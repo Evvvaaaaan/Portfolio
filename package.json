@@ -1,5 +1,4 @@
 {
-<<<<<<< HEAD
   "name": "portfolio",
   "private": true,
   "version": "0.0.0",
@@ -22,6 +21,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@playwright/test": "^1.60.0",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.1",
@@ -30,22 +30,5 @@
     "eslint-plugin-react-refresh": "^0.5.2",
     "globals": "^17.6.0",
     "vite": "^8.0.12"
-=======
-  "name": "evan-portfolio",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "devDependencies": {
-    "vite": "^8.0.14"
-  },
-  "dependencies": {
-    "@supabase/supabase-js": "^2.106.2"
->>>>>>> bcf8b2bcf48342220252d365f32cb5f486903217
   }
 }
