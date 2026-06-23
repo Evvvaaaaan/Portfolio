@@ -27,6 +27,8 @@ export default function SpaceBackground() {
 
   useEffect(() => {
     const canvas = ref.current
+    if (!canvas) return
+
     const renderer = new THREE.WebGLRenderer({ canvas, antialias: true })
     renderer.setSize(window.innerWidth, window.innerHeight)
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
@@ -68,15 +70,43 @@ export default function SpaceBackground() {
       depthWrite: false,
       alphaTest: 0.02,
     })
-    scene.add(new THREE.Points(starGeo, starMat))
+    
+    const starsPoints = new THREE.Points(starGeo, starMat)
+    scene.add(starsPoints)
+
+    let scrollPercent = 0
+    let scrollPercentSmooth = 0
+    
+    const onScroll = () => {
+      const maxScroll = document.documentElement.scrollHeight - window.innerHeight
+      scrollPercent = maxScroll > 0 ? window.scrollY / maxScroll : 0
+    }
+    window.addEventListener('scroll', onScroll, { passive: true })
 
     let id
     const clock = new THREE.Clock()
     const tick = () => {
       id = requestAnimationFrame(tick)
       const t = clock.getElapsedTime()
-      scene.rotation.y = t * 0.005
-      scene.rotation.x = Math.sin(t * 0.003) * 0.04
+      
+      // Smooth out scroll progress
+      scrollPercentSmooth += (scrollPercent - scrollPercentSmooth) * 0.05
+      
+      // 1. Vortex rotation: spin the stars on Z axis as we scroll down
+      starsPoints.rotation.z = scrollPercentSmooth * 1.8
+      
+      // Y/X slow rotation + scroll drift
+      starsPoints.rotation.y = t * 0.005 + scrollPercentSmooth * 0.15
+      starsPoints.rotation.x = Math.sin(t * 0.003) * 0.04 + scrollPercentSmooth * 0.08
+      
+      // 2. Camera flies deep into the starfield (Z: 400 down to 40)
+      // We use a power curve so the zoom feels like it accelerates (sucked-in feeling)
+      camera.position.z = 400 - Math.pow(scrollPercentSmooth, 1.2) * 360
+      
+      // 3. Field of View Expansion: creates an edge-stretching warp speed optical illusion
+      camera.fov = 75 + Math.pow(scrollPercentSmooth, 1.5) * 45
+      camera.updateProjectionMatrix()
+
       renderer.render(scene, camera)
     }
     tick()
@@ -91,6 +121,7 @@ export default function SpaceBackground() {
     return () => {
       cancelAnimationFrame(id)
       window.removeEventListener('resize', onResize)
+      window.removeEventListener('scroll', onScroll)
       starGeo.dispose()
       starMat.dispose()
       starTexture.dispose()

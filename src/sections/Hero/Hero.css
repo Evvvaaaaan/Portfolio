@@ -65,6 +65,26 @@
   50% { opacity: 0.4; }
 }
 
+/* Holographic tilt overlay wrapper */
+.hero-title-holo-wrap {
+  position: relative;
+}
+
+/* Duplicate h1: rainbow gradient clipped to text shape, fades in on tilt */
+.hero-title-holo {
+  position: absolute;
+  top: 0;
+  left: 0;
+  margin: 0;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  opacity: 0;
+  pointer-events: none;
+  user-select: none;
+  will-change: opacity, background;
+}
+
 /* Title */
 .hero-title {
   font-size: clamp(48px, 8vw, 96px);

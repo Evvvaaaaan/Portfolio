@@ -9,6 +9,7 @@
   border-bottom: 1px solid transparent;
 }
 
+
 .navbar.scrolled {
   padding: 14px 0;
   background: rgba(10, 10, 15, 0.8);
@@ -64,6 +65,8 @@
 }
 .nav-link:hover { color: var(--text-h); }
 .nav-link:hover::after { width: 100%; }
+.nav-link--active { color: var(--text-h); }
+.nav-link--active::after { width: 100%; }
 
 /* CTA */
 .nav-cta {
@@ -97,19 +100,19 @@
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid var(--border);
   border-radius: 40px;
-  padding: 3px;
+  padding: 2px;
   gap: 1px;
 }
 
 .lang-btn {
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 9px;
   font-weight: 600;
   color: var(--text);
   background: none;
   border: none;
   border-radius: 40px;
-  padding: 5px 9px;
+  padding: 3px 6px;
   cursor: pointer;
   transition: color 0.18s, background 0.18s;
   letter-spacing: 0.04em;

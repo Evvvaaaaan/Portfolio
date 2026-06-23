@@ -1,0 +1,208 @@
+.pollock-wrap {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  cursor: crosshair;
+  z-index: 0;
+}
+
+.pollock-canvas {
+  display: block;
+  position: absolute;
+  inset: 0;
+}
+
+/* ── Bottom UI bar ── */
+.pollock-ui {
+  position: fixed;
+  bottom: 28px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-radius: 50px;
+  padding: 10px 18px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  z-index: 10;
+  white-space: nowrap;
+}
+
+.pollock-info {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.pollock-artwork {
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.85);
+  letter-spacing: 0.01em;
+}
+
+.pollock-artist {
+  font-size: 10px;
+  font-family: var(--font-mono);
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.pollock-divider {
+  width: 1px;
+  height: 24px;
+  background: rgba(255, 255, 255, 0.12);
+  flex-shrink: 0;
+}
+
+.pollock-palette {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.pollock-swatch {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  background: var(--sw);
+  cursor: pointer;
+  transition: transform 0.15s, border-color 0.15s;
+  outline: none;
+}
+.pollock-swatch:hover:not(.active) { transform: scale(1.15); }
+.pollock-swatch.active {
+  border-color: white;
+  transform: scale(1.25);
+}
+
+.pollock-regen {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: transparent;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 15px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.15s, border-color 0.15s, transform 0.2s;
+  outline: none;
+}
+.pollock-regen:hover {
+  color: white;
+  border-color: rgba(255, 255, 255, 0.45);
+  transform: rotate(60deg);
+}
+
+/* ── Hint ── */
+.pollock-hint {
+  position: fixed;
+  bottom: 84px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 12px;
+  font-family: var(--font-mono);
+  color: rgba(255, 255, 255, 0.4);
+  pointer-events: none;
+  white-space: nowrap;
+  z-index: 10;
+  animation: hint-fade 0.6s ease 1.5s both;
+}
+
+@keyframes hint-fade {
+  from { opacity: 0; transform: translateX(-50%) translateY(4px); }
+  to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
+/* ── Canvas wrapper (fade transition) ── */
+.pollock-canvas-wrap {
+  position: absolute;
+  inset: 0;
+  transition: opacity 0.28s ease;
+}
+.pollock-canvas-wrap.fading { opacity: 0; }
+
+/* Klein overlay canvas */
+.pollock-overlay { z-index: 1; cursor: crosshair; }
+
+/* ── Artwork nav buttons ── */
+.pollock-next-btn,
+.klein-prev-btn {
+  font-size: 11px;
+  font-family: var(--font-mono);
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  padding: 4px 12px;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: transparent;
+  color: rgba(255, 255, 255, 0.62);
+  cursor: pointer;
+  white-space: nowrap;
+  outline: none;
+  transition: color 0.2s, border-color 0.2s;
+  flex-shrink: 0;
+}
+.pollock-next-btn:hover { color: #fff; border-color: rgba(255, 255, 255, 0.45); }
+
+/* ── Klein mode bar ── */
+.klein-ui {
+  background: rgba(0, 8, 42, 0.72);
+  border-color: rgba(80, 130, 255, 0.25);
+}
+.klein-ui .pollock-divider { background: rgba(80, 130, 255, 0.18); }
+.klein-ui .pollock-info { align-items: center; }
+.klein-ui .pollock-artwork { color: rgba(200, 220, 255, 0.9); }
+.klein-ui .pollock-artist  { color: rgba(110, 155, 255, 0.52); }
+
+.klein-prev-btn {
+  border-color: rgba(80, 130, 255, 0.25);
+  color: rgba(140, 180, 255, 0.65);
+}
+.klein-prev-btn:hover { color: rgba(210, 225, 255, 0.9); border-color: rgba(100, 160, 255, 0.5); }
+
+/* Klein artwork arrows */
+.klein-arr {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  border: 1px solid rgba(80, 130, 255, 0.28);
+  background: transparent;
+  color: rgba(160, 200, 255, 0.72);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; flex-shrink: 0; outline: none;
+  transition: color 0.2s, border-color 0.2s, background 0.2s;
+}
+.klein-arr:hover:not(:disabled) {
+  color: #fff;
+  border-color: rgba(100, 160, 255, 0.6);
+  background: rgba(0, 47, 167, 0.4);
+}
+.klein-arr:disabled { opacity: 0.2; cursor: default; }
+.klein-arr:focus-visible { outline: 2px solid rgba(100, 160, 255, 0.7); outline-offset: 2px; }
+
+/* Klein dot indicators */
+.klein-dots { display: flex; align-items: center; gap: 6px; }
+.klein-dot {
+  width: 5px; height: 5px;
+  border-radius: 40px; border: none; padding: 0;
+  background: rgba(80, 130, 255, 0.3);
+  cursor: pointer; outline: none;
+  transition: width 0.28s ease, background 0.28s ease;
+}
+.klein-dot.active { width: 18px; background: rgba(80, 160, 255, 0.88); }
+.klein-dot:focus-visible { outline: 2px solid rgba(100, 160, 255, 0.7); outline-offset: 2px; }
+
+/* ── Mobile ── */
+@media (max-width: 600px) {
+  .pollock-ui { gap: 10px; padding: 8px 14px; bottom: 20px; }
+  .pollock-info { display: none; }
+  .pollock-divider { display: none; }
+  .pollock-hint { bottom: 72px; font-size: 11px; }
+  .klein-ui .pollock-info { display: flex; }
+}

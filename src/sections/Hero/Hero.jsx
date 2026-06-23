@@ -162,8 +162,105 @@ function ParticleScene({ containerRef }) {
 
 export default function Hero() {
   const canvasRef = useRef(null)
+  const holoRef = useRef(null)
   const { lang, t } = useLang()
   const typedText = useTyping(t.hero.roles, lang)
+
+  // Physical screen tilt → holographic color on text
+  useEffect(() => {
+    const holo = holoRef.current
+    if (!holo) return
+
+    const tilt = { x: 0, y: 0 }
+    const target = { x: 0, y: 0 }
+    let hasPhysicalSensor = false
+    // Auto-calibration: first sensor reading becomes the "rest" position.
+    // This works for both laptops (beta≈0° flat) and phones (beta≈90° upright)
+    // without needing to know which device type is in use.
+    let restBeta = null
+    let restGamma = null
+
+    const onOrientation = (e) => {
+      if (e.beta === null || e.gamma === null) return
+      hasPhysicalSensor = true
+
+      // Calibrate on first valid reading
+      if (restBeta === null) {
+        restBeta = e.beta
+        restGamma = e.gamma
+        return
+      }
+
+      // Deviation from rest position → tilt input.
+      // ÷25 = sensitive: ~25° tilt gives full intensity.
+      target.x = Math.max(-1, Math.min(1, (e.beta - restBeta) / 25))
+      target.y = Math.max(-1, Math.min(1, (e.gamma - restGamma) / 25))
+    }
+
+    // Fallback: mouse position when no physical sensor fires
+    const onMouse = (e) => {
+      if (hasPhysicalSensor) return
+      target.x = (e.clientY / window.innerHeight - 0.5) * 2
+      target.y = (e.clientX / window.innerWidth - 0.5) * 2
+    }
+
+    // iOS / macOS Safari 13+ requires a user gesture before orientation events fire
+    const requestPermission = () => {
+      if (typeof DeviceOrientationEvent?.requestPermission === 'function') {
+        DeviceOrientationEvent.requestPermission()
+          .then((state) => {
+            if (state === 'granted') {
+              // Re-attach listener now that permission is granted
+              window.addEventListener('deviceorientation', onOrientation)
+            }
+          })
+          .catch(() => {})
+      }
+    }
+
+    window.addEventListener('deviceorientation', onOrientation)
+    window.addEventListener('mousemove', onMouse)
+    document.addEventListener('click', requestPermission, { once: true })
+
+    let raf
+
+    const animate = () => {
+      raf = requestAnimationFrame(animate)
+
+      tilt.x += (target.x - tilt.x) * 0.08
+      tilt.y += (target.y - tilt.y) * 0.08
+
+      const intensity = Math.min(1, Math.sqrt(tilt.x ** 2 + tilt.y ** 2))
+
+      if (intensity < 0.015) {
+        holo.style.opacity = '0'
+        return
+      }
+
+      // Tilt direction → hue. Each direction of tilt shows a different color,
+      // like a holographic sticker reflecting different wavelengths by angle.
+      const angle = (Math.atan2(tilt.y, tilt.x) * 180 / Math.PI + 360) % 360
+      const baseHue = angle
+
+      holo.style.opacity = (intensity * 0.9).toFixed(3)
+      holo.style.backgroundImage = [
+        `linear-gradient(${angle}deg,`,
+        `hsl(${baseHue | 0},100%,55%),`,
+        `hsl(${(baseHue + 72) % 360 | 0},100%,55%),`,
+        `hsl(${(baseHue + 144) % 360 | 0},100%,55%),`,
+        `hsl(${(baseHue + 216) % 360 | 0},100%,55%),`,
+        `hsl(${(baseHue + 288) % 360 | 0},100%,55%))`,
+      ].join(' ')
+    }
+    animate()
+
+    return () => {
+      cancelAnimationFrame(raf)
+      window.removeEventListener('deviceorientation', onOrientation)
+      window.removeEventListener('mousemove', onMouse)
+      document.removeEventListener('click', requestPermission)
+    }
+  }, [])
 
   const handleScroll = () => {
     document.querySelector('#about')?.scrollIntoView({ behavior: 'smooth' })
@@ -185,9 +282,15 @@ export default function Hero() {
           {t.hero.tag}
         </div>
 
-        <h1 className="hero-title fade-up delay-1">
-          Hi, I'm <span className="hero-name">Evan</span>
-        </h1>
+        <div className="hero-title-holo-wrap fade-up delay-1">
+          <h1 className="hero-title">
+            Hi, I&apos;m <span className="hero-name">Evan</span>
+          </h1>
+          {/* Same text, background-clip: text — fades in rainbow on tilt */}
+          <h1 className="hero-title hero-title-holo" ref={holoRef} aria-hidden="true">
+            Hi, I&apos;m <span>Evan</span>
+          </h1>
+        </div>
 
         <div className="hero-role fade-up delay-2" aria-live="polite" aria-atomic="true">
           <span className="role-text">{typedText}</span>

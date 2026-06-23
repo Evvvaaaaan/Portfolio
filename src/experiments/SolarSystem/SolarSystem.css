@@ -1,0 +1,225 @@
+/* ── 태양계 시뮬레이터 UI ── */
+
+.ss-controls {
+  position: absolute;
+  left: 20px;
+  bottom: 20px;
+  z-index: 10;
+  width: 264px;
+  padding: 16px 16px 13px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(8, 10, 18, 0.78);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  font-family: var(--font-mono, monospace);
+}
+
+.ss-ctl-row {
+  display: grid;
+  grid-template-columns: 58px 1fr 64px;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.ss-ctl-row label {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.55);
+  letter-spacing: 0.02em;
+}
+
+.ss-ctl-row input[type='range'] { width: 100%; }
+
+.ss-ctl-val {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.85);
+  text-align: right;
+  white-space: nowrap;
+}
+
+.ss-ctl-note {
+  margin: 2px 0 10px;
+  font-size: 10.5px;
+  line-height: 1.5;
+  color: #fbbf24;
+  opacity: 0.85;
+}
+
+.ss-ctl-btns {
+  display: flex;
+  gap: 6px;
+}
+
+.ss-ctl-btns button {
+  flex: 1;
+  padding: 6px 4px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 999px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.5);
+  font-family: inherit;
+  font-size: 10.5px;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: border-color 0.18s, color 0.18s, background 0.18s;
+}
+
+.ss-ctl-btns button:hover {
+  border-color: rgba(255, 255, 255, 0.38);
+  color: #fff;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.ss-elapsed {
+  margin-top: 11px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.ss-elapsed span {
+  color: #fbbf24;
+  margin-left: 6px;
+}
+
+/* ── 행성 정보 패널 ── */
+
+.ss-info {
+  position: absolute;
+  right: 20px;
+  top: 72px;
+  z-index: 10;
+  width: 300px;
+  max-height: calc(100% - 110px);
+  overflow-y: auto;
+  padding: 18px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(8, 10, 18, 0.82);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  animation: ss-info-in 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes ss-info-in {
+  from { opacity: 0; transform: translateX(16px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+.ss-info-close {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  border: none;
+  background: none;
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 18px;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.ss-info-close:hover { color: #fff; }
+
+.ss-info h3 {
+  margin: 0 0 10px;
+  font-size: 18px;
+  color: #fff;
+  font-weight: 600;
+}
+
+.ss-info h3 em {
+  font-style: normal;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.4);
+  font-family: var(--font-mono, monospace);
+  margin-left: 6px;
+}
+
+.ss-info-desc {
+  margin: 0 0 14px;
+  font-size: 12.5px;
+  line-height: 1.7;
+  color: rgba(255, 255, 255, 0.72);
+  word-break: keep-all;
+}
+
+.ss-info-rows {
+  margin: 0;
+}
+
+.ss-info-rows > div {
+  display: flex;
+  justify-content: space-between;
+  padding: 5px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.ss-info-rows dt {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.ss-info-rows dd {
+  margin: 0;
+  font-size: 11.5px;
+  color: rgba(255, 255, 255, 0.88);
+  font-family: var(--font-mono, monospace);
+}
+
+.ss-live {
+  margin-top: 14px;
+  padding: 12px;
+  border-radius: 10px;
+  background: rgba(251, 191, 36, 0.06);
+  border: 1px solid rgba(251, 191, 36, 0.18);
+}
+
+.ss-live-title {
+  font-size: 10.5px;
+  letter-spacing: 0.08em;
+  color: #fbbf24;
+  margin-bottom: 6px;
+}
+
+.ss-live .ss-info-rows dd { color: #ffe9b3; }
+
+.ss-state {
+  margin-top: 9px;
+  font-size: 11px;
+  text-align: center;
+  padding: 5px 0;
+  border-radius: 6px;
+}
+
+.ss-state.stable {
+  color: #6ee7a8;
+  background: rgba(34, 197, 94, 0.1);
+}
+
+.ss-state.escape {
+  color: #fb7185;
+  background: rgba(244, 63, 94, 0.12);
+}
+
+/* ── Mobile ── */
+@media (max-width: 640px) {
+  .ss-controls {
+    left: 10px;
+    right: 10px;
+    bottom: 12px;
+    width: auto;
+    padding: 12px 12px 10px;
+  }
+
+  .ss-info {
+    left: 10px;
+    right: 10px;
+    top: auto;
+    bottom: 196px;
+    width: auto;
+    max-height: 38vh;
+  }
+}

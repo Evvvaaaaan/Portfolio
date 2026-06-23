@@ -1,0 +1,167 @@
+/* ── Full-screen immersive container ── */
+.exp-page {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+}
+
+/* ── Always-visible floating back button ── */
+.exp-page-back {
+  position: absolute;
+  top: 20px;
+  left: 24px;
+  z-index: 30;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  padding: 5px 16px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  letter-spacing: 0.06em;
+  color: rgba(255, 255, 255, 0.5);
+  background: rgba(10, 10, 15, 0.55);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  transition: color 0.2s, border-color 0.2s, background 0.2s;
+  white-space: nowrap;
+}
+.exp-page-back:hover {
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.5);
+  background: rgba(10, 10, 15, 0.8);
+}
+
+/* ── Auto-hide top bar (title + tags + code btn) ── */
+.exp-page-bar {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 14px 32px;
+  background: rgba(10, 10, 15, 0.75);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--border);
+  transform: translateY(-100%);
+  opacity: 0;
+  transition: transform 0.38s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s;
+  pointer-events: none;
+}
+
+.exp-page-bar.visible {
+  transform: translateY(0);
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.exp-page-code-btn {
+  position: absolute;
+  right: 32px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  padding: 4px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+.exp-page-code-btn:hover {
+  color: var(--text-h);
+  border-color: var(--text-muted);
+}
+
+.exp-page-meta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.exp-page-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-h);
+  letter-spacing: -0.01em;
+}
+
+.exp-page-tags {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.exp-page-tag {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  padding: 2px 9px;
+  border-radius: 999px;
+  letter-spacing: 0.08em;
+  border: 1px solid var(--exp-color, var(--border));
+  color: var(--exp-color, var(--text-muted));
+  opacity: 0.75;
+}
+
+/* ── Canvas fills the entire screen ── */
+.exp-page-canvas {
+  position: absolute;
+  inset: 0;
+}
+
+.exp-page-canvas > * {
+  width: 100%;
+  height: 100%;
+}
+
+.exp-page-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+/* ── Bottom info strip hidden for full immersion ── */
+.exp-page-info {
+  display: none;
+}
+
+/* ── Fullscreen mode (exp.fullscreen = true) ── */
+.exp-fullscreen {
+  position: fixed;
+  inset: 0;
+  z-index: 110;
+  background: #000;
+}
+
+.exp-fullscreen-back {
+  position: absolute;
+  top: 20px;
+  left: 24px;
+  z-index: 60;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  padding: 4px 15px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  letter-spacing: 0.06em;
+  color: rgba(255, 255, 255, 0.5);
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(8px);
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+.exp-fullscreen-back:hover {
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.5);
+}
+
+@media (max-width: 767px) {
+  .exp-page-bar { padding: 12px 16px; }
+  .exp-page-meta { gap: 8px; }
+}

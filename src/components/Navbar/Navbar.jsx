@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { Link, useLocation } from 'react-router-dom'
 import { useLang } from '../../context/LangContext'
 import './Navbar.css'
 
@@ -54,6 +55,9 @@ export default function Navbar() {
   const { t } = useLang()
   const [scrolled, setScrolled] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
+  const location = useLocation()
+
+  const isLabDetail = /^\/gallery\/.+/.test(location.pathname)
 
   const navItems = [
     { label: t.nav.about, href: '#about' },
@@ -68,7 +72,14 @@ export default function Navbar() {
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
+  if (isLabDetail) return null
+
   const handleNav = (e, href) => {
+    if (location.pathname !== '/') {
+      e.preventDefault()
+      window.location.href = '/' + href
+      return
+    }
     e.preventDefault()
     setMenuOpen(false)
     document.querySelector(href)?.scrollIntoView({ behavior: 'smooth' })
@@ -95,6 +106,12 @@ export default function Navbar() {
               {item.label}
             </a>
           ))}
+          <Link
+            to="/gallery"
+            className={`nav-link ${location.pathname === '/gallery' ? 'nav-link--active' : ''}`}
+          >
+            Lab
+          </Link>
           <a href="#contact" className="nav-cta" onClick={(e) => handleNav(e, '#contact')}>
             {t.nav.hire}
           </a>
@@ -129,6 +146,13 @@ export default function Navbar() {
                 {item.label}
               </a>
             ))}
+            <Link
+              to="/gallery"
+              className="nav-link"
+              onClick={() => setMenuOpen(false)}
+            >
+              Lab
+            </Link>
             <a href="#contact" className="nav-cta" onClick={(e) => handleNav(e, '#contact')}>
               {t.nav.hire}
             </a>

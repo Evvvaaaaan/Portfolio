@@ -29,16 +29,20 @@ export default async function handler(req, res) {
       source: 'portfolio',
     })
 
-    await sendEmail({
-      subject: `[Portfolio] Resume request from ${name}`,
-      replyTo: email,
-      html: `
-        <h2>New resume request</h2>
-        <p><strong>Name:</strong> ${escapeHtml(name)}</p>
-        <p><strong>Email:</strong> ${escapeHtml(email)}</p>
-        <p><strong>Phone:</strong> ${escapeHtml(phone)}</p>
-      `,
-    })
+    try {
+      await sendEmail({
+        subject: `[Portfolio] Resume request from ${name}`,
+        replyTo: email,
+        html: `
+          <h2>New resume request</h2>
+          <p><strong>Name:</strong> ${escapeHtml(name)}</p>
+          <p><strong>Email:</strong> ${escapeHtml(email)}</p>
+          <p><strong>Phone:</strong> ${escapeHtml(phone)}</p>
+        `,
+      })
+    } catch (emailErr) {
+      console.error('Email send failed (non-fatal):', emailErr)
+    }
 
     sendJson(res, 200, { ok: true, id: record?.id ?? null })
   } catch (error) {

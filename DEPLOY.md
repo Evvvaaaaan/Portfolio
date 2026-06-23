@@ -25,7 +25,8 @@ https://supabase.com/dashboard/project/rwirgphjphjhqaalseak/settings/api-keys
 ### 3. Vercel 프로젝트 설정
 
 - 프로젝트를 GitHub 저장소에 올립니다.
-- Vercel에서 해당 GitHub 저장소를 Import합니다.
+- Vercel에서 해당 GitHub 저장소를 
+Import합니다.
 - Framework Preset이 `Vite`인지 확인합니다.
 - Build Command가 `npm run build`인지 확인합니다.
 - Output Directory가 `build`인지 확인합니다.

@@ -11,12 +11,12 @@ const skillGroups = [
   {
     category: 'Backend',
     icon: '⚙️',
-    skills: ['Node.js', 'Express', 'Python', 'Django', 'REST API', 'PostgreSQL'],
+    skills: ['Node.js', 'Python', 'REST API', 'Spring Boot'],
   },
   {
     category: 'Tools & DevOps',
     icon: '🛠️',
-    skills: ['Git / GitHub', 'Docker', 'Nginx', 'Linux', 'Vite', 'CI/CD'],
+    skills: ['Git / GitHub', 'Nginx', 'Vite', 'AWS'],
   },
   {
     category: 'Design',

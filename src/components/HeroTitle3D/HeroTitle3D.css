@@ -1,0 +1,9 @@
+.hero-title-3d {
+  width: 100%;
+  height: clamp(140px, 20vw, 300px);
+  pointer-events: none;
+}
+
+.hero-title-3d canvas {
+  display: block;
+}
