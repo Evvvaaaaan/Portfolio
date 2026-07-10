@@ -7,7 +7,10 @@ export default function Speedrun() {
   const [best, setBest] = useState(loadBest)
   const timerRef = useRef(null)
   const runRef = useRef(run)
-  runRef.current = run
+
+  useEffect(() => {
+    runRef.current = run
+  }, [run])
 
   // 타이머는 rAF로 DOM에 직접 쓴다 — 프레임마다 리렌더하지 않기 위함
   useEffect(() => {
@@ -43,7 +46,9 @@ export default function Speedrun() {
   useEffect(() => {
     if (run.finishedAt == null) return
     const total = run.finishedAt - run.startedAt
-    if (saveBest(total)) setBest(total)
+    if (!saveBest(total)) return
+    const id = requestAnimationFrame(() => setBest(total))
+    return () => cancelAnimationFrame(id)
   }, [run.finishedAt, run.startedAt])
 
   const restart = () => {

@@ -13,16 +13,16 @@ export default function Inspect() {
   // 현재 스텝 대상으로 스크롤하고, 하이라이트 박스를 요소 위치에 고정
   useEffect(() => {
     const el = document.querySelector(current.selector)
+    let raf
     if (!el) {
-      setBox(null)
-      return
+      raf = requestAnimationFrame(() => setBox(null))
+      return () => cancelAnimationFrame(raf)
     }
     // 네이티브 scrollTo는 Lenis가 되돌리므로 Lenis 인스턴스를 우선 사용
     const lenis = getLenis()
     if (lenis) lenis.scrollTo(el, { duration: 0.8 })
     else el.scrollIntoView({ behavior: 'smooth', block: 'center' })
 
-    let raf
     const update = () => {
       const r = el.getBoundingClientRect()
       setBox({ x: r.left, y: r.top, w: r.width, h: r.height })
@@ -31,7 +31,7 @@ export default function Inspect() {
       cancelAnimationFrame(raf)
       raf = requestAnimationFrame(update)
     }
-    update()
+    schedule()
     window.addEventListener('scroll', schedule, { passive: true })
     window.addEventListener('resize', schedule)
     return () => {
