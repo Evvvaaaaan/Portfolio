@@ -24,6 +24,13 @@ export const modes = [
     color: '#ff6b6b',
     component: lazy(() => import('./Destruction/Destruction.jsx')),
   },
+  {
+    id: 'inspect',
+    title: 'Inspect',
+    description: 'A guided teardown of how this site is built.',
+    color: '#61dafb',
+    component: lazy(() => import('./Inspect/Inspect.jsx')),
+  },
 ]
 
 export function getMode(id) {

@@ -1,0 +1,74 @@
+.inspect-highlight {
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 1900;
+  pointer-events: none;
+  outline: 2px solid #61dafb;
+  outline-offset: -2px;
+  background: rgba(97, 218, 251, 0.08);
+  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.45);
+  transition: transform 0.2s ease, width 0.2s ease, height 0.2s ease;
+}
+
+.inspect-panel {
+  position: fixed;
+  top: 120px;
+  right: 16px;
+  z-index: 2000;
+  width: 300px;
+  padding: 14px;
+  border-radius: 12px;
+  background: rgba(12, 14, 22, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  color: #fff;
+}
+
+.inspect-tag {
+  font-family: 'SF Mono', ui-monospace, Menlo, monospace;
+  font-size: 0.72rem;
+  color: #61dafb;
+  margin-bottom: 6px;
+}
+
+.inspect-title {
+  margin: 0 0 6px;
+  font-size: 1rem;
+}
+
+.inspect-note {
+  margin: 0 0 12px;
+  font-size: 0.78rem;
+  line-height: 1.55;
+  opacity: 0.8;
+}
+
+.inspect-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.inspect-step {
+  margin-right: auto;
+  font-size: 0.72rem;
+  opacity: 0.6;
+  font-variant-numeric: tabular-nums;
+}
+
+.inspect-controls button {
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 0.75rem;
+  border-radius: 6px;
+  padding: 3px 10px;
+  cursor: pointer;
+}
+
+.inspect-controls button:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
