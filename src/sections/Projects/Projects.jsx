@@ -2,44 +2,8 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useLang } from '../../context/LangContext'
 import { useScrollReveal } from '../../hooks/useScrollReveal'
+import { projects } from '../../data/projects.js'
 import './Projects.css'
-
-const projects = [
-  {
-    id: 1,
-    title: 'FindX',
-    desc: '분실물·유실물 위치 기반 매칭 서비스. 물건을 잃어버렸을 때 등록하면 주변에서 습득된 물건과 자동으로 매칭해 빠르게 찾을 수 있도록 연결해줍니다.',
-    tags: ['React Native', 'Spring Boot', 'WebSocket', 'AWS'],
-    category: 'Fullstack',
-    accent: '#4f9cf9',
-    link: 'https://apps.apple.com/kr/app/find-x/id6758507153?l=en-GB',
-    github: 'https://github.com/Evvvaaaaan/treasureHunter-frontend',
-    type: 'findx',
-    slug: 'findx',
-  },
-  {
-    id: 2,
-    title: 'Spotline',
-    desc: '추후 업데이트 예정',
-    tags: [],
-    category: 'Fullstack',
-    accent: '#f59e0b',
-    link: '#',
-    github: '#',
-    slug: 'spotline',
-  },
-  {
-    id: 3,
-    title: 'Lyralab',
-    desc: '일상에서 발견한 문제와 아이디어를 소프트웨어로 개발하는 프로젝트 스튜디오',
-    tags: ['React', 'Supabase', 'Claude', 'Figma'],
-    category: 'Fullstack',
-    accent: '#a855f7',
-    link: 'https://lyralab.site',
-    github: '#',
-    slug: 'lyralab',
-  },
-]
 
 export default function Projects() {
   const { t } = useLang()
