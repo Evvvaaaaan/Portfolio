@@ -1,0 +1,25 @@
+.destruction-host {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  cursor: grab;
+}
+
+.destruction-host:active { cursor: grabbing; }
+
+.destruction-restore {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2100;
+  padding: 10px 22px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  background: rgba(12, 14, 22, 0.9);
+  color: #ff6b6b;
+  font-family: 'SF Mono', ui-monospace, Menlo, monospace;
+  font-size: 0.8rem;
+  letter-spacing: 0.12em;
+  cursor: pointer;
+}

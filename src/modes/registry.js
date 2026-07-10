@@ -17,6 +17,13 @@ export const modes = [
     color: '#ffd75e',
     component: lazy(() => import('./Speedrun/Speedrun.jsx')),
   },
+  {
+    id: 'destruction',
+    title: 'Destruction',
+    description: 'Watch the page collapse. Throw the debris.',
+    color: '#ff6b6b',
+    component: lazy(() => import('./Destruction/Destruction.jsx')),
+  },
 ]
 
 export function getMode(id) {
