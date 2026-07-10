@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { useLang } from '../../context/LangContext'
+import ModeMenu from '../../modes/ModeSelector/ModeMenu.jsx'
 import './Navbar.css'
 
 const LANGS = [
@@ -112,6 +113,7 @@ export default function Navbar() {
           >
             Lab
           </Link>
+          {location.pathname === '/' && <ModeMenu />}
           <a href="#contact" className="nav-cta" onClick={(e) => handleNav(e, '#contact')}>
             {t.nav.hire}
           </a>

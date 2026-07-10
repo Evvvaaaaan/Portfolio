@@ -16,6 +16,8 @@ import Gallery from './pages/Gallery/Gallery'
 import ExperimentPage from './pages/ExperimentPage/ExperimentPage'
 import CodePage from './pages/CodePage/CodePage'
 import ProjectPage from './pages/ProjectPage/ProjectPage'
+import { ModeProvider } from './modes/ModeContext.jsx'
+import ModeLayer from './modes/ModeLayer.jsx'
 
 const isShowcase = new URLSearchParams(window.location.search).get('showcase') === 'loading'
 
@@ -273,17 +275,20 @@ function AppContent() {
 
   return (
     <LangProvider>
-      <SpaceBackground />
-      <Cursor />
-      <Navbar />
-      <Routes>
-        <Route path="/" element={<MainPage />} />
-        <Route path="/gallery" element={<Gallery />} />
-        <Route path="/gallery/:id" element={<ExperimentPage />} />
-        <Route path="/gallery/:id/code" element={<CodePage />} />
-        <Route path="/projects/:slug" element={<ProjectPage />} />
-      </Routes>
-      {showGlobalFooter && <Footer />}
+      <ModeProvider>
+        <SpaceBackground />
+        <Cursor />
+        <Navbar />
+        <Routes>
+          <Route path="/" element={<MainPage />} />
+          <Route path="/gallery" element={<Gallery />} />
+          <Route path="/gallery/:id" element={<ExperimentPage />} />
+          <Route path="/gallery/:id/code" element={<CodePage />} />
+          <Route path="/projects/:slug" element={<ProjectPage />} />
+        </Routes>
+        {isMainPage && <ModeLayer />}
+        {showGlobalFooter && <Footer />}
+      </ModeProvider>
     </LangProvider>
   )
 }
