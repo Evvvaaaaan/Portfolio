@@ -1,0 +1,61 @@
+.speedrun-panel {
+  position: fixed;
+  top: 120px;
+  right: 16px;
+  z-index: 2000;
+  width: 220px;
+  padding: 12px;
+  border-radius: 12px;
+  background: rgba(12, 14, 22, 0.88);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  color: #fff;
+  font-family: 'SF Mono', ui-monospace, Menlo, monospace;
+  font-size: 0.72rem;
+}
+
+.speedrun-timer {
+  font-size: 1.4rem;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  margin-bottom: 8px;
+}
+
+.speedrun-splits {
+  list-style: none;
+  margin: 0 0 8px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.speedrun-splits li {
+  display: flex;
+  justify-content: space-between;
+  opacity: 0.5;
+  font-variant-numeric: tabular-nums;
+}
+
+.speedrun-split--done { opacity: 1; color: #ffd75e; }
+
+.speedrun-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  padding-top: 8px;
+}
+
+.speedrun-clear { color: #ffd75e; }
+
+.speedrun-footer button {
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  border-radius: 6px;
+  padding: 2px 8px;
+  cursor: pointer;
+}

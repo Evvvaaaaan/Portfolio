@@ -10,6 +10,13 @@ export const modes = [
     color: '#4af626',
     component: lazy(() => import('./Terminal/Terminal.jsx')),
   },
+  {
+    id: 'speedrun',
+    title: 'Speedrun',
+    description: 'Clear every section against the clock.',
+    color: '#ffd75e',
+    component: lazy(() => import('./Speedrun/Speedrun.jsx')),
+  },
 ]
 
 export function getMode(id) {
