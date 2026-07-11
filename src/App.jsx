@@ -276,7 +276,7 @@ function AppContent() {
   return (
     <LangProvider>
       <ModeProvider>
-        <SpaceBackground />
+        <SpaceBackground warpEnabled={isMainPage && isDesktop} />
         <Cursor />
         <Navbar />
         <Routes>

@@ -23,8 +23,13 @@ function createStarTexture() {
   return texture
 }
 
-export default function SpaceBackground() {
+export default function SpaceBackground({ warpEnabled = false }) {
   const ref = useRef(null)
+  const warpEnabledRef = useRef(warpEnabled)
+
+  useEffect(() => {
+    warpEnabledRef.current = warpEnabled
+  }, [warpEnabled])
 
   useEffect(() => {
     const canvas = ref.current
@@ -79,10 +84,12 @@ export default function SpaceBackground() {
     let scrollPercentSmooth = 0
     let intensitySmooth = 0
 
-    // 데스크톱 슬라이드덱(섹션마다 정확히 100vh)에서만 섹션 전환 구간 가속을 쓴다.
-    // 모바일은 섹션 높이가 콘텐츠에 따라 달라 이 계산이 성립하지 않으므로
-    // 기존 페이지 전체 기준(scrollPercentSmooth) 줌을 그대로 유지한다.
-    let isDesktop = window.matchMedia('(min-width: 769px) and (min-height: 701px)').matches
+    // 메인 페이지의 데스크톱 슬라이드덱(섹션마다 정확히 100vh)에서만 섹션 전환
+    // 구간 가속을 쓴다. warpEnabled는 App.jsx에서 "메인 페이지 && 데스크톱"일
+    // 때만 true로 내려오며, 라우트 변경이나 리사이즈에 반응해 갱신된다
+    // (warpEnabledRef를 통해 항상 최신 값을 읽는다). 그 외(다른 라우트, 모바일)는
+    // 섹션 높이가 100vh로 고정되지 않으므로 기존 페이지 전체 기준
+    // (scrollPercentSmooth) 줌을 그대로 유지한다.
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
     const onScroll = () => {
@@ -100,13 +107,14 @@ export default function SpaceBackground() {
       // Smooth out scroll progress
       scrollPercentSmooth += (scrollPercent - scrollPercentSmooth) * 0.05
 
-      // 데스크톱+모션 허용 시: 섹션 전환 구간마다 0→1→0으로 반복되는 세기.
-      // 그 외(모바일, reduced-motion)에는 0으로 고정하고 zoomDriver가 기존 값을 쓰게 한다.
-      const targetIntensity = (isDesktop && !reducedMotion)
+      // 메인 페이지 데스크톱 슬라이드덱 + 모션 허용 시: 섹션 전환 구간마다
+      // 0→1→0으로 반복되는 세기. 그 외에는 0으로 고정하고 zoomDriver가
+      // 기존 값을 쓰게 한다.
+      const targetIntensity = (warpEnabledRef.current && !reducedMotion)
         ? computeTransitionIntensity(window.scrollY, window.innerHeight)
         : 0
       intensitySmooth += (targetIntensity - intensitySmooth) * 0.14
-      const zoomDriver = isDesktop ? intensitySmooth : scrollPercentSmooth
+      const zoomDriver = warpEnabledRef.current ? intensitySmooth : scrollPercentSmooth
 
       // 1. Vortex rotation: spin the stars on Z axis as we scroll down
       starsPoints.rotation.z = scrollPercentSmooth * 1.8
@@ -131,7 +139,6 @@ export default function SpaceBackground() {
       renderer.setSize(window.innerWidth, window.innerHeight)
       camera.aspect = window.innerWidth / window.innerHeight
       camera.updateProjectionMatrix()
-      isDesktop = window.matchMedia('(min-width: 769px) and (min-height: 701px)').matches
     }
     window.addEventListener('resize', onResize)
 
