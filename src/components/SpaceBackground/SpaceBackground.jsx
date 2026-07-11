@@ -113,7 +113,12 @@ export default function SpaceBackground({ warpEnabled = false }) {
       const targetIntensity = (warpEnabledRef.current && !reducedMotion)
         ? computeTransitionIntensity(window.scrollY, window.innerHeight)
         : 0
-      intensitySmooth += (targetIntensity - intensitySmooth) * 0.14
+      // 상승(가속 진입)은 빠르게 따라가 정점을 놓치지 않고, 하강(감속)은 훨씬
+      // 천천히 풀어 효과가 스크롤 속도와 무관하게 충분히 오래 느껴지도록
+      // 비대칭 스무딩을 쓴다. 대칭(k=0.14 고정)이었을 때는 빠른 스크롤에서
+      // 전체 효과가 몇백 ms 안에 끝나 버려 거의 체감되지 않았다.
+      const smoothingRate = targetIntensity > intensitySmooth ? 0.18 : 0.025
+      intensitySmooth += (targetIntensity - intensitySmooth) * smoothingRate
       const zoomDriver = warpEnabledRef.current ? intensitySmooth : scrollPercentSmooth
 
       // 1. Vortex rotation: spin the stars on Z axis as we scroll down

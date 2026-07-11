@@ -74,7 +74,7 @@ const intensity = 4 * frac * (1 - frac)                  // 0 → 1(중간점) �
 | 적용 범위 | **데스크톱(슬라이드덱)에서만.** 모바일은 섹션이 100vh 고정이 아니라 이 `frac` 계산이 성립하지 않으므로, 모바일은 기존 동작(페이지 전체 기준 `scrollPercentSmooth`)을 그대로 유지 |
 | 판별 방법 | `SpaceBackground` 내부에서 `window.matchMedia('(min-width: 769px) and (min-height: 701px)')`로 자체 판별 (App.jsx의 `useMediaQuery`와 동일한 조건, 컴포넌트 간 상태 공유 없이 독립 계산) |
 | Reduced motion | `prefers-reduced-motion: reduce`에서는 `intensity`를 항상 0으로 고정 — 카메라 줌/피시아이 없이 기존처럼 즉시 전환 |
-| 스무딩 | 기존 `scrollPercentSmooth`와 같은 lerp 패턴(`+= (target - current) * k`)을 `intensity`에도 적용해 떨림 방지. 반응성을 위해 기존 `k=0.05`보다 빠른 `k=0.14` 사용 |
+| 스무딩 | 기존 `scrollPercentSmooth`와 같은 lerp 패턴(`+= (target - current) * k`)을 `intensity`에도 적용. 단, 대칭 `k=0.14` 고정값은 실제 브라우저 확인 결과 빠르게 스크롤하면 효과가 몇백 ms 안에 끝나 거의 체감되지 않는 문제가 있어, **비대칭(상승 빠르게/하강 느리게)** 스무딩으로 변경: 상승 `k=0.18`, 하강 `k=0.025`. 상승은 정점을 놓치지 않게 빠르게, 하강은 스크롤 속도와 무관하게 효과가 오래 느껴지도록 천천히 |
 
 ## 아키텍처
 
