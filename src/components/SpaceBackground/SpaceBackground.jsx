@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react'
 import * as THREE from 'three'
+import { computeTransitionIntensity } from './transitionIntensity.js'
 
 function createStarTexture() {
   const canvas = document.createElement('canvas')
@@ -76,7 +77,14 @@ export default function SpaceBackground() {
 
     let scrollPercent = 0
     let scrollPercentSmooth = 0
-    
+    let intensitySmooth = 0
+
+    // 데스크톱 슬라이드덱(섹션마다 정확히 100vh)에서만 섹션 전환 구간 가속을 쓴다.
+    // 모바일은 섹션 높이가 콘텐츠에 따라 달라 이 계산이 성립하지 않으므로
+    // 기존 페이지 전체 기준(scrollPercentSmooth) 줌을 그대로 유지한다.
+    let isDesktop = window.matchMedia('(min-width: 769px) and (min-height: 701px)').matches
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+
     const onScroll = () => {
       const maxScroll = document.documentElement.scrollHeight - window.innerHeight
       scrollPercent = maxScroll > 0 ? window.scrollY / maxScroll : 0
@@ -91,20 +99,28 @@ export default function SpaceBackground() {
       
       // Smooth out scroll progress
       scrollPercentSmooth += (scrollPercent - scrollPercentSmooth) * 0.05
-      
+
+      // 데스크톱+모션 허용 시: 섹션 전환 구간마다 0→1→0으로 반복되는 세기.
+      // 그 외(모바일, reduced-motion)에는 0으로 고정하고 zoomDriver가 기존 값을 쓰게 한다.
+      const targetIntensity = (isDesktop && !reducedMotion)
+        ? computeTransitionIntensity(window.scrollY, window.innerHeight)
+        : 0
+      intensitySmooth += (targetIntensity - intensitySmooth) * 0.14
+      const zoomDriver = isDesktop ? intensitySmooth : scrollPercentSmooth
+
       // 1. Vortex rotation: spin the stars on Z axis as we scroll down
       starsPoints.rotation.z = scrollPercentSmooth * 1.8
-      
+
       // Y/X slow rotation + scroll drift
       starsPoints.rotation.y = t * 0.005 + scrollPercentSmooth * 0.15
       starsPoints.rotation.x = Math.sin(t * 0.003) * 0.04 + scrollPercentSmooth * 0.08
-      
+
       // 2. Camera flies deep into the starfield (Z: 400 down to 40)
       // We use a power curve so the zoom feels like it accelerates (sucked-in feeling)
-      camera.position.z = 400 - Math.pow(scrollPercentSmooth, 1.2) * 360
-      
+      camera.position.z = 400 - Math.pow(zoomDriver, 1.2) * 360
+
       // 3. Field of View Expansion: creates an edge-stretching warp speed optical illusion
-      camera.fov = 75 + Math.pow(scrollPercentSmooth, 1.5) * 45
+      camera.fov = 75 + Math.pow(zoomDriver, 1.5) * 45
       camera.updateProjectionMatrix()
 
       renderer.render(scene, camera)
@@ -115,6 +131,7 @@ export default function SpaceBackground() {
       renderer.setSize(window.innerWidth, window.innerHeight)
       camera.aspect = window.innerWidth / window.innerHeight
       camera.updateProjectionMatrix()
+      isDesktop = window.matchMedia('(min-width: 769px) and (min-height: 701px)').matches
     }
     window.addEventListener('resize', onResize)
 
