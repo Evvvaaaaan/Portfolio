@@ -97,7 +97,7 @@ function MainPage() {
 
     const handleScroll = () => {
       const progress = window.scrollY / window.innerHeight
-      // DOM blur을 배경 워프와 같은 커브(0→1→0 포물선)로 구동해 두 레이어의
+      // DOM blur를 배경 워프와 같은 커브(0→1→0 포물선)로 구동해 두 레이어의
       // 타이밍을 일치시킨다. 기존 |offset| 비례 blur는 슬라이드가 떠날수록
       // 계속 증가해 카메라 워프(중간점 정점)와 어긋났다.
       const transitionBlur = computeTransitionIntensity(window.scrollY, window.innerHeight) * 12

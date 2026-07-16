@@ -135,12 +135,13 @@ export default function SpaceBackground({ warpEnabled = false }) {
       // 천천히 풀어 효과가 스크롤 속도와 무관하게 충분히 오래 느껴지도록
       // 비대칭 스무딩을 쓴다. 대칭(k=0.14 고정)이었을 때는 빠른 스크롤에서
       // 전체 효과가 몇백 ms 안에 끝나 버려 거의 체감되지 않았다.
-      const smoothingRate = targetIntensity > intensitySmooth ? 0.18 : 0.025
-      intensitySmooth += (targetIntensity - intensitySmooth) * smoothingRate
-
-      // 스트릭은 별필드와 같은 회전을 따라가 한 몸처럼 보이게 한다.
-      streaks.object3d.rotation.copy(starsPoints.rotation)
-      streaks.update(intensitySmooth)
+      if (!warpEnabledRef.current) {
+        // 라우트 이동 등으로 워프가 꺼지면 잔류 왜곡/스트릭 없이 즉시 리셋.
+        intensitySmooth = 0
+      } else {
+        const smoothingRate = targetIntensity > intensitySmooth ? 0.18 : 0.025
+        intensitySmooth += (targetIntensity - intensitySmooth) * smoothingRate
+      }
 
       const zoomDriver = warpEnabledRef.current ? intensitySmooth : scrollPercentSmooth
 
@@ -150,6 +151,10 @@ export default function SpaceBackground({ warpEnabled = false }) {
       // Y/X slow rotation + scroll drift
       starsPoints.rotation.y = t * 0.005 + scrollPercentSmooth * 0.15
       starsPoints.rotation.x = Math.sin(t * 0.003) * 0.04 + scrollPercentSmooth * 0.08
+
+      // 스트릭은 별필드와 같은 회전을 따라가 한 몸처럼 보이게 한다.
+      streaks.object3d.rotation.copy(starsPoints.rotation)
+      streaks.update(intensitySmooth)
 
       // 2. Camera flies deep into the starfield (Z: 400 down to 40)
       // We use a power curve so the zoom feels like it accelerates (sucked-in feeling)
