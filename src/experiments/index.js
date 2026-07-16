@@ -2,6 +2,7 @@ import { lazy } from 'react'
 
 const ParticleMorph = lazy(() => import('./ParticleMorph/ParticleMorph'))
 const InkFlow = lazy(() => import('./InkFlow/InkFlow'))
+const NeonRaymarch = lazy(() => import('./NeonRaymarch/NeonRaymarch'))
 const DeepSpace   = lazy(() => import('./DeepSpace/DeepSpace'))
 const SolarSystem = lazy(() => import('./SolarSystem/SolarSystem'))
 
@@ -29,6 +30,18 @@ export const experiments = [
     symbol: '≋',
     fullscreen: true,
     component: InkFlow,
+  },
+  {
+    id: 'neon-raymarch',
+    title: 'Neon Raymarch',
+    description: '폴리곤 없이 거리 함수만으로 그려내는 네온 공간. 드래그로 궤도를 돌고, 세 개의 슬라이더로 형태·발광·색을 실시간 변형합니다.',
+    tags: ['glsl', 'raymarching', 'sdf'],
+    color: '#f43f5e',
+    planet: 'mars',
+    planetName: 'SDF',
+    symbol: '◈',
+    fullscreen: true,
+    component: NeonRaymarch,
   },
   {
     id: 'solar-system',
