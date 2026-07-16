@@ -4,6 +4,12 @@ import { computeTransitionIntensity } from './transitionIntensity.js'
 import { computeSectionTint } from './sectionTint.js'
 import { createWarpStreaks } from './warpStreaks.js'
 import { createPostFX } from './postfx.js'
+import {
+  shouldPlayArrival,
+  beginArrival,
+  concludeArrival,
+  computeArrivalIntensity,
+} from './arrivalSequence.js'
 
 function createStarTexture() {
   const canvas = document.createElement('canvas')
@@ -110,6 +116,22 @@ export default function SpaceBackground({ warpEnabled = false }) {
     // (scrollPercentSmooth) 줌을 그대로 유지한다.
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
+    // 첫 로딩 도착 시퀀스: 조건 충족 시 고속 워프에서 시작해 감속-정착한다.
+    // SpaceBackground는 라우트가 바뀌어도 언마운트되지 않으므로 이 판정은
+    // 페이지 로드당 정확히 1회다. 재생하지 않는 경우에도 반드시 'skipped'로
+    // 종결해 Hero가 기다리지 않게 한다.
+    let arrivalActive = shouldPlayArrival({
+      warpEnabled: warpEnabledRef.current,
+      reducedMotion,
+      scrollY: window.scrollY,
+      viewportHeight: window.innerHeight,
+    })
+    if (arrivalActive) {
+      beginArrival()
+    } else {
+      concludeArrival('skipped')
+    }
+
     const onScroll = () => {
       const maxScroll = document.documentElement.scrollHeight - window.innerHeight
       scrollPercent = maxScroll > 0 ? window.scrollY / maxScroll : 0
@@ -125,22 +147,35 @@ export default function SpaceBackground({ warpEnabled = false }) {
       // Smooth out scroll progress
       scrollPercentSmooth += (scrollPercent - scrollPercentSmooth) * 0.05
 
-      // 메인 페이지 데스크톱 슬라이드덱 + 모션 허용 시: 섹션 전환 구간마다
-      // 0→1→0으로 반복되는 세기. 그 외에는 0으로 고정하고 zoomDriver가
-      // 기존 값을 쓰게 한다.
-      const targetIntensity = (warpEnabledRef.current && !reducedMotion)
-        ? computeTransitionIntensity(window.scrollY, window.innerHeight)
-        : 0
-      // 상승(가속 진입)은 빠르게 따라가 정점을 놓치지 않고, 하강(감속)은 훨씬
-      // 천천히 풀어 효과가 스크롤 속도와 무관하게 충분히 오래 느껴지도록
-      // 비대칭 스무딩을 쓴다. 대칭(k=0.14 고정)이었을 때는 빠른 스크롤에서
-      // 전체 효과가 몇백 ms 안에 끝나 버려 거의 체감되지 않았다.
-      if (!warpEnabledRef.current) {
-        // 라우트 이동 등으로 워프가 꺼지면 잔류 왜곡/스트릭 없이 즉시 리셋.
-        intensitySmooth = 0
+      // 도착 시퀀스 중에는 스크롤이 아니라 타임라인이 intensity를 직접
+      // 구동한다 (스무딩 없이 — 감속 곡선 자체가 이미 ease-out).
+      // 도중에 라우트가 바뀌면(warp off) 즉시 종결하고 기존 리셋을 따른다.
+      if (arrivalActive && !warpEnabledRef.current) {
+        arrivalActive = false
+        concludeArrival('done')
+      }
+      if (arrivalActive) {
+        const arrival = computeArrivalIntensity(t * 1000)
+        intensitySmooth = arrival.intensity
+        if (arrival.done) {
+          arrivalActive = false
+          concludeArrival('done')
+        }
       } else {
-        const smoothingRate = targetIntensity > intensitySmooth ? 0.18 : 0.025
-        intensitySmooth += (targetIntensity - intensitySmooth) * smoothingRate
+        const targetIntensity = (warpEnabledRef.current && !reducedMotion)
+          ? computeTransitionIntensity(window.scrollY, window.innerHeight)
+          : 0
+        // 상승(가속 진입)은 빠르게 따라가 정점을 놓치지 않고, 하강(감속)은 훨씬
+        // 천천히 풀어 효과가 스크롤 속도와 무관하게 충분히 오래 느껴지도록
+        // 비대칭 스무딩을 쓴다. 대칭(k=0.14 고정)이었을 때는 빠른 스크롤에서
+        // 전체 효과가 몇백 ms 안에 끝나 버려 거의 체감되지 않았다.
+        if (!warpEnabledRef.current) {
+          // 라우트 이동 등으로 워프가 꺼지면 잔류 왜곡/스트릭 없이 즉시 리셋.
+          intensitySmooth = 0
+        } else {
+          const smoothingRate = targetIntensity > intensitySmooth ? 0.18 : 0.025
+          intensitySmooth += (targetIntensity - intensitySmooth) * smoothingRate
+        }
       }
 
       const zoomDriver = warpEnabledRef.current ? intensitySmooth : scrollPercentSmooth
