@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react'
 import * as THREE from 'three'
 import { computeTransitionIntensity } from './transitionIntensity.js'
+import { computeSectionTint } from './sectionTint.js'
 
 function createStarTexture() {
   const canvas = document.createElement('canvas')
@@ -39,6 +40,7 @@ export default function SpaceBackground({ warpEnabled = false }) {
     renderer.setSize(window.innerWidth, window.innerHeight)
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
     renderer.setClearColor(0x0a0a0f, 1)
+    const clearColor = new THREE.Color(0x0a0a0f)
 
     const scene = new THREE.Scene()
     const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 2000)
@@ -135,6 +137,16 @@ export default function SpaceBackground({ warpEnabled = false }) {
       // 3. Field of View Expansion: creates an edge-stretching warp speed optical illusion
       camera.fov = 75 + Math.pow(zoomDriver, 1.5) * 45
       camera.updateProjectionMatrix()
+
+      // 섹션별 우주 좌표 틴트: 메인 데스크톱 슬라이드덱에서만 의미가 있다.
+      // (다른 라우트는 섹션이 100vh 고정이 아니므로 기본색 유지)
+      if (warpEnabledRef.current) {
+        const [r, g, b] = computeSectionTint(window.scrollY, window.innerHeight)
+        clearColor.setRGB(r, g, b)
+      } else {
+        clearColor.set(0x0a0a0f)
+      }
+      renderer.setClearColor(clearColor, 1)
 
       renderer.render(scene, camera)
     }
