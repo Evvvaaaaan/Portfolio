@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react'
 import * as THREE from 'three'
 import { computeTransitionIntensity } from './transitionIntensity.js'
 import { computeSectionTint } from './sectionTint.js'
+import { createWarpStreaks } from './warpStreaks.js'
 
 function createStarTexture() {
   const canvas = document.createElement('canvas')
@@ -82,6 +83,11 @@ export default function SpaceBackground({ warpEnabled = false }) {
     const starsPoints = new THREE.Points(starGeo, starMat)
     scene.add(starsPoints)
 
+    // 하이퍼스페이스 스트릭: 워프 전환 정점에서만 나타난다 (데스크톱 전용 연출
+    // 이지만 게이트는 intensity가 담당 — 모바일/other 라우트는 intensity=0).
+    const streaks = createWarpStreaks({ count: 400 })
+    scene.add(streaks.object3d)
+
     let scrollPercent = 0
     let scrollPercentSmooth = 0
     let intensitySmooth = 0
@@ -121,6 +127,11 @@ export default function SpaceBackground({ warpEnabled = false }) {
       // 전체 효과가 몇백 ms 안에 끝나 버려 거의 체감되지 않았다.
       const smoothingRate = targetIntensity > intensitySmooth ? 0.18 : 0.025
       intensitySmooth += (targetIntensity - intensitySmooth) * smoothingRate
+
+      // 스트릭은 별필드와 같은 회전을 따라가 한 몸처럼 보이게 한다.
+      streaks.object3d.rotation.copy(starsPoints.rotation)
+      streaks.update(intensitySmooth)
+
       const zoomDriver = warpEnabledRef.current ? intensitySmooth : scrollPercentSmooth
 
       // 1. Vortex rotation: spin the stars on Z axis as we scroll down
@@ -163,6 +174,7 @@ export default function SpaceBackground({ warpEnabled = false }) {
       cancelAnimationFrame(id)
       window.removeEventListener('resize', onResize)
       window.removeEventListener('scroll', onScroll)
+      streaks.dispose()
       starGeo.dispose()
       starMat.dispose()
       starTexture.dispose()
