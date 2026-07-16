@@ -1,7 +1,7 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import * as THREE from 'three'
 import { useLang } from '../../context/LangContext'
-import { ARRIVAL_DONE_EVENT, getArrivalStatus } from '../../components/SpaceBackground/arrivalSequence.js'
+import { ARRIVAL_DONE_EVENT, getArrivalStatus, concludeArrival } from '../../components/SpaceBackground/arrivalSequence.js'
 import './Hero.css'
 
 function createSoftPointTexture() {
@@ -161,37 +161,39 @@ function ParticleScene({ containerRef }) {
   return null
 }
 
+// useSyncExternalStore 계약: subscribe는 스토어 변경 시 콜백을 부르고,
+// getSnapshot은 현재 값을 돌려준다. 종결 이벤트가 곧 유일한 변경 신호다.
+function subscribeToArrival(onStoreChange) {
+  window.addEventListener(ARRIVAL_DONE_EVENT, onStoreChange)
+  return () => window.removeEventListener(ARRIVAL_DONE_EVENT, onStoreChange)
+}
+
+function isArrivalConcluded() {
+  const s = getArrivalStatus()
+  return s === 'done' || s === 'skipped'
+}
+
 export default function Hero() {
   const canvasRef = useRef(null)
   const holoRef = useRef(null)
   const { lang, t } = useLang()
   const typedText = useTyping(t.hero.roles, lang)
 
-  // 도착 시퀀스가 끝날 때까지 콘텐츠 스태거를 잡아둔다. 이미 종결됐으면
-  // (재생 안 함 포함) 처음부터 기다리지 않는다.
-  const [awaitingArrival, setAwaitingArrival] = useState(() => {
-    const s = getArrivalStatus()
-    return s !== 'done' && s !== 'skipped'
-  })
+  // 도착 시퀀스가 끝날 때까지 콘텐츠 스태거를 잡아둔다. 상태 머신이 외부
+  // 스토어이므로 useSyncExternalStore로 구독한다 — 구독 직후 스냅샷을
+  // 재확인하므로 SpaceBackground 이펙트와의 실행 순서 레이스가 없다.
+  const arrivalConcluded = useSyncExternalStore(subscribeToArrival, isArrivalConcluded)
+  const awaitingArrival = !arrivalConcluded
 
+  // 안전장치: 어떤 이유로든 시퀀스가 종결되지 않아도 콘텐츠가 영원히
+  // 숨지 않도록, 4초 후에도 미종결이면 스토어를 직접 종결시킨다.
   useEffect(() => {
-    if (!awaitingArrival) return
-    // 이펙트 실행 순서 레이스 방지: SpaceBackground의 이펙트가 먼저 실행돼
-    // 리스너 부착 전에 이벤트가 이미 지나갔을 수 있다 — 상태를 재확인한다.
-    const s = getArrivalStatus()
-    if (s === 'done' || s === 'skipped') {
-      setAwaitingArrival(false)
-      return
-    }
-    const reveal = () => setAwaitingArrival(false)
-    window.addEventListener(ARRIVAL_DONE_EVENT, reveal, { once: true })
-    // 안전장치: 어떤 이유로든 이벤트가 오지 않아도 콘텐츠가 영원히 숨지 않게.
-    const fallback = setTimeout(reveal, 4000)
-    return () => {
-      window.removeEventListener(ARRIVAL_DONE_EVENT, reveal)
-      clearTimeout(fallback)
-    }
-  }, [awaitingArrival])
+    if (arrivalConcluded) return
+    const fallback = setTimeout(() => {
+      if (!isArrivalConcluded()) concludeArrival('skipped')
+    }, 4000)
+    return () => clearTimeout(fallback)
+  }, [arrivalConcluded])
 
   // Physical screen tilt → holographic color on text
   useEffect(() => {
