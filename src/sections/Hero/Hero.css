@@ -248,6 +248,12 @@
   opacity: 0;
 }
 
+/* 도착 시퀀스 동안 등장 스태거를 0% 지점에서 일시정지시킨다 (delay 카운트다운
+   포함). 시퀀스가 끝나 클래스가 떨어지는 순간 스태거가 처음부터 재생된다. */
+.hero--awaiting-arrival .fade-up {
+  animation-play-state: paused;
+}
+
 .hero .delay-1 { animation-delay: 0.2s; }
 .hero .delay-2 { animation-delay: 0.35s; }
 .hero .delay-3 { animation-delay: 0.5s; }

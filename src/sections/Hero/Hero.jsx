@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import * as THREE from 'three'
 import { useLang } from '../../context/LangContext'
+import { ARRIVAL_DONE_EVENT, getArrivalStatus } from '../../components/SpaceBackground/arrivalSequence.js'
 import './Hero.css'
 
 function createSoftPointTexture() {
@@ -166,6 +167,32 @@ export default function Hero() {
   const { lang, t } = useLang()
   const typedText = useTyping(t.hero.roles, lang)
 
+  // 도착 시퀀스가 끝날 때까지 콘텐츠 스태거를 잡아둔다. 이미 종결됐으면
+  // (재생 안 함 포함) 처음부터 기다리지 않는다.
+  const [awaitingArrival, setAwaitingArrival] = useState(() => {
+    const s = getArrivalStatus()
+    return s !== 'done' && s !== 'skipped'
+  })
+
+  useEffect(() => {
+    if (!awaitingArrival) return
+    // 이펙트 실행 순서 레이스 방지: SpaceBackground의 이펙트가 먼저 실행돼
+    // 리스너 부착 전에 이벤트가 이미 지나갔을 수 있다 — 상태를 재확인한다.
+    const s = getArrivalStatus()
+    if (s === 'done' || s === 'skipped') {
+      setAwaitingArrival(false)
+      return
+    }
+    const reveal = () => setAwaitingArrival(false)
+    window.addEventListener(ARRIVAL_DONE_EVENT, reveal, { once: true })
+    // 안전장치: 어떤 이유로든 이벤트가 오지 않아도 콘텐츠가 영원히 숨지 않게.
+    const fallback = setTimeout(reveal, 4000)
+    return () => {
+      window.removeEventListener(ARRIVAL_DONE_EVENT, reveal)
+      clearTimeout(fallback)
+    }
+  }, [awaitingArrival])
+
   // Physical screen tilt → holographic color on text
   useEffect(() => {
     const holo = holoRef.current
@@ -269,7 +296,7 @@ export default function Hero() {
   const descLines = t.hero.desc.split('\n')
 
   return (
-    <section className="hero" id="home">
+    <section className={awaitingArrival ? 'hero hero--awaiting-arrival' : 'hero'} id="home">
       <div className="hero-canvas" ref={canvasRef}>
         <ParticleScene containerRef={canvasRef} />
       </div>
