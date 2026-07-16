@@ -71,6 +71,11 @@ export function createPostFX(renderer, scene, camera, width, height) {
       composer.setSize(w, h)
     },
     dispose() {
+      // EffectComposer.dispose()는 자기 렌더타겟만 해제하고 각 패스의
+      // dispose()는 호출하지 않는다 — 블룸의 내부 렌더타겟(밝기 추출 +
+      // 블러 밉체인)은 직접 해제해야 리마운트/HMR 시 GPU 누수가 없다.
+      bloom.dispose()
+      warpPass.dispose()
       composer.dispose()
     },
   }
