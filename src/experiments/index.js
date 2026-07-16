@@ -1,6 +1,7 @@
 import { lazy } from 'react'
 
 const ParticleMorph = lazy(() => import('./ParticleMorph/ParticleMorph'))
+const InkFlow = lazy(() => import('./InkFlow/InkFlow'))
 const DeepSpace   = lazy(() => import('./DeepSpace/DeepSpace'))
 const SolarSystem = lazy(() => import('./SolarSystem/SolarSystem'))
 
@@ -16,6 +17,18 @@ export const experiments = [
     symbol: '✳',
     fullscreen: true,
     component: ParticleMorph,
+  },
+  {
+    id: 'ink-flow',
+    title: 'Ink Flow',
+    description: 'Navier-Stokes 방정식을 GPU에서 풀어내는 진짜 유체 시뮬레이션. 드래그하면 발광 잉크가 소용돌이치며 퍼지고, 시간이 지나면 서서히 가라앉습니다.',
+    tags: ['webgl2', 'fluid', 'simulation'],
+    color: '#38bdf8',
+    planet: 'neptune',
+    planetName: 'INK',
+    symbol: '≋',
+    fullscreen: true,
+    component: InkFlow,
   },
   {
     id: 'solar-system',
