@@ -1,9 +1,22 @@
 import { lazy } from 'react'
 
+const ParticleMorph = lazy(() => import('./ParticleMorph/ParticleMorph'))
 const DeepSpace   = lazy(() => import('./DeepSpace/DeepSpace'))
 const SolarSystem = lazy(() => import('./SolarSystem/SolarSystem'))
 
 export const experiments = [
+  {
+    id: 'particle-morph',
+    title: 'Particle Morph',
+    description: '10만 개의 GPGPU 파티클이 글자와 형상 사이를 숨 쉬듯 오가는 모핑 조각. 마우스는 파티클을 밀어내는 힘장이 되고, 클릭하면 다음 형상으로 헤쳐 모입니다.',
+    tags: ['gpgpu', 'three.js', 'particles'],
+    color: '#c084fc',
+    planet: 'venus',
+    planetName: 'MORPH',
+    symbol: '✳',
+    fullscreen: true,
+    component: ParticleMorph,
+  },
   {
     id: 'solar-system',
     title: 'Solar System',
