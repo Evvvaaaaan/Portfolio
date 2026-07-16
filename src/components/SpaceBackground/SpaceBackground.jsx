@@ -3,6 +3,7 @@ import * as THREE from 'three'
 import { computeTransitionIntensity } from './transitionIntensity.js'
 import { computeSectionTint } from './sectionTint.js'
 import { createWarpStreaks } from './warpStreaks.js'
+import { createPostFX } from './postfx.js'
 
 function createStarTexture() {
   const canvas = document.createElement('canvas')
@@ -46,6 +47,15 @@ export default function SpaceBackground({ warpEnabled = false }) {
     const scene = new THREE.Scene()
     const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 2000)
     camera.position.z = 400
+
+    // 포스트프로세싱은 데스크톱 전용 (스펙: 모바일은 중간 수준 유지).
+    // 데스크톱 판별은 App.jsx의 useMediaQuery와 동일 조건을 독립 계산한다.
+    // 워프 왜곡 패스는 intensity=0이면 무효과이므로 메인 페이지가 아닐 때는
+    // 블룸만 남는다.
+    const isDesktop = window.matchMedia('(min-width: 769px) and (min-height: 701px)').matches
+    const postfx = isDesktop
+      ? createPostFX(renderer, scene, camera, window.innerWidth, window.innerHeight)
+      : null
 
     // Stars: tiny soft sprites with depth variation, so they read as distant light.
     const STARS = 6500
@@ -159,7 +169,11 @@ export default function SpaceBackground({ warpEnabled = false }) {
       }
       renderer.setClearColor(clearColor, 1)
 
-      renderer.render(scene, camera)
+      if (postfx) {
+        postfx.render(intensitySmooth)
+      } else {
+        renderer.render(scene, camera)
+      }
     }
     tick()
 
@@ -167,6 +181,7 @@ export default function SpaceBackground({ warpEnabled = false }) {
       renderer.setSize(window.innerWidth, window.innerHeight)
       camera.aspect = window.innerWidth / window.innerHeight
       camera.updateProjectionMatrix()
+      postfx?.setSize(window.innerWidth, window.innerHeight)
     }
     window.addEventListener('resize', onResize)
 
@@ -178,6 +193,7 @@ export default function SpaceBackground({ warpEnabled = false }) {
       starGeo.dispose()
       starMat.dispose()
       starTexture.dispose()
+      postfx?.dispose()
       renderer.dispose()
     }
   }, [])
