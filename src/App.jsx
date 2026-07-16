@@ -3,6 +3,7 @@ import './index.css'
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom'
 import { LangProvider, useLang } from './context/LangContext'
 import { useLenis, getLenis } from './hooks/useLenis'
+import { computeTransitionIntensity } from './components/SpaceBackground/transitionIntensity.js'
 import Cursor from './components/Cursor/Cursor'
 import Navbar from './components/Navbar/Navbar'
 import SpaceBackground from './components/SpaceBackground/SpaceBackground'
@@ -96,6 +97,10 @@ function MainPage() {
 
     const handleScroll = () => {
       const progress = window.scrollY / window.innerHeight
+      // DOM blur을 배경 워프와 같은 커브(0→1→0 포물선)로 구동해 두 레이어의
+      // 타이밍을 일치시킨다. 기존 |offset| 비례 blur는 슬라이드가 떠날수록
+      // 계속 증가해 카메라 워프(중간점 정점)와 어긋났다.
+      const transitionBlur = computeTransitionIntensity(window.scrollY, window.innerHeight) * 12
       const slides = slidesRef.current
 
       slides.forEach((slide, idx) => {
@@ -110,12 +115,12 @@ function MainPage() {
           // Scrolled past: zoom out (scale up) and fade
           scale = 1 + offset * 1.6
           opacity = Math.max(0, 1 - offset * 2.2)
-          blur = offset * 15
+          blur = transitionBlur
         } else if (offset < 0) {
           // Coming in: zoom in from center (scale up from 0.25 to 1.0)
           scale = 0.25 + (1 + offset) * 0.75
           opacity = Math.max(0, 1 + offset)
-          blur = Math.abs(offset) * 15
+          blur = transitionBlur
         } else {
           // Active
           scale = 1
