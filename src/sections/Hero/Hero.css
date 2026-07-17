@@ -254,6 +254,12 @@
   animation-play-state: paused;
 }
 
+/* 도착 시퀀스 동안에는 스크롤 인디케이터도 숨긴다 — 콘텐츠가 전부 숨은
+   상태에서 혼자 떠 있으면 어색하다. */
+.hero--awaiting-arrival .scroll-indicator {
+  opacity: 0;
+}
+
 .hero .delay-1 { animation-delay: 0.2s; }
 .hero .delay-2 { animation-delay: 0.35s; }
 .hero .delay-3 { animation-delay: 0.5s; }

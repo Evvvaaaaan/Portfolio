@@ -25,7 +25,7 @@ function createSoftPointTexture() {
   return texture
 }
 
-function useTyping(words, lang, speed = 80, pause = 1800) {
+function useTyping(words, lang, speed = 80, pause = 1800, active = true) {
   const [text, setText] = useState('')
   const [wordIdx, setWordIdx] = useState(0)
   const [charIdx, setCharIdx] = useState(0)
@@ -40,6 +40,7 @@ function useTyping(words, lang, speed = 80, pause = 1800) {
   }, [lang])
 
   useEffect(() => {
+    if (!active) return
     const current = words[wordIdx] ?? ''
     let timeout
 
@@ -56,7 +57,7 @@ function useTyping(words, lang, speed = 80, pause = 1800) {
 
     setText(current.slice(0, charIdx))
     return () => clearTimeout(timeout)
-  }, [charIdx, deleting, wordIdx, words, speed, pause])
+  }, [charIdx, deleting, wordIdx, words, speed, pause, active])
 
   return text
 }
@@ -177,7 +178,6 @@ export default function Hero() {
   const canvasRef = useRef(null)
   const holoRef = useRef(null)
   const { lang, t } = useLang()
-  const typedText = useTyping(t.hero.roles, lang)
 
   // 도착 시퀀스가 끝날 때까지 콘텐츠 스태거를 잡아둔다. 상태 머신이 외부
   // 스토어이므로 useSyncExternalStore로 구독한다 — 구독 직후 스냅샷을
@@ -195,6 +195,8 @@ export default function Hero() {
   }, [arrivalConcluded])
 
   const awaitingArrival = !arrivalConcluded && !fallbackRevealed
+
+  const typedText = useTyping(t.hero.roles, lang, 80, 1800, !awaitingArrival)
 
   // Physical screen tilt → holographic color on text
   useEffect(() => {
