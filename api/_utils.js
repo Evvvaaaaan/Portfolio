@@ -66,6 +66,29 @@ export async function insertSupabase(table, payload) {
   return response.json()
 }
 
+export async function selectSupabase(table, query) {
+  const supabaseUrl = process.env.SUPABASE_URL
+  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY
+
+  if (!supabaseUrl || !supabaseKey) {
+    throw new Error('Missing Supabase environment variables')
+  }
+
+  const response = await fetch(`${supabaseUrl.replace(/\/$/, '')}/rest/v1/${table}?${query}`, {
+    headers: {
+      apikey: supabaseKey,
+      Authorization: `Bearer ${supabaseKey}`,
+    },
+  })
+
+  if (!response.ok) {
+    const errorText = await response.text()
+    throw new Error(`Supabase select failed: ${errorText}`)
+  }
+
+  return response.json()
+}
+
 export async function sendEmail({ subject, html, replyTo }) {
   const apiKey = process.env.RESEND_API_KEY
   const from = process.env.RESEND_FROM_EMAIL
