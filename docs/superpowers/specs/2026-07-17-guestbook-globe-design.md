@@ -11,9 +11,11 @@ messages as glowing star pins. Entries persist in Supabase.
 
 ## Decisions (confirmed with user)
 
-- **Globe**: 3D interactive globe (three/@react-three/fiber/drei — already
-  installed). Continents rendered as a dot matrix to match the site's
-  SpaceBackground space theme.
+- **Globe**: 3D interactive globe built with raw three.js + OrbitControls
+  (`three/addons`), matching the existing pattern in `SolarSystem`,
+  `DeepSpace`, and `SpaceBackground` (the codebase does not use R3F despite
+  it being installed). Continents rendered as a dot matrix to match the
+  site's SpaceBackground space theme.
 - **Location**: visitor clicks directly on the globe surface. Coordinates are
   rounded server-side to 1 decimal place (~10 km) for privacy. No browser
   geolocation permission, no IP-based auto-location.
@@ -47,8 +49,8 @@ write-API (added complexity, no benefit at this scale).
 
 - `Guestbook.jsx` + `Guestbook.css` following the existing page structure
   (`Gallery`, `ExperimentPage` pattern).
-- Full-screen R3F `<Canvas>` with the globe, a page title, and a bottom-right
-  hint ("지구를 클릭해 흔적을 남겨보세요" / EN equivalent).
+- Full-screen three.js canvas with the globe, a page title, and a hint
+  ("지구를 클릭해 흔적을 남겨보세요" / EN equivalent).
 
 ### 3. Globe rendering
 
@@ -112,5 +114,5 @@ is_hidden   boolean default false  -- manual takedown flag
 
 ## i18n
 
-All user-facing strings in both KR and EN via the existing `LangContext` /
-`src/i18n` structure.
+All user-facing strings in all four site languages (en/ko/ja/zh) via the
+existing `LangContext` / `src/i18n/translations.js` structure.
