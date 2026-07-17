@@ -218,6 +218,119 @@ function FindXPreview({ active }) {
 
 const TAB_LABELS = { overview: '개요', stack: '기술스택', results: '성과' }
 
+const SPOTLINE_BOXES = [
+  { label: 'person', className: 'customer', delay: '0s' },
+  { label: 'queue', className: 'queue', delay: '0.12s' },
+  { label: 'zone', className: 'zone', delay: '0.24s' },
+]
+
+const SPOTLINE_STATS = [
+  { label: 'Visitors', value: '42', width: '82%' },
+  { label: 'Dwell', value: '3.8m', width: '64%' },
+  { label: 'Queue', value: '2', width: '36%' },
+]
+
+function SpotlinePreview({ active }) {
+  const [phase, setPhase] = useState('idle')
+
+  useEffect(() => {
+    if (!active) {
+      setPhase('idle')
+      return
+    }
+
+    let cancelled = false
+    const sleep = ms => new Promise(r => setTimeout(r, ms))
+
+    async function run() {
+      while (!cancelled) {
+        setPhase('scan')
+        await sleep(950)
+        if (cancelled) return
+        setPhase('detect')
+        await sleep(1200)
+        if (cancelled) return
+        setPhase('report')
+        await sleep(2200)
+        if (cancelled) return
+        setPhase('idle')
+        await sleep(450)
+      }
+    }
+
+    const t = setTimeout(() => { if (!cancelled) run() }, 350)
+    return () => { cancelled = true; clearTimeout(t) }
+  }, [active])
+
+  const detected = phase === 'detect' || phase === 'report'
+  const reported = phase === 'report'
+
+  return (
+    <div className={`spotline-preview phase-${phase}`}>
+      <div className="spotline-topbar">
+        <div className="spotline-brand">
+          <span className="spotline-brand-mark" />
+          <span>SpotLine AI</span>
+        </div>
+        <span className={`spotline-live${active ? ' on' : ''}`}>LIVE</span>
+      </div>
+
+      <div className="spotline-dashboard">
+        <div className="spotline-feed">
+          <div className="spotline-feed-head">
+            <span>CCTV 01</span>
+            <span>YOLOv8</span>
+          </div>
+          <div className="spotline-camera">
+            <div className="spotline-grid" />
+            <span className="spotline-counter">AI 분석 중</span>
+            <span className="spotline-entrance" />
+            <span className="spotline-shelf left" />
+            <span className="spotline-shelf right" />
+            <span className="spotline-path" />
+            {SPOTLINE_BOXES.map((box) => (
+              <span
+                key={box.label}
+                className={`spotline-box ${box.className}${detected ? ' in' : ''}`}
+                style={{ transitionDelay: detected ? box.delay : '0s' }}
+              >
+                <em>{box.label}</em>
+              </span>
+            ))}
+            <span className={`spotline-scan${phase === 'scan' ? ' on' : ''}`} />
+          </div>
+        </div>
+
+        <div className={`spotline-insights${reported ? ' in' : ''}`}>
+          {SPOTLINE_STATS.map((stat, i) => (
+            <div key={stat.label} className="spotline-stat" style={{ transitionDelay: reported ? `${i * 0.1}s` : '0s' }}>
+              <div>
+                <span className="spotline-stat-label">{stat.label}</span>
+                <strong>{stat.value}</strong>
+              </div>
+              <span className="spotline-stat-bar">
+                <span style={{ width: reported ? stat.width : '0%' }} />
+              </span>
+            </div>
+          ))}
+          <div className="spotline-chart" aria-hidden="true">
+            {[36, 54, 42, 72, 58].map((height, i) => (
+              <span key={i} style={{ height: reported ? `${height}%` : '8%' }} />
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div className={`spotline-result${reported ? ' in' : ''}`}>
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <polyline points="20 6 9 17 4 12" />
+        </svg>
+        매장 분석 완료
+      </div>
+    </div>
+  )
+}
+
 const CHART_CANDLES = [
   { h: 38, bodyH: 20, bodyTop: 10, dir: 'up' },
   { h: 26, bodyH: 14, bodyTop: 6,  dir: 'down' },
@@ -390,6 +503,8 @@ function GalleryCard({ project, active }) {
         </div>
         {project.type === 'findx' ? (
           <FindXPreview active={active} />
+        ) : project.type === 'spotline' ? (
+          <SpotlinePreview active={active} />
         ) : project.type === 'candle' ? (
           <CandlePreview active={active} />
         ) : (
@@ -419,18 +534,22 @@ function GalleryCard({ project, active }) {
         <div className="gcard-head">
           <span className="gcard-category">{project.category}</span>
           <div className="gcard-links">
-            <a href={project.github} target="_blank" rel="noreferrer" aria-label={`${project.title} GitHub`} onClick={(e) => e.stopPropagation()}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/>
-              </svg>
-            </a>
-            <a href={project.link} target="_blank" rel="noreferrer" aria-label={`${project.title} live demo`} onClick={(e) => e.stopPropagation()}>
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
-                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
-                <polyline points="15 3 21 3 21 9"/>
-                <line x1="10" y1="14" x2="21" y2="3"/>
-              </svg>
-            </a>
+            {project.github && project.github !== '#' && (
+              <a href={project.github} target="_blank" rel="noreferrer" aria-label={`${project.title} GitHub`} onClick={(e) => e.stopPropagation()}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                  <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/>
+                </svg>
+              </a>
+            )}
+            {project.link && project.link !== '#' && (
+              <a href={project.link} target="_blank" rel="noreferrer" aria-label={`${project.title} live demo`} onClick={(e) => e.stopPropagation()}>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+                  <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+                  <polyline points="15 3 21 3 21 9"/>
+                  <line x1="10" y1="14" x2="21" y2="3"/>
+                </svg>
+              </a>
+            )}
           </div>
         </div>
 

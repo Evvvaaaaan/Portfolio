@@ -52,11 +52,46 @@ const projectData = {
 
   spotline: {
     slug: 'spotline',
-    category: 'Fullstack',
+    category: 'AI · Fullstack',
     title: 'Spotline',
-    tagline: '추후 업데이트 예정',
+    tagline: 'CCTV Vision AI 분석으로 매장 운영 데이터를 시각화하는 소상공인 매장 관리 서비스',
     accent: '#f59e0b',
-    comingSoon: true,
+    background: 'Google AI Agent Challenge에서 산업현장의 AI 전환을 주제로 시작한 프로젝트입니다. 매장에 이미 설치된 CCTV 영상을 Vision AI로 분석해 소상공인이 고객 흐름과 매장 상태를 더 효율적으로 파악할 수 있도록 돕는 것을 목표로 했습니다. 프로젝트 과정에서 Google Cloud 지원을 받아 GPU와 CPU 연산 리소스를 활용했고, 다양한 모델 실험과 튜닝을 반복하며 비용 대비 합리적인 방식으로 Vision AI 분석 정확도를 높였습니다.',
+    features: [
+      {
+        title: 'CCTV 기반 매장 분석',
+        desc: 'YOLO 기반 Vision AI로 매장 내 상황을 인식하고 운영에 필요한 정보를 추출',
+      },
+      {
+        title: '통계 기반 인사이트',
+        desc: '분석된 매장 데이터를 통계화해 시간대별 흐름과 운영 지표를 한눈에 확인',
+      },
+      {
+        title: '소상공인 운영 대시보드',
+        desc: '복잡한 AI 분석 결과를 매장 관리자가 이해하기 쉬운 형태로 시각화',
+      },
+      {
+        title: 'Google Cloud 기반 정확도 개선',
+        desc: '지원받은 GPU/CPU 리소스로 YOLO 모델 실험과 튜닝을 반복해 실제 매장 환경에 맞는 탐지 정확도를 합리적으로 향상',
+      },
+    ],
+    stack: ['Vision AI', 'YOLO', 'React', 'FastAPI', 'Python', 'Google Cloud'],
+    role: {
+      title: 'Vision AI 연동 · 정확도 개선 · 통계 분석 UI 구현',
+      bullets: [
+        'YOLO 기반 Vision AI 분석 결과를 서비스 흐름에 연결',
+        'Google Cloud 지원 GPU/CPU 리소스를 활용해 모델 실험 비용을 줄이고 인식 정확도 개선',
+        'CCTV 분석 데이터를 통계 지표로 정리',
+        'React 기반 통계 분석 표시 화면 구현',
+      ],
+    },
+    results: [
+      'Google AI Agent Challenge 우수상',
+      'Google Cloud GPU/CPU 지원을 활용한 비용 효율적 Vision AI 정확도 개선',
+    ],
+    links: [
+      { label: 'GitHub', href: 'https://github.com/Evvvaaaaan/SpotLine-frontend', external: true },
+    ],
   },
 
   lyralab: {

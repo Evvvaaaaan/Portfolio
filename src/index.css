@@ -150,7 +150,14 @@ main {
   66%       { transform: translateY(-4px) rotate3d(1, 0, 0, -0.2deg); }
 }
 
-.about, .skills, .projects, .contact {
+/* About/Skills/Projects: text only, space background stays visible behind */
+.about, .skills, .projects {
+  position: relative;
+  z-index: 1;
+  margin: 48px 40px;
+}
+
+.contact {
   position: relative;
   z-index: 1;
   margin: 48px 40px;
@@ -167,17 +174,12 @@ main {
     0 0 100px rgba(255, 255, 255, 0.06),
     0 0 0 1px rgba(255, 255, 255, 0.05);
   animation: float-panel 11s ease-in-out infinite;
+  animation-delay: -1.8s;
   transform-style: preserve-3d;
 }
 
-/* Stagger phases so panels don't all bob in sync */
-.about   { animation-delay: 0s; }
-.skills  { animation-delay: -3.5s; }
-.projects{ animation-delay: -7s; }
-.contact { animation-delay: -1.8s; }
-
-/* Glowing rim at the top edge of each panel */
-.about::before, .skills::before, .projects::before, .contact::before {
+/* Glowing rim at the top edge of the contact panel */
+.contact::before {
   content: '';
   position: absolute;
   top: 0; left: 5%; right: 5%;
@@ -194,8 +196,8 @@ main {
   z-index: 2;
 }
 
-/* Ambient glow cast beneath each panel */
-.about::after, .skills::after, .projects::after, .contact::after {
+/* Ambient glow cast beneath the contact panel */
+.contact::after {
   content: '';
   position: absolute;
   bottom: -50px; left: 15%; right: 15%;
@@ -207,7 +209,10 @@ main {
 }
 
 @media (max-width: 768px) {
-  .about, .skills, .projects, .contact {
+  .about, .skills, .projects {
+    margin: 20px 12px;
+  }
+  .contact {
     margin: 20px 12px;
     border-radius: 20px;
   }

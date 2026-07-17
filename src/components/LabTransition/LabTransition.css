@@ -1,0 +1,99 @@
+.labtransition-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 5000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  pointer-events: auto;
+  cursor: none;
+}
+
+.labtransition-hole,
+.labtransition-ring-scale {
+  position: absolute;
+  left: var(--origin-x, 50%);
+  top: var(--origin-y, 50%);
+  border-radius: 50%;
+  transform: translate(-50%, -50%) scale(0);
+  transition: transform 700ms cubic-bezier(0.65, 0, 0.35, 1);
+}
+
+.labtransition-overlay.is-expanded .labtransition-hole,
+.labtransition-overlay.is-expanded .labtransition-ring-scale {
+  transform: translate(-50%, -50%) scale(1);
+}
+
+.labtransition-hole {
+  width: 260vmax;
+  height: 260vmax;
+  background: #000;
+}
+
+.labtransition-ring-scale {
+  width: 300vmax;
+  height: 300vmax;
+}
+
+.labtransition-ring-spin {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  filter: blur(3px);
+  opacity: 0.85;
+  animation: labtransition-spin 2.4s linear infinite;
+  background: conic-gradient(
+    from 0deg,
+    transparent 0deg,
+    rgba(255, 255, 255, 0.55) 6deg,
+    transparent 34deg,
+    transparent 150deg,
+    rgba(178, 194, 255, 0.4) 160deg,
+    transparent 196deg,
+    transparent 314deg,
+    rgba(255, 255, 255, 0.45) 330deg,
+    transparent 356deg
+  );
+}
+
+@keyframes labtransition-spin {
+  to { transform: rotate(360deg); }
+}
+
+.labtransition-text {
+  position: relative;
+  z-index: 1;
+  color: #f0f0ff;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: clamp(1rem, 2.4vw, 1.3rem);
+  letter-spacing: 0.08em;
+  text-align: center;
+  padding: 0 24px;
+  opacity: 0;
+  filter: blur(6px);
+  transform: translateY(8px);
+  transition: opacity 1200ms ease, filter 1200ms ease, transform 1200ms ease;
+}
+
+.labtransition-text--in {
+  opacity: 1;
+  filter: blur(0);
+  transform: translateY(0);
+  transition-duration: 1200ms;
+}
+
+.labtransition-text:not(.labtransition-text--in) {
+  transition-duration: 400ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .labtransition-hole,
+  .labtransition-ring-scale,
+  .labtransition-text {
+    transition-duration: 1ms;
+  }
+  .labtransition-ring-spin {
+    animation: none;
+  }
+}

@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
-import { Link, useLocation } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { useLang } from '../../context/LangContext'
 import ModeMenu from '../../modes/ModeSelector/ModeMenu.jsx'
+import LabTransition from '../LabTransition/LabTransition.jsx'
 import './Navbar.css'
 
 const LANGS = [
@@ -56,9 +57,18 @@ export default function Navbar() {
   const { t } = useLang()
   const [scrolled, setScrolled] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
+  const [labOrigin, setLabOrigin] = useState(null)
   const location = useLocation()
+  const navigate = useNavigate()
 
   const isLabDetail = /^\/gallery\/.+/.test(location.pathname)
+
+  const handleLabClick = (e) => {
+    if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return
+    e.preventDefault()
+    setMenuOpen(false)
+    setLabOrigin({ x: e.clientX, y: e.clientY })
+  }
 
   const navItems = [
     { label: t.nav.about, href: '#about' },
@@ -87,6 +97,7 @@ export default function Navbar() {
   }
 
   return (
+    <>
     <header className={`navbar ${scrolled ? 'scrolled' : ''}`}>
       <div className="nav-inner container">
         <a className="nav-logo" href="#home" onClick={(e) => handleNav(e, '#home')}>
@@ -107,12 +118,13 @@ export default function Navbar() {
               {item.label}
             </a>
           ))}
-          <Link
-            to="/gallery"
+          <a
+            href="/gallery"
             className={`nav-link ${location.pathname === '/gallery' ? 'nav-link--active' : ''}`}
+            onClick={handleLabClick}
           >
             Lab
-          </Link>
+          </a>
           {location.pathname === '/' && <ModeMenu />}
           <a href="#contact" className="nav-cta" onClick={(e) => handleNav(e, '#contact')}>
             {t.nav.hire}
@@ -148,13 +160,13 @@ export default function Navbar() {
                 {item.label}
               </a>
             ))}
-            <Link
-              to="/gallery"
+            <a
+              href="/gallery"
               className="nav-link"
-              onClick={() => setMenuOpen(false)}
+              onClick={handleLabClick}
             >
               Lab
-            </Link>
+            </a>
             <a href="#contact" className="nav-cta" onClick={(e) => handleNav(e, '#contact')}>
               {t.nav.hire}
             </a>
@@ -162,5 +174,13 @@ export default function Navbar() {
         )}
       </div>
     </header>
+    {labOrigin && (
+      <LabTransition
+        origin={labOrigin}
+        onNavigate={() => navigate('/gallery')}
+        onDone={() => setLabOrigin(null)}
+      />
+    )}
+    </>
   )
 }

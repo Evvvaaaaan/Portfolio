@@ -116,8 +116,6 @@
 
 /* ── Gallery Card ────────────────────────────────── */
 .gcard {
-  background: var(--bg-card);
-  border: 1px solid var(--border);
   border-radius: 24px;
   overflow: hidden;
   display: flex;
@@ -187,10 +185,7 @@
 }
 
 .gallery-slide.active .gcard {
-  border-color: color-mix(in srgb, var(--card-accent) 35%, transparent);
-  box-shadow:
-    0 32px 80px rgba(0, 0, 0, 0.45),
-    0 0 0 1px color-mix(in srgb, var(--card-accent) 20%, transparent);
+  box-shadow: 0 32px 80px rgba(0, 0, 0, 0.45);
 }
 
 /* Preview area */
@@ -429,6 +424,376 @@
 
 .gcard-tab-panel .gcard-tags {
   margin-top: 8px;
+}
+
+/* ── Spotline Vision AI Preview ─────────────────── */
+.spotline-preview {
+  position: relative;
+  height: calc(100% - 40px);
+  padding: 10px 12px 9px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  overflow: hidden;
+}
+
+.spotline-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 18px;
+  flex-shrink: 0;
+}
+
+.spotline-brand {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  font-size: 11px;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  color: var(--text-h);
+  letter-spacing: 0.04em;
+}
+
+.spotline-brand-mark {
+  width: 9px;
+  height: 9px;
+  border-radius: 3px;
+  background: var(--card-accent);
+  box-shadow: 0 0 16px color-mix(in srgb, var(--card-accent) 80%, transparent);
+  flex-shrink: 0;
+}
+
+.spotline-live {
+  position: relative;
+  padding: 2px 7px 2px 15px;
+  border-radius: 20px;
+  background: rgba(239, 68, 68, 0.1);
+  color: #f87171;
+  font-size: 9px;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.spotline-live::before {
+  content: '';
+  position: absolute;
+  left: 7px;
+  top: 50%;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: currentColor;
+  transform: translateY(-50%);
+}
+
+.spotline-live.on::before {
+  animation: spotline-live-pulse 0.9s ease-in-out infinite alternate;
+}
+
+@keyframes spotline-live-pulse {
+  to { opacity: 0.35; transform: translateY(-50%) scale(1.8); }
+}
+
+.spotline-dashboard {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(96px, 0.85fr);
+  gap: 8px;
+  flex: 1;
+  min-height: 0;
+}
+
+.spotline-feed,
+.spotline-insights {
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(3, 7, 18, 0.42);
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.spotline-feed {
+  display: flex;
+  flex-direction: column;
+}
+
+.spotline-feed-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 5px 7px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  font-size: 8px;
+  font-family: var(--font-mono);
+  color: var(--text-muted);
+  letter-spacing: 0.05em;
+}
+
+.spotline-camera {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 22% 74%, rgba(245, 158, 11, 0.2), transparent 28%),
+    linear-gradient(145deg, rgba(15, 23, 42, 0.95), rgba(24, 24, 27, 0.95));
+}
+
+.spotline-grid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+  background-size: 18px 18px;
+  opacity: 0.55;
+}
+
+.spotline-counter {
+  position: absolute;
+  top: 7px;
+  left: 7px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.28);
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 9px;
+  font-family: var(--font-mono);
+}
+
+.spotline-entrance,
+.spotline-shelf,
+.spotline-path {
+  position: absolute;
+  display: block;
+  border-radius: 4px;
+}
+
+.spotline-entrance {
+  left: 12%;
+  bottom: 10%;
+  width: 25%;
+  height: 8%;
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.spotline-shelf.left {
+  left: 8%;
+  top: 25%;
+  width: 12%;
+  height: 36%;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.spotline-shelf.right {
+  right: 9%;
+  top: 18%;
+  width: 16%;
+  height: 54%;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.spotline-path {
+  left: 30%;
+  top: 32%;
+  width: 37%;
+  height: 44%;
+  border: 1px dashed rgba(255, 255, 255, 0.16);
+  transform: skewX(-10deg);
+}
+
+.spotline-box {
+  position: absolute;
+  border: 1.5px solid #22c55e;
+  border-radius: 4px;
+  color: #86efac;
+  opacity: 0;
+  transform: scale(0.92);
+  transition:
+    opacity 0.28s ease,
+    transform 0.28s ease,
+    box-shadow 0.28s ease;
+}
+
+.spotline-box.in {
+  opacity: 1;
+  transform: scale(1);
+  box-shadow: 0 0 18px rgba(34, 197, 94, 0.22);
+}
+
+.spotline-box.customer {
+  left: 27%;
+  top: 28%;
+  width: 18%;
+  height: 45%;
+}
+
+.spotline-box.queue {
+  left: 50%;
+  top: 36%;
+  width: 16%;
+  height: 33%;
+}
+
+.spotline-box.zone {
+  left: 23%;
+  bottom: 13%;
+  width: 54%;
+  height: 20%;
+  border-color: var(--card-accent);
+  color: #fbbf24;
+}
+
+.spotline-box em {
+  position: absolute;
+  left: -1px;
+  top: -15px;
+  padding: 1px 4px;
+  border-radius: 3px;
+  background: #22c55e;
+  color: #06101f;
+  font-size: 8px;
+  font-family: var(--font-mono);
+  font-style: normal;
+  font-weight: 700;
+}
+
+.spotline-box.zone em {
+  background: var(--card-accent);
+}
+
+.spotline-scan {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--card-accent), transparent);
+  box-shadow: 0 0 18px var(--card-accent);
+  opacity: 0;
+  transform: translateY(-8px);
+}
+
+.spotline-scan.on {
+  opacity: 1;
+  animation: spotline-scan 0.95s ease-in-out infinite;
+}
+
+@keyframes spotline-scan {
+  to { transform: translateY(150px); }
+}
+
+.spotline-insights {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 7px;
+  opacity: 0.58;
+  transition: opacity 0.28s ease;
+}
+
+.spotline-insights.in {
+  opacity: 1;
+}
+
+.spotline-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  opacity: 0.72;
+  transform: translateX(6px);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.spotline-insights.in .spotline-stat {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.spotline-stat > div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 5px;
+}
+
+.spotline-stat-label {
+  color: var(--text-muted);
+  font-size: 8px;
+  font-family: var(--font-mono);
+  letter-spacing: 0.04em;
+}
+
+.spotline-stat strong {
+  color: var(--text-h);
+  font-size: 12px;
+  font-family: var(--font-mono);
+  line-height: 1;
+}
+
+.spotline-stat-bar {
+  height: 4px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+
+.spotline-stat-bar span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--card-accent), #22c55e);
+  transition: width 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.spotline-chart {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  flex: 1;
+  min-height: 20px;
+  padding-top: 2px;
+}
+
+.spotline-chart span {
+  flex: 1;
+  min-width: 0;
+  border-radius: 3px 3px 0 0;
+  background: color-mix(in srgb, var(--card-accent) 62%, white);
+  opacity: 0.72;
+  transition: height 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.spotline-result {
+  position: absolute;
+  left: 12px;
+  bottom: 9px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 9px;
+  border-radius: 20px;
+  border: 1px solid color-mix(in srgb, var(--card-accent) 36%, transparent);
+  background: rgba(8, 13, 24, 0.82);
+  backdrop-filter: blur(8px);
+  color: var(--card-accent);
+  font-size: 10px;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  opacity: 0;
+  transform: translateY(6px) scale(0.94);
+  transition:
+    opacity 0.32s ease,
+    transform 0.36s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.spotline-result.in {
+  opacity: 1;
+  transform: translateY(0) scale(1);
 }
 
 /* ── Candle Preview ──────────────────────────────── */
