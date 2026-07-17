@@ -186,26 +186,17 @@ export default function GuestbookGlobe({ entries, tempPin, onPickLocation, onPic
       renderer.domElement.removeEventListener('pointerdown', onPointerDown)
       renderer.domElement.removeEventListener('pointerup', onPointerUp)
 
-      // Dispose sphere geometry and material
       sphere.geometry.dispose()
       sphere.material.dispose()
-
-      // Dispose land-dots geometry and material if loaded
       if (state.landDots) {
         state.landDots.geometry.dispose()
         state.landDots.material.dispose()
       }
-
-      // Dispose textures
       glowTex.dispose()
       tempTex.dispose()
-
-      // Dispose pin sprite materials
       for (const sprite of state.pinGroup.children) {
         sprite.material.dispose()
       }
-
-      // Dispose temp pin sprite material
       if (state.tempSprite) {
         state.tempSprite.material.dispose()
       }
