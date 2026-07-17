@@ -4,12 +4,12 @@
 // App.jsx의 데스크톱 슬라이드덱(섹션당 정확히 100vh)에서만 의미가 있으므로
 // 호출부(SpaceBackground)가 warpEnabled일 때만 사용한다.
 export const SECTION_TINTS = [
-  [0.039, 0.039, 0.059], // home     — 기본 우주색 (#0a0a0f)
-  [0.031, 0.051, 0.106], // about    — 딥 블루
-  [0.020, 0.067, 0.075], // skills   — 틸
-  [0.067, 0.031, 0.098], // projects — 퍼플
-  [0.086, 0.043, 0.051], // contact  — 웜 레드
-  [0.024, 0.031, 0.055], // footer   — 다크 네이비
+  [0.024, 0.024, 0.037], // home     — 기본 우주색 (더 어둡게)
+  [0.016, 0.027, 0.055], // about    — 딥 블루
+  [0.010, 0.035, 0.039], // skills   — 틸
+  [0.035, 0.016, 0.051], // projects — 퍼플
+  [0.045, 0.022, 0.027], // contact  — 웜 레드
+  [0.012, 0.016, 0.029], // footer   — 다크 네이비
 ]
 
 export function computeSectionTint(scrollY, viewportHeight, tints = SECTION_TINTS) {
