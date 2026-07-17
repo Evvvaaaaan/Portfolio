@@ -10,6 +10,7 @@ import {
   concludeArrival,
   computeArrivalIntensity,
 } from './arrivalSequence.js'
+import { WARP_BOOST_EVENT, computeBoostIntensity } from './warpBoost.js'
 
 function createStarTexture() {
   const canvas = document.createElement('canvas')
@@ -140,6 +141,18 @@ export default function SpaceBackground({ warpEnabled = false }) {
 
     let id
     const clock = new THREE.Clock()
+    // Lab 진입 부스트: 이벤트 수신 시점부터 타임라인을 재생한다.
+    // 진행 중인 도착 시퀀스가 있으면 즉시 종결한다 (우선순위: 부스트 >
+    // 도착 시퀀스 > 스크롤 워프).
+    let boostStartT = null
+    const onWarpBoost = () => {
+      boostStartT = clock.getElapsedTime()
+      if (arrivalActive) {
+        arrivalActive = false
+        concludeArrival('done')
+      }
+    }
+    window.addEventListener(WARP_BOOST_EVENT, onWarpBoost)
     const tick = () => {
       id = requestAnimationFrame(tick)
       const t = clock.getElapsedTime()
@@ -154,7 +167,13 @@ export default function SpaceBackground({ warpEnabled = false }) {
         arrivalActive = false
         concludeArrival('done')
       }
-      if (arrivalActive) {
+      if (boostStartT !== null) {
+        // 부스트는 warpEnabled와 무관하게 끝까지 재생 — 라우트가 /gallery로
+        // 바뀌어도 해제 곡선이 이어져 도착 후 자연 감속한다.
+        const boost = computeBoostIntensity((t - boostStartT) * 1000)
+        intensitySmooth = boost.intensity
+        if (boost.phase === 'done') boostStartT = null
+      } else if (arrivalActive) {
         const arrival = computeArrivalIntensity(t * 1000)
         intensitySmooth = arrival.intensity
         if (arrival.done) {
@@ -178,7 +197,10 @@ export default function SpaceBackground({ warpEnabled = false }) {
         }
       }
 
-      const zoomDriver = warpEnabledRef.current ? intensitySmooth : scrollPercentSmooth
+      // 부스트 중에는 라우트와 무관하게 intensity가 카메라를 구동해야 한다.
+      const zoomDriver = (warpEnabledRef.current || boostStartT !== null)
+        ? intensitySmooth
+        : scrollPercentSmooth
 
       // 1. Vortex rotation: spin the stars on Z axis as we scroll down
       starsPoints.rotation.z = scrollPercentSmooth * 1.8
@@ -196,7 +218,8 @@ export default function SpaceBackground({ warpEnabled = false }) {
       camera.position.z = 400 - Math.pow(zoomDriver, 1.2) * 360
 
       // 3. Field of View Expansion: creates an edge-stretching warp speed optical illusion
-      camera.fov = 75 + Math.pow(zoomDriver, 1.5) * 45
+      // 부스트 피크(1.4)에서 기존 공식은 ~150°를 넘어 왜곡이 깨진다 — 클램프.
+      camera.fov = Math.min(150, 75 + Math.pow(zoomDriver, 1.5) * 45)
       camera.updateProjectionMatrix()
 
       // 섹션별 우주 좌표 틴트: 메인 데스크톱 슬라이드덱에서만 의미가 있다.
@@ -229,6 +252,7 @@ export default function SpaceBackground({ warpEnabled = false }) {
       cancelAnimationFrame(id)
       window.removeEventListener('resize', onResize)
       window.removeEventListener('scroll', onScroll)
+      window.removeEventListener(WARP_BOOST_EVENT, onWarpBoost)
       streaks.dispose()
       starGeo.dispose()
       starMat.dispose()
