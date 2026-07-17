@@ -11,7 +11,9 @@ test('Lab 클릭 시 워프 전환을 거쳐 갤러리에 도착한다', async (
   // 늦게 뜰 수 있어, 그 사이 시퀀스(~2.4s)가 끝나면 양성 단언이 레이스로
   // 실패한다. commit 시점부터 폴링하면 클래스 등장을 놓치지 않는다.
   await page.goto('/', { waitUntil: 'commit' })
-  // 도착 시퀀스가 끝나 화면이 안정된 뒤 클릭한다.
+  // 도착 시퀀스가 끝나 화면이 안정된 뒤 클릭한다. toBeAttached를 먼저 확인해
+  // 요소 부재로 인한 not.toHaveClass의 공허한 통과(vacuous pass)를 막는다.
+  await expect(page.locator('section.hero')).toBeAttached({ timeout: 15000 })
   await expect(page.locator('section.hero')).not.toHaveClass(/hero--awaiting-arrival/, {
     timeout: 15000,
   })

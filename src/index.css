@@ -364,12 +364,18 @@ main {
 /* ==== Lab 워프 진입: 페이지 콘텐츠 이탈 ====
    부스트 가속 동안 콘텐츠가 카메라를 지나쳐 사라지듯 확대·페이드된다.
    LabTransition이 body에 warp-exit 클래스를 토글한다. 데스크톱 메인은
-   .scroll-viewport, 그 외 라우트/모바일은 main이 콘텐츠 루트다. */
+   .scroll-viewport, 그 외 라우트/모바일은 main이 콘텐츠 루트다.
+   transition 800ms은 warpBoost.js의 BOOST_CHARGE_MS와 동기다 — 함께 수정할 것. */
 body.warp-exit .scroll-viewport,
 body.warp-exit main {
   transition:
     transform 800ms cubic-bezier(0.5, 0, 1, 1),
     opacity 800ms cubic-bezier(0.5, 0, 1, 1);
+  /* 모바일 main은 문서 전체 높이라 기본 origin(50% 50%)이 문서 중심이 되어
+     화면이 위/아래로 크게 밀린다 — LabTransition이 현재 뷰포트 중심을
+     --warp-origin-y로 넣어준다. 데스크톱 .scroll-viewport는 100vh 고정이라
+     기본값(50%)과 동일하게 동작한다. */
+  transform-origin: 50% var(--warp-origin-y, 50%);
   transform: scale(1.35);
   opacity: 0;
 }

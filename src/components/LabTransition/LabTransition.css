@@ -54,7 +54,15 @@
   opacity: 1;
   filter: blur(0);
   transform: translateY(0);
-  transition-duration: 1200ms;
+  /* 홀드(900ms) 안에 페이드인이 끝나도록 700ms — 1200ms였을 때는
+     90% 불투명도에서 바로 아웃이 시작돼 미완성으로 보였다. */
+  transition-duration: 700ms;
+}
+
+/* 플래시가 걷힌 뒤에는 갤러리 조작을 막지 않는다 — 문구는 표시 전용 */
+.labtransition-overlay--released {
+  pointer-events: none;
+  cursor: auto;
 }
 
 @media (prefers-reduced-motion: reduce) {

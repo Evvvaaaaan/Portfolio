@@ -21,6 +21,7 @@ const REDUCED_DONE_MS = 800
 export default function LabTransition({ origin, onNavigate, onDone }) {
   const [flash, setFlash] = useState(false)
   const [showText, setShowText] = useState(false)
+  const [released, setReleased] = useState(false)
 
   // onNavigate/onDone은 부모(Navbar)가 매 렌더 새 인라인 함수로 넘긴다.
   // 타이머 예약은 마운트 시 한 번만 돌아야 하므로 최신 콜백은 ref로 읽되,
@@ -50,6 +51,11 @@ export default function LabTransition({ origin, onNavigate, onDone }) {
     }
 
     requestWarpBoost()
+    // 스크롤된 모바일 main에서도 확대 기준이 현재 뷰포트 중심이 되도록 주입.
+    document.documentElement.style.setProperty(
+      '--warp-origin-y',
+      `${window.scrollY + window.innerHeight / 2}px`,
+    )
     document.body.classList.add('warp-exit')
 
     const navAt = BOOST_CHARGE_MS + BOOST_PEAK_MS / 2
@@ -58,8 +64,13 @@ export default function LabTransition({ origin, onNavigate, onDone }) {
       setTimeout(() => {
         callbacksRef.current.onNavigate()
         document.body.classList.remove('warp-exit')
+        document.documentElement.style.removeProperty('--warp-origin-y')
       }, navAt),
-      setTimeout(() => setFlash(false), BOOST_CHARGE_MS + BOOST_PEAK_MS),
+      setTimeout(() => {
+        setFlash(false)
+        // 플래시가 걷히면 오버레이가 갤러리 입력을 막지 않게 한다.
+        setReleased(true)
+      }, BOOST_CHARGE_MS + BOOST_PEAK_MS),
       setTimeout(() => setShowText(true), BOOST_CHARGE_MS + BOOST_PEAK_MS),
       setTimeout(
         () => setShowText(false),
@@ -73,6 +84,7 @@ export default function LabTransition({ origin, onNavigate, onDone }) {
     return () => {
       timers.forEach(clearTimeout)
       document.body.classList.remove('warp-exit')
+      document.documentElement.style.removeProperty('--warp-origin-y')
     }
     // reducedMotion은 마운트 시점 판정 고정 — 의도적으로 deps 제외.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -80,7 +92,7 @@ export default function LabTransition({ origin, onNavigate, onDone }) {
 
   return (
     <div
-      className={`labtransition-overlay ${reducedMotion ? 'labtransition-overlay--reduced' : ''}`}
+      className={`labtransition-overlay ${reducedMotion ? 'labtransition-overlay--reduced' : ''} ${released ? 'labtransition-overlay--released' : ''}`}
     >
       <div className={`labtransition-flash ${flash ? 'labtransition-flash--on' : ''}`} />
       <p className={`labtransition-text ${showText ? 'labtransition-text--in' : ''}`}>
