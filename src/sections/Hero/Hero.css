@@ -17,16 +17,6 @@
   display: block;
 }
 
-/* Radial gradient overlay to keep text readable */
-.hero-overlay {
-  position: absolute;
-  inset: 0;
-  background:
-    radial-gradient(ellipse 70% 60% at 50% 50%, transparent 20%, rgba(10, 10, 15, 0.82) 90%),
-    linear-gradient(to bottom, transparent 50%, rgba(10, 10, 15, 0.6) 85%, transparent 100%);
-  z-index: 1;
-}
-
 /* Content */
 .hero-content {
   position: relative;
@@ -49,6 +39,7 @@
   padding: 6px 16px;
   margin-bottom: 28px;
   letter-spacing: 0.04em;
+  text-shadow: var(--legibility-shadow);
 }
 
 .hero-tag-dot {
@@ -93,6 +84,7 @@
   line-height: 1;
   margin-bottom: 16px;
   color: var(--text-h);
+  text-shadow: var(--legibility-shadow);
 }
 
 .hero-name {
@@ -112,6 +104,7 @@
   height: 44px;
   display: flex;
   align-items: center;
+  text-shadow: var(--legibility-shadow);
 }
 
 .role-text { color: var(--text-h); }
@@ -134,6 +127,7 @@
   line-height: 1.7;
   max-width: 520px;
   margin-bottom: 40px;
+  text-shadow: var(--legibility-shadow);
 }
 
 /* Buttons */

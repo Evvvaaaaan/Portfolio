@@ -306,8 +306,6 @@ export default function Hero() {
         <ParticleScene containerRef={canvasRef} />
       </div>
 
-      <div className="hero-overlay" />
-
       <div className="hero-content container">
         <div className="hero-tag fade-up">
           <span className="hero-tag-dot" />
