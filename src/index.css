@@ -332,3 +332,38 @@ main {
     font-size: 12px;
   }
 }
+
+/* ==== 섹션 본문 가독성 스크림 ====
+   별/블룸이 텍스트 바로 뒤에서 빛나지 않도록 콘텐츠 뒤에 은은한
+   방사형 어둠을 깐다. 블러 없는 순수 그라데이션이라 렌더 비용은 없다.
+   Hero는 대상이 아니다 (가독성 문제 지점이 섹션 본문으로 확인됨). */
+.about,
+.skills,
+.projects,
+.contact {
+  position: relative;
+}
+
+.about::before,
+.skills::before,
+.projects::before,
+.contact::before {
+  content: '';
+  position: absolute;
+  inset: -6% 0;
+  background: radial-gradient(
+    ellipse 72% 62% at 50% 50%,
+    rgba(5, 6, 12, 0.55),
+    rgba(5, 6, 12, 0) 74%
+  );
+  pointer-events: none;
+  z-index: 0;
+}
+
+.about > .container,
+.skills > .container,
+.projects > .container,
+.contact > .container {
+  position: relative;
+  z-index: 1;
+}
