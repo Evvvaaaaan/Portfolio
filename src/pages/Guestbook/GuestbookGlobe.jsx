@@ -90,6 +90,7 @@ export default function GuestbookGlobe({ entries, tempPin, onPickLocation, onPic
           transparent: true,
           opacity: 0.85,
         }))
+        stateRef.current.landDots = dots
         globe.add(dots)
       })
       .catch(() => {}) // 마스크 로드 실패 시 도트 없이 구만 표시
@@ -148,7 +149,7 @@ export default function GuestbookGlobe({ entries, tempPin, onPickLocation, onPic
 
     const state = {
       globe, pinGroup, glowTex, tempTex, reduced,
-      latestSprite: null, tempSprite: null, intro: null, introPlayed: false,
+      latestSprite: null, tempSprite: null, intro: null, introPlayed: false, landDots: null,
     }
     stateRef.current = state
 
@@ -184,6 +185,31 @@ export default function GuestbookGlobe({ entries, tempPin, onPickLocation, onPic
       window.removeEventListener('resize', onResize)
       renderer.domElement.removeEventListener('pointerdown', onPointerDown)
       renderer.domElement.removeEventListener('pointerup', onPointerUp)
+
+      // Dispose sphere geometry and material
+      sphere.geometry.dispose()
+      sphere.material.dispose()
+
+      // Dispose land-dots geometry and material if loaded
+      if (state.landDots) {
+        state.landDots.geometry.dispose()
+        state.landDots.material.dispose()
+      }
+
+      // Dispose textures
+      glowTex.dispose()
+      tempTex.dispose()
+
+      // Dispose pin sprite materials
+      for (const sprite of state.pinGroup.children) {
+        sprite.material.dispose()
+      }
+
+      // Dispose temp pin sprite material
+      if (state.tempSprite) {
+        state.tempSprite.material.dispose()
+      }
+
       controls.dispose()
       renderer.dispose()
       mount.removeChild(renderer.domElement)
