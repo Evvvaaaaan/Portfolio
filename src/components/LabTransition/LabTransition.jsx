@@ -1,61 +1,86 @@
 import { useEffect, useRef, useState } from 'react'
 import './LabTransition.css'
+import {
+  requestWarpBoost,
+  BOOST_CHARGE_MS,
+  BOOST_PEAK_MS,
+  BOOST_RELEASE_MS,
+} from '../SpaceBackground/warpBoost.js'
 
-const CLOSE_MS = 700
-const NAV_BUFFER_MS = 150
-const TEXT_IN_MS = 1200
+const FLASH_LEAD_MS = 150
 const TEXT_HOLD_MS = 900
 const TEXT_OUT_MS = 400
-const OPEN_MS = 700
+const REDUCED_NAV_MS = 250
+const REDUCED_DONE_MS = 800
 
-// Lab 이동 시 블랙홀에 빨려들어가는 듯한 화면 전환. 확장된 검은 원이 화면을
-// 완전히 덮은 순간 실제 라우트를 바꾸고("onNavigate"), 도착 문구를 천천히
-// 보여준 뒤 다시 열리며 Lab 페이지를 드러낸다.
+// Lab 이동: 배경 우주 워프가 최대로 가속(부스트)하며 페이지 콘텐츠가
+// 카메라를 지나쳐 사라지고, 정점의 화이트 플래시 순간 라우트를 바꾼 뒤
+// 워프가 풀리며 갤러리가 드러난다. origin prop은 시각적으로 더 이상
+// 쓰지 않지만 Navbar 계약 유지를 위해 시그니처에 남긴다.
+// eslint-disable-next-line no-unused-vars
 export default function LabTransition({ origin, onNavigate, onDone }) {
-  const [expanded, setExpanded] = useState(false)
+  const [flash, setFlash] = useState(false)
   const [showText, setShowText] = useState(false)
 
   // onNavigate/onDone은 부모(Navbar)가 매 렌더 새 인라인 함수로 넘긴다.
-  // 아래 타이머 예약은 마운트 시 단 한 번만 돌아야 하므로, 최신 콜백은
-  // ref로 읽고 effect 의존성에는 넣지 않는다 — 그렇지 않으면 부모가
-  // 리렌더될 때마다(네비게이션으로 인한 리렌더 포함) 전체 시퀀스가
-  // 리셋되어 "도착" 상태에서 멈춘 것처럼 보인다.
+  // 타이머 예약은 마운트 시 한 번만 돌아야 하므로 최신 콜백은 ref로 읽는다.
   const callbacksRef = useRef({ onNavigate, onDone })
+  // eslint-disable-next-line react-hooks/refs
   callbacksRef.current = { onNavigate, onDone }
 
-  useEffect(() => {
-    const raf = requestAnimationFrame(() => setExpanded(true))
-    return () => cancelAnimationFrame(raf)
-  }, [])
+  const reducedMotion =
+    typeof window !== 'undefined' &&
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
   useEffect(() => {
+    if (reducedMotion) {
+      // 부스트 없이 어두운 오버레이 + 문구만 짧게.
+      const timers = [
+        setTimeout(() => callbacksRef.current.onNavigate(), REDUCED_NAV_MS),
+        setTimeout(() => setShowText(true), REDUCED_NAV_MS),
+        setTimeout(() => setShowText(false), REDUCED_NAV_MS + TEXT_HOLD_MS),
+        setTimeout(
+          () => callbacksRef.current.onDone(),
+          REDUCED_DONE_MS + TEXT_HOLD_MS,
+        ),
+      ]
+      return () => timers.forEach(clearTimeout)
+    }
+
+    requestWarpBoost()
+    document.body.classList.add('warp-exit')
+
+    const navAt = BOOST_CHARGE_MS + BOOST_PEAK_MS / 2
     const timers = [
-      setTimeout(() => callbacksRef.current.onNavigate(), CLOSE_MS),
-      setTimeout(() => setShowText(true), CLOSE_MS + NAV_BUFFER_MS),
-      setTimeout(() => setShowText(false), CLOSE_MS + NAV_BUFFER_MS + TEXT_IN_MS + TEXT_HOLD_MS),
+      setTimeout(() => setFlash(true), BOOST_CHARGE_MS - FLASH_LEAD_MS),
+      setTimeout(() => {
+        callbacksRef.current.onNavigate()
+        document.body.classList.remove('warp-exit')
+      }, navAt),
+      setTimeout(() => setFlash(false), BOOST_CHARGE_MS + BOOST_PEAK_MS),
+      setTimeout(() => setShowText(true), BOOST_CHARGE_MS + BOOST_PEAK_MS),
       setTimeout(
-        () => setExpanded(false),
-        CLOSE_MS + NAV_BUFFER_MS + TEXT_IN_MS + TEXT_HOLD_MS + TEXT_OUT_MS,
+        () => setShowText(false),
+        BOOST_CHARGE_MS + BOOST_PEAK_MS + TEXT_HOLD_MS,
       ),
       setTimeout(
         () => callbacksRef.current.onDone(),
-        CLOSE_MS + NAV_BUFFER_MS + TEXT_IN_MS + TEXT_HOLD_MS + TEXT_OUT_MS + OPEN_MS,
+        BOOST_CHARGE_MS + BOOST_PEAK_MS + BOOST_RELEASE_MS + TEXT_HOLD_MS + TEXT_OUT_MS,
       ),
     ]
-    return () => timers.forEach(clearTimeout)
+    return () => {
+      timers.forEach(clearTimeout)
+      document.body.classList.remove('warp-exit')
+    }
+    // reducedMotion은 마운트 시점 판정 고정 — 의도적으로 deps 제외.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  const originStyle = {
-    '--origin-x': origin ? `${origin.x}px` : '50%',
-    '--origin-y': origin ? `${origin.y}px` : '50%',
-  }
-
   return (
-    <div className={`labtransition-overlay ${expanded ? 'is-expanded' : ''}`} style={originStyle}>
-      <div className="labtransition-ring-scale">
-        <div className="labtransition-ring-spin" />
-      </div>
-      <div className="labtransition-hole" />
+    <div
+      className={`labtransition-overlay ${reducedMotion ? 'labtransition-overlay--reduced' : ''}`}
+    >
+      <div className={`labtransition-flash ${flash ? 'labtransition-flash--on' : ''}`} />
       <p className={`labtransition-text ${showText ? 'labtransition-text--in' : ''}`}>
         Lab에 도착하였습니다.
       </p>

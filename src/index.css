@@ -360,3 +360,25 @@ main {
   position: relative;
   z-index: 1;
 }
+
+/* ==== Lab 워프 진입: 페이지 콘텐츠 이탈 ====
+   부스트 가속 동안 콘텐츠가 카메라를 지나쳐 사라지듯 확대·페이드된다.
+   LabTransition이 body에 warp-exit 클래스를 토글한다. 데스크톱 메인은
+   .scroll-viewport, 그 외 라우트/모바일은 main이 콘텐츠 루트다. */
+body.warp-exit .scroll-viewport,
+body.warp-exit main {
+  transition:
+    transform 800ms cubic-bezier(0.5, 0, 1, 1),
+    opacity 800ms cubic-bezier(0.5, 0, 1, 1);
+  transform: scale(1.35);
+  opacity: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body.warp-exit .scroll-viewport,
+  body.warp-exit main {
+    transition: none;
+    transform: none;
+    opacity: 1;
+  }
+}

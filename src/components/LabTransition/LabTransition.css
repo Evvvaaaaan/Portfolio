@@ -10,55 +10,28 @@
   cursor: none;
 }
 
-.labtransition-hole,
-.labtransition-ring-scale {
-  position: absolute;
-  left: var(--origin-x, 50%);
-  top: var(--origin-y, 50%);
-  border-radius: 50%;
-  transform: translate(-50%, -50%) scale(0);
-  transition: transform 700ms cubic-bezier(0.65, 0, 0.35, 1);
+/* reduced-motion: 워프 없이 어두운 배경 위에 문구만 */
+.labtransition-overlay--reduced {
+  background: rgba(5, 6, 12, 0.88);
 }
 
-.labtransition-overlay.is-expanded .labtransition-hole,
-.labtransition-overlay.is-expanded .labtransition-ring-scale {
-  transform: translate(-50%, -50%) scale(1);
-}
-
-.labtransition-hole {
-  width: 260vmax;
-  height: 260vmax;
-  background: #000;
-}
-
-.labtransition-ring-scale {
-  width: 300vmax;
-  height: 300vmax;
-}
-
-.labtransition-ring-spin {
+/* 부스트 정점의 화이트 플래시 — 빠르게 차오르고 여운을 남기며 사라진다 */
+.labtransition-flash {
   position: absolute;
   inset: 0;
-  border-radius: 50%;
-  filter: blur(3px);
-  opacity: 0.85;
-  animation: labtransition-spin 2.4s linear infinite;
-  background: conic-gradient(
-    from 0deg,
-    transparent 0deg,
-    rgba(255, 255, 255, 0.55) 6deg,
-    transparent 34deg,
-    transparent 150deg,
-    rgba(178, 194, 255, 0.4) 160deg,
-    transparent 196deg,
-    transparent 314deg,
-    rgba(255, 255, 255, 0.45) 330deg,
-    transparent 356deg
+  background: radial-gradient(
+    circle at 50% 50%,
+    rgba(255, 255, 255, 0.98),
+    rgba(210, 225, 255, 0.9) 45%,
+    rgba(255, 255, 255, 0.78)
   );
+  opacity: 0;
+  transition: opacity 450ms ease-out;
 }
 
-@keyframes labtransition-spin {
-  to { transform: rotate(360deg); }
+.labtransition-flash--on {
+  opacity: 1;
+  transition-duration: 150ms;
 }
 
 .labtransition-text {
@@ -70,10 +43,11 @@
   letter-spacing: 0.08em;
   text-align: center;
   padding: 0 24px;
+  text-shadow: 0 2px 18px rgba(5, 6, 12, 0.9);
   opacity: 0;
   filter: blur(6px);
   transform: translateY(8px);
-  transition: opacity 1200ms ease, filter 1200ms ease, transform 1200ms ease;
+  transition: opacity 400ms ease, filter 400ms ease, transform 400ms ease;
 }
 
 .labtransition-text--in {
@@ -83,17 +57,11 @@
   transition-duration: 1200ms;
 }
 
-.labtransition-text:not(.labtransition-text--in) {
-  transition-duration: 400ms;
-}
-
 @media (prefers-reduced-motion: reduce) {
-  .labtransition-hole,
-  .labtransition-ring-scale,
+  .labtransition-flash {
+    display: none;
+  }
   .labtransition-text {
     transition-duration: 1ms;
-  }
-  .labtransition-ring-spin {
-    animation: none;
   }
 }
