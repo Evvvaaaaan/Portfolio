@@ -150,12 +150,11 @@ main {
   66%       { transform: translateY(-4px) rotate3d(1, 0, 0, -0.2deg); }
 }
 
-/* About/Skills/Projects: solid black backing so text reads over the starfield */
+/* About/Skills/Projects: text only, space background stays visible behind */
 .about, .skills, .projects {
   position: relative;
   z-index: 1;
   margin: 48px 40px;
-  background: #000;
 }
 
 .contact {
