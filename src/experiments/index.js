@@ -5,6 +5,7 @@ const InkFlow = lazy(() => import('./InkFlow/InkFlow'))
 const NeonRaymarch = lazy(() => import('./NeonRaymarch/NeonRaymarch'))
 const WindAtlas = lazy(() => import('./WindAtlas/WindAtlas'))
 const SeismicEcho = lazy(() => import('./SeismicEcho/SeismicEcho'))
+const HandConductor = lazy(() => import('./HandConductor/HandConductor'))
 const DeepSpace   = lazy(() => import('./DeepSpace/DeepSpace'))
 const SolarSystem = lazy(() => import('./SolarSystem/SolarSystem'))
 
@@ -68,6 +69,18 @@ export const experiments = [
     symbol: '◎',
     fullscreen: true,
     component: SeismicEcho,
+  },
+  {
+    id: 'hand-conductor',
+    title: 'Hand Conductor',
+    description: '웹캠 속 손이 지휘봉이 됩니다. 핀치로 파티클을 끌어모으고 손바닥을 펼쳐 흩어버리는 제스처 인터랙션. 카메라를 켜지 않으면 마우스 모드로 동작합니다.',
+    tags: ['mediapipe', 'webcam', 'gesture'],
+    color: '#fb923c',
+    planet: 'jupiter',
+    planetName: 'HANDS',
+    symbol: '✋',
+    fullscreen: true,
+    component: HandConductor,
   },
   {
     id: 'solar-system',

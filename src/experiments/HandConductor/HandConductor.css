@@ -1,0 +1,131 @@
+.hand-conductor {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #05070c;
+}
+
+.hc-canvas {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.hc-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  text-align: center;
+  padding: 24px;
+  background: rgba(5, 7, 12, 0.55);
+  backdrop-filter: blur(4px);
+}
+
+.hc-overlay h2 {
+  margin: 0;
+  font-size: 26px;
+  letter-spacing: 0.04em;
+  color: #fb923c;
+}
+
+.hc-overlay p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.7;
+  color: rgba(226, 232, 240, 0.75);
+}
+
+.hc-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.hc-actions button {
+  padding: 10px 24px;
+  border-radius: 999px;
+  border: 1px solid rgba(226, 232, 240, 0.3);
+  background: transparent;
+  color: #e2e8f0;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.hc-actions .hc-primary {
+  border-color: #fb923c;
+  background: rgba(251, 146, 60, 0.15);
+  color: #fb923c;
+}
+
+.hc-actions button:hover {
+  background: rgba(226, 232, 240, 0.1);
+}
+
+.hc-actions .hc-primary:hover {
+  background: rgba(251, 146, 60, 0.28);
+}
+
+.hc-gesture-hint {
+  font-size: 12px !important;
+  color: rgba(148, 163, 184, 0.7) !important;
+}
+
+.hc-preview {
+  position: absolute;
+  left: 18px;
+  bottom: 18px;
+  width: 160px;
+}
+
+.hc-preview video,
+.hc-preview canvas {
+  position: absolute;
+  bottom: 24px;
+  left: 0;
+  width: 160px;
+  height: 120px;
+  border-radius: 10px;
+}
+
+.hc-preview video {
+  object-fit: cover;
+  transform: scaleX(-1);
+  border: 1px solid rgba(251, 146, 60, 0.4);
+}
+
+.hc-preview.hidden video,
+.hc-preview.hidden canvas {
+  display: none;
+}
+
+.hc-preview button {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  padding: 3px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  background: rgba(5, 7, 12, 0.7);
+  color: rgba(226, 232, 240, 0.7);
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.hc-badge {
+  position: absolute;
+  left: 18px;
+  bottom: 18px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: rgba(8, 10, 16, 0.7);
+  border: 1px solid rgba(251, 146, 60, 0.3);
+  color: rgba(226, 232, 240, 0.7);
+  font-size: 12px;
+  pointer-events: none;
+}
