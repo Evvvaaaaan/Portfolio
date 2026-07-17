@@ -1,7 +1,7 @@
 export const translations = {
   en: {
     nav: {
-      about: 'About', skills: 'Skills', projects: 'Projects', contact: 'Contact', hire: 'Hire Me',
+      about: 'About', skills: 'Skills', projects: 'Projects', contact: 'Contact', guestbook: 'Guestbook', hire: 'Hire Me',
     },
     hero: {
       tag: 'Available for work',
@@ -61,12 +61,30 @@ export const translations = {
       error: 'Request failed. Please try again or contact me by email.',
       close: 'Close',
     },
+    guestbook: {
+      title: 'Guestbook',
+      hint: 'Click anywhere on the globe to leave your mark',
+      loadError: 'Could not load messages.',
+      retry: 'Retry',
+      form: {
+        title: 'Leave a message',
+        nickname: 'Nickname', nicknamePH: 'Your nickname',
+        message: 'Message', messagePH: 'Leave a short message...',
+        emoji: 'Mood (optional)',
+        submit: 'Pin it', sending: 'Pinning...',
+        cancel: 'Cancel',
+        success: 'Your star is now on the globe!',
+        errorInvalid: 'Please fill in a nickname and message.',
+        errorRate: 'Too many messages — please try again in an hour.',
+        errorServer: 'Something went wrong. Please try again.',
+      },
+    },
     footer: { built: 'Built with React + Vite' },
   },
 
   ko: {
     nav: {
-      about: '소개', skills: '스킬', projects: '프로젝트', contact: '연락', hire: '채용 문의',
+      about: '소개', skills: '스킬', projects: '프로젝트', contact: '연락', guestbook: '방명록', hire: '채용 문의',
     },
     hero: {
       tag: '채용 가능',
@@ -126,12 +144,30 @@ export const translations = {
       error: '신청에 실패했습니다. 다시 시도하거나 이메일로 연락해주세요.',
       close: '닫기',
     },
+    guestbook: {
+      title: '방명록',
+      hint: '지구를 클릭해 흔적을 남겨보세요',
+      loadError: '메시지를 불러오지 못했습니다.',
+      retry: '다시 시도',
+      form: {
+        title: '메시지 남기기',
+        nickname: '닉네임', nicknamePH: '닉네임을 입력하세요',
+        message: '메시지', messagePH: '짧은 메시지를 남겨주세요...',
+        emoji: '기분 (선택)',
+        submit: '남기기', sending: '남기는 중...',
+        cancel: '취소',
+        success: '당신의 별이 지구에 새겨졌습니다!',
+        errorInvalid: '닉네임과 메시지를 입력해주세요.',
+        errorRate: '작성이 너무 잦아요 — 1시간 후에 다시 시도해주세요.',
+        errorServer: '문제가 발생했습니다. 다시 시도해주세요.',
+      },
+    },
     footer: { built: 'React + Vite로 제작' },
   },
 
   ja: {
     nav: {
-      about: '自己紹介', skills: 'スキル', projects: 'プロジェクト', contact: '連絡', hire: 'お問い合わせ',
+      about: '自己紹介', skills: 'スキル', projects: 'プロジェクト', contact: '連絡', guestbook: 'ゲストブック', hire: 'お問い合わせ',
     },
     hero: {
       tag: '採用可能',
@@ -191,12 +227,30 @@ export const translations = {
       error: '申請に失敗しました。再度お試しいただくか、メールでご連絡ください。',
       close: '閉じる',
     },
+    guestbook: {
+      title: 'ゲストブック',
+      hint: '地球をクリックして足跡を残しましょう',
+      loadError: 'メッセージを読み込めませんでした。',
+      retry: '再試行',
+      form: {
+        title: 'メッセージを残す',
+        nickname: 'ニックネーム', nicknamePH: 'ニックネームを入力',
+        message: 'メッセージ', messagePH: '短いメッセージをどうぞ...',
+        emoji: '気分（任意）',
+        submit: '残す', sending: '送信中...',
+        cancel: 'キャンセル',
+        success: 'あなたの星が地球に刻まれました！',
+        errorInvalid: 'ニックネームとメッセージを入力してください。',
+        errorRate: '投稿が多すぎます。1時間後にもう一度お試しください。',
+        errorServer: '問題が発生しました。もう一度お試しください。',
+      },
+    },
     footer: { built: 'React + Viteで制作' },
   },
 
   zh: {
     nav: {
-      about: '关于我', skills: '技能', projects: '项目', contact: '联系', hire: '联系我',
+      about: '关于我', skills: '技能', projects: '项目', contact: '联系', guestbook: '留言板', hire: '联系我',
     },
     hero: {
       tag: '正在求职',
@@ -255,6 +309,24 @@ export const translations = {
       success: '您的申请已完成。',
       error: '申请失败。请重试或通过电子邮件联系我。',
       close: '关闭',
+    },
+    guestbook: {
+      title: '留言板',
+      hint: '点击地球，留下你的足迹',
+      loadError: '无法加载留言。',
+      retry: '重试',
+      form: {
+        title: '留下留言',
+        nickname: '昵称', nicknamePH: '请输入昵称',
+        message: '留言', messagePH: '写一句简短的留言...',
+        emoji: '心情（可选）',
+        submit: '留下', sending: '发送中...',
+        cancel: '取消',
+        success: '你的星星已落在地球上！',
+        errorInvalid: '请填写昵称和留言。',
+        errorRate: '发送太频繁了，请一小时后再试。',
+        errorServer: '出了点问题，请重试。',
+      },
     },
     footer: { built: '使用 React + Vite 构建' },
   },

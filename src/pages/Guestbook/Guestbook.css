@@ -1,0 +1,277 @@
+.guestbook-page {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+}
+
+.gb-canvas {
+  position: absolute;
+  inset: 0;
+}
+
+.gb-canvas canvas {
+  display: block;
+  cursor: grab;
+}
+
+.gb-canvas canvas:active {
+  cursor: grabbing;
+}
+
+.gb-head {
+  position: absolute;
+  top: 96px;
+  left: clamp(20px, 5vw, 64px);
+  pointer-events: none;
+}
+
+.gb-head h1 {
+  font-size: clamp(1.8rem, 4vw, 2.6rem);
+  color: #fff;
+  margin: 0 0 6px;
+}
+
+.gb-head p {
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 0.95rem;
+  margin: 0;
+}
+
+.gb-load-error {
+  position: absolute;
+  top: 96px;
+  right: clamp(20px, 5vw, 64px);
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.85rem;
+  background: rgba(20, 12, 12, 0.7);
+  border: 1px solid rgba(255, 120, 120, 0.25);
+  border-radius: 10px;
+  padding: 10px 14px;
+}
+
+.gb-load-error button {
+  background: none;
+  border: none;
+  color: #9db9ff;
+  cursor: pointer;
+  text-decoration: underline;
+  font-size: 0.85rem;
+}
+
+.gb-form,
+.gb-card {
+  position: absolute;
+  right: clamp(20px, 4vw, 56px);
+  top: 50%;
+  transform: translateY(-50%);
+  width: min(340px, calc(100vw - 40px));
+  background: rgba(10, 14, 26, 0.82);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 16px;
+  padding: 22px;
+  color: #fff;
+}
+
+.gb-form h2 {
+  margin: 0 0 2px;
+  font-size: 1.1rem;
+}
+
+.gb-coords {
+  margin: 0 0 14px;
+  font-size: 0.78rem;
+  color: rgba(157, 185, 255, 0.8);
+  font-variant-numeric: tabular-nums;
+}
+
+.gb-form label {
+  display: block;
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.6);
+  margin-bottom: 12px;
+}
+
+.gb-form input[type='text'],
+.gb-form input:not([type]),
+.gb-form textarea {
+  display: block;
+  width: 100%;
+  margin-top: 5px;
+  padding: 9px 11px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 9px;
+  color: #fff;
+  font: inherit;
+  font-size: 0.9rem;
+  resize: none;
+}
+
+.gb-form input:focus,
+.gb-form textarea:focus {
+  outline: none;
+  border-color: rgba(157, 185, 255, 0.6);
+}
+
+.gb-emoji {
+  border: none;
+  margin: 0 0 12px;
+  padding: 0;
+}
+
+.gb-emoji legend {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.6);
+  padding: 0;
+  margin-bottom: 6px;
+}
+
+.gb-emoji-grid {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 4px;
+}
+
+.gb-emoji-item input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.gb-emoji-item span {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.05rem;
+  padding: 4px 0;
+  border-radius: 7px;
+  cursor: pointer;
+  border: 1px solid transparent;
+}
+
+.gb-emoji-item input:checked + span {
+  background: rgba(157, 185, 255, 0.18);
+  border-color: rgba(157, 185, 255, 0.55);
+}
+
+.gb-hp {
+  position: absolute;
+  left: -9999px;
+  width: 1px;
+  height: 1px;
+}
+
+.gb-error {
+  color: #ff9d9d;
+  font-size: 0.82rem;
+  margin: 0 0 10px;
+}
+
+.gb-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.gb-btn,
+.gb-btn-ghost {
+  font: inherit;
+  font-size: 0.88rem;
+  padding: 9px 18px;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.gb-btn {
+  background: #9db9ff;
+  border: none;
+  color: #0a0e1a;
+  font-weight: 600;
+}
+
+.gb-btn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.gb-btn-ghost {
+  background: none;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.gb-card-close {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 1.3rem;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.gb-card-head {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.gb-card-emoji {
+  font-size: 1.3rem;
+}
+
+.gb-card-head time {
+  margin-left: auto;
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.gb-card-msg {
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.55;
+  color: rgba(255, 255, 255, 0.85);
+  overflow-wrap: break-word;
+}
+
+.gb-toast {
+  position: absolute;
+  bottom: 40px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(10, 14, 26, 0.9);
+  border: 1px solid rgba(157, 185, 255, 0.4);
+  border-radius: 12px;
+  padding: 12px 22px;
+  color: #cdddff;
+  font-size: 0.9rem;
+}
+
+/* 모바일: 폼/카드를 바텀 시트로 */
+@media (max-width: 640px) {
+  .gb-form,
+  .gb-card {
+    top: auto;
+    right: 0;
+    left: 0;
+    bottom: 0;
+    transform: none;
+    width: 100%;
+    border-radius: 18px 18px 0 0;
+    max-height: 70vh;
+    overflow-y: auto;
+  }
+
+  .gb-head {
+    top: 84px;
+  }
+
+  .gb-emoji-grid {
+    grid-template-columns: repeat(8, 1fr);
+  }
+}

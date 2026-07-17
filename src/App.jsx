@@ -17,6 +17,7 @@ import Gallery from './pages/Gallery/Gallery'
 import ExperimentPage from './pages/ExperimentPage/ExperimentPage'
 import CodePage from './pages/CodePage/CodePage'
 import ProjectPage from './pages/ProjectPage/ProjectPage'
+import Guestbook from './pages/Guestbook/Guestbook'
 import { ModeProvider } from './modes/ModeContext.jsx'
 import ModeLayer from './modes/ModeLayer.jsx'
 
@@ -255,8 +256,8 @@ function AppContent() {
   useLenis()
 
   useEffect(() => {
-    const isGallery = location.pathname === '/gallery'
-    if (isGallery) {
+    const lockScroll = location.pathname === '/gallery' || location.pathname === '/guestbook'
+    if (lockScroll) {
       document.body.style.overflow = 'hidden'
       document.documentElement.style.overflow = 'hidden'
     } else {
@@ -276,7 +277,9 @@ function AppContent() {
   // Experiment demos render a fixed, full-viewport canvas (immersive by
   // design) - an in-flow footer would just sit on top of/cover the canvas.
   const isExperimentDemo = /^\/gallery\/[^/]+$/.test(location.pathname)
-  const showGlobalFooter = (!isMainPage || !isDesktop) && !isLabPage && !isExperimentDemo
+  // 방명록도 실험 데모처럼 고정 풀뷰포트 캔버스라 푸터를 겹치지 않게 숨긴다
+  const isGuestbook = location.pathname === '/guestbook'
+  const showGlobalFooter = (!isMainPage || !isDesktop) && !isLabPage && !isExperimentDemo && !isGuestbook
 
   return (
     <LangProvider>
@@ -290,6 +293,7 @@ function AppContent() {
           <Route path="/gallery/:id" element={<ExperimentPage />} />
           <Route path="/gallery/:id/code" element={<CodePage />} />
           <Route path="/projects/:slug" element={<ProjectPage />} />
+          <Route path="/guestbook" element={<Guestbook />} />
         </Routes>
         {isMainPage && <ModeLayer />}
         {showGlobalFooter && <Footer />}

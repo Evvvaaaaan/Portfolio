@@ -70,6 +70,13 @@ export default function Navbar() {
     setLabOrigin({ x: e.clientX, y: e.clientY })
   }
 
+  const handleGuestbookClick = (e) => {
+    if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return
+    e.preventDefault()
+    setMenuOpen(false)
+    navigate('/guestbook')
+  }
+
   const navItems = [
     { label: t.nav.about, href: '#about' },
     { label: t.nav.skills, href: '#skills' },
@@ -125,6 +132,13 @@ export default function Navbar() {
           >
             Lab
           </a>
+          <a
+            href="/guestbook"
+            className={`nav-link ${location.pathname === '/guestbook' ? 'nav-link--active' : ''}`}
+            onClick={handleGuestbookClick}
+          >
+            {t.nav.guestbook}
+          </a>
           {location.pathname === '/' && <ModeMenu />}
           <a href="#contact" className="nav-cta" onClick={(e) => handleNav(e, '#contact')}>
             {t.nav.hire}
@@ -166,6 +180,9 @@ export default function Navbar() {
               onClick={handleLabClick}
             >
               Lab
+            </a>
+            <a href="/guestbook" className="nav-link" onClick={handleGuestbookClick}>
+              {t.nav.guestbook}
             </a>
             <a href="#contact" className="nav-cta" onClick={(e) => handleNav(e, '#contact')}>
               {t.nav.hire}
