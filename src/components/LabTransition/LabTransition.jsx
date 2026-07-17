@@ -23,10 +23,12 @@ export default function LabTransition({ origin, onNavigate, onDone }) {
   const [showText, setShowText] = useState(false)
 
   // onNavigate/onDone은 부모(Navbar)가 매 렌더 새 인라인 함수로 넘긴다.
-  // 타이머 예약은 마운트 시 한 번만 돌아야 하므로 최신 콜백은 ref로 읽는다.
+  // 타이머 예약은 마운트 시 한 번만 돌아야 하므로 최신 콜백은 ref로 읽되,
+  // ref 동기화는 렌더 중이 아니라 커밋 후에 한다 (렌더 순수성 유지).
   const callbacksRef = useRef({ onNavigate, onDone })
-  // eslint-disable-next-line react-hooks/refs
-  callbacksRef.current = { onNavigate, onDone }
+  useEffect(() => {
+    callbacksRef.current = { onNavigate, onDone }
+  })
 
   const reducedMotion =
     typeof window !== 'undefined' &&
