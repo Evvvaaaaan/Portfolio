@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import * as THREE from 'three'
 import { useLang } from '../../context/LangContext'
-import { ARRIVAL_DONE_EVENT, getArrivalStatus, concludeArrival } from '../../components/SpaceBackground/arrivalSequence.js'
+import { ARRIVAL_DONE_EVENT, getArrivalStatus } from '../../components/SpaceBackground/arrivalSequence.js'
 import './Hero.css'
 
 function createSoftPointTexture() {
@@ -183,17 +183,18 @@ export default function Hero() {
   // 스토어이므로 useSyncExternalStore로 구독한다 — 구독 직후 스냅샷을
   // 재확인하므로 SpaceBackground 이펙트와의 실행 순서 레이스가 없다.
   const arrivalConcluded = useSyncExternalStore(subscribeToArrival, isArrivalConcluded)
-  const awaitingArrival = !arrivalConcluded
 
   // 안전장치: 어떤 이유로든 시퀀스가 종결되지 않아도 콘텐츠가 영원히
-  // 숨지 않도록, 4초 후에도 미종결이면 스토어를 직접 종결시킨다.
+  // 숨지 않도록 4초 후 로컬로만 공개한다. Hero는 공유 상태 머신의
+  // 소비자일 뿐이므로 스토어에 쓰지 않는다.
+  const [fallbackRevealed, setFallbackRevealed] = useState(false)
   useEffect(() => {
     if (arrivalConcluded) return
-    const fallback = setTimeout(() => {
-      if (!isArrivalConcluded()) concludeArrival('skipped')
-    }, 4000)
+    const fallback = setTimeout(() => setFallbackRevealed(true), 4000)
     return () => clearTimeout(fallback)
   }, [arrivalConcluded])
+
+  const awaitingArrival = !arrivalConcluded && !fallbackRevealed
 
   // Physical screen tilt → holographic color on text
   useEffect(() => {
