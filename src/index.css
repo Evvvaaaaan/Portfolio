@@ -336,18 +336,12 @@ main {
 /* ==== 섹션 본문 가독성 스크림 ====
    별/블룸이 텍스트 바로 뒤에서 빛나지 않도록 콘텐츠 뒤에 은은한
    방사형 어둠을 깐다. 블러 없는 순수 그라데이션이라 렌더 비용은 없다.
-   Hero는 대상이 아니다 (가독성 문제 지점이 섹션 본문으로 확인됨). */
-.about,
-.skills,
-.projects,
-.contact {
-  position: relative;
-}
-
+   Hero는 대상이 아니고, Contact는 자체 유리 패널 배경(rgba(14,14,28,0.78)
+   + blur)이 있어 스크림이 불필요하다 — Contact의 의사요소는 이미
+   림 글로우/하단 글로우가 사용 중이기도 하다. */
 .about::before,
 .skills::before,
-.projects::before,
-.contact::before {
+.projects::before {
   content: '';
   position: absolute;
   inset: -6% 0;
@@ -362,8 +356,7 @@ main {
 
 .about > .container,
 .skills > .container,
-.projects > .container,
-.contact > .container {
+.projects > .container {
   position: relative;
   z-index: 1;
 }
