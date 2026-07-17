@@ -3,6 +3,8 @@ import { lazy } from 'react'
 const ParticleMorph = lazy(() => import('./ParticleMorph/ParticleMorph'))
 const InkFlow = lazy(() => import('./InkFlow/InkFlow'))
 const NeonRaymarch = lazy(() => import('./NeonRaymarch/NeonRaymarch'))
+const WindAtlas = lazy(() => import('./WindAtlas/WindAtlas'))
+const SeismicEcho = lazy(() => import('./SeismicEcho/SeismicEcho'))
 const DeepSpace   = lazy(() => import('./DeepSpace/DeepSpace'))
 const SolarSystem = lazy(() => import('./SolarSystem/SolarSystem'))
 
@@ -42,6 +44,30 @@ export const experiments = [
     symbol: '◈',
     fullscreen: true,
     component: NeonRaymarch,
+  },
+  {
+    id: 'wind-atlas',
+    title: 'Wind Atlas',
+    description: '지금 이 순간 지구 위를 흐르는 바람을 수천 개의 입자 궤적으로 그린 실시간 지도. 클릭하면 그 지점의 풍속과 풍향이 나타납니다.',
+    tags: ['data-art', 'api', 'canvas'],
+    color: '#5eead4',
+    planet: 'sky',
+    planetName: 'WIND',
+    symbol: '🍃',
+    fullscreen: true,
+    component: WindAtlas,
+  },
+  {
+    id: 'seismic-echo',
+    title: 'Seismic Echo',
+    description: '지난 30일간 지구의 맥박 — USGS 실시간 데이터로 수천 건의 지진이 파문으로 울려 퍼지는 시간 리플레이. 타임라인을 문질러 시간을 되감을 수 있습니다.',
+    tags: ['data-art', 'api', 'canvas'],
+    color: '#facc15',
+    planet: 'earth',
+    planetName: 'QUAKE',
+    symbol: '◎',
+    fullscreen: true,
+    component: SeismicEcho,
   },
   {
     id: 'solar-system',
