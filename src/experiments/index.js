@@ -7,6 +7,7 @@ const WindAtlas = lazy(() => import('./WindAtlas/WindAtlas'))
 const SeismicEcho = lazy(() => import('./SeismicEcho/SeismicEcho'))
 const HandConductor = lazy(() => import('./HandConductor/HandConductor'))
 const VoiceBloom = lazy(() => import('./VoiceBloom/VoiceBloom'))
+const PosterLab = lazy(() => import('./PosterLab/PosterLab'))
 const DeepSpace   = lazy(() => import('./DeepSpace/DeepSpace'))
 const SolarSystem = lazy(() => import('./SolarSystem/SolarSystem'))
 
@@ -94,6 +95,18 @@ export const experiments = [
     symbol: '❀',
     fullscreen: true,
     component: VoiceBloom,
+  },
+  {
+    id: 'poster-lab',
+    title: 'Poster Lab',
+    description: '시드 숫자 하나가 스위스 스타일 포스터 한 장이 되는 제너러티브 디자인 도구. 팔레트·그리드·타이포를 조합하고 PNG로 내려받을 수 있습니다.',
+    tags: ['generative', 'design-tool', 'export'],
+    color: '#e2e8f0',
+    planet: 'moon',
+    planetName: 'POSTER',
+    symbol: '▦',
+    fullscreen: false,
+    component: PosterLab,
   },
   {
     id: 'solar-system',
