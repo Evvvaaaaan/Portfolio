@@ -84,6 +84,10 @@ describe('POST /api/guestbook', () => {
     await handler(fakeReq({ method: 'POST', body: validBody, headers: { 'x-forwarded-for': '1.2.3.4' } }), res)
     expect(res.statusCode).toBe(429)
     expect(fetch).toHaveBeenCalledTimes(1) // 카운트 조회만, insert 없음
+
+    const url = fetch.mock.calls[0][0]
+    expect(url).toContain('ip_hash=eq.')
+    expect(url).toContain('created_at=gte.')
   })
 
   it('성공 시 반올림된 좌표로 insert하고 ip_hash 없는 공개 필드를 반환한다', async () => {
@@ -96,6 +100,10 @@ describe('POST /api/guestbook', () => {
     expect(res.statusCode).toBe(200)
     expect(res.body.entry).not.toHaveProperty('ip_hash')
     expect(res.body.entry.id).toBe('abc')
+
+    const selectUrl = fetch.mock.calls[0][0]
+    expect(selectUrl).toContain('ip_hash=eq.')
+    expect(selectUrl).toContain('created_at=gte.')
 
     const insertPayload = JSON.parse(fetch.mock.calls[1][1].body)
     expect(insertPayload.lat).toBe(37.6)
