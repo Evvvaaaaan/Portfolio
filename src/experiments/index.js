@@ -6,6 +6,7 @@ const NeonRaymarch = lazy(() => import('./NeonRaymarch/NeonRaymarch'))
 const WindAtlas = lazy(() => import('./WindAtlas/WindAtlas'))
 const SeismicEcho = lazy(() => import('./SeismicEcho/SeismicEcho'))
 const HandConductor = lazy(() => import('./HandConductor/HandConductor'))
+const VoiceBloom = lazy(() => import('./VoiceBloom/VoiceBloom'))
 const DeepSpace   = lazy(() => import('./DeepSpace/DeepSpace'))
 const SolarSystem = lazy(() => import('./SolarSystem/SolarSystem'))
 
@@ -81,6 +82,18 @@ export const experiments = [
     symbol: '✋',
     fullscreen: true,
     component: HandConductor,
+  },
+  {
+    id: 'voice-bloom',
+    title: 'Voice Bloom',
+    description: '목소리가 정원이 됩니다. 낮은 음은 줄기를 밀어 올리고 높은 음은 꽃을 피우는 오디오 반응 제너러티브 가든. 마이크가 없으면 내장 신스가 대신 연주합니다.',
+    tags: ['web audio', 'generative', 'mic'],
+    color: '#f472b6',
+    planet: 'aurora',
+    planetName: 'VOICE',
+    symbol: '❀',
+    fullscreen: true,
+    component: VoiceBloom,
   },
   {
     id: 'solar-system',
