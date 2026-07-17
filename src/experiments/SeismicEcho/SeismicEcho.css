@@ -1,0 +1,141 @@
+.seismic-echo {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #05070c;
+}
+
+.seismic-echo canvas {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.se-status {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  font-size: 14px;
+  color: rgba(226, 232, 240, 0.75);
+}
+
+.se-status button {
+  padding: 8px 20px;
+  border-radius: 999px;
+  border: 1px solid rgba(250, 204, 21, 0.4);
+  background: transparent;
+  color: #facc15;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.se-status button:hover {
+  background: rgba(250, 204, 21, 0.12);
+}
+
+.se-spinner {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 2px solid rgba(250, 204, 21, 0.2);
+  border-top-color: #facc15;
+  animation: se-spin 0.9s linear infinite;
+}
+
+@keyframes se-spin {
+  to { transform: rotate(360deg); }
+}
+
+.se-max {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  background: rgba(10, 8, 12, 0.6);
+  color: #ef4444;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: right;
+}
+
+.se-max span {
+  color: rgba(226, 232, 240, 0.6);
+  font-size: 11px;
+  font-weight: 400;
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.se-max:hover {
+  background: rgba(239, 68, 68, 0.1);
+}
+
+.se-bar {
+  position: absolute;
+  left: 50%;
+  bottom: 18px;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: min(680px, calc(100% - 48px));
+  padding: 10px 16px;
+  border-radius: 999px;
+  background: rgba(8, 10, 16, 0.7);
+  border: 1px solid rgba(250, 204, 21, 0.2);
+  backdrop-filter: blur(8px);
+}
+
+.se-play {
+  flex: none;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 1px solid rgba(250, 204, 21, 0.4);
+  background: transparent;
+  color: #facc15;
+  font-size: 12px;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+}
+
+.se-bar input[type='range'] {
+  flex: 1;
+  accent-color: #facc15;
+}
+
+.se-clock {
+  flex: none;
+  min-width: 168px;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  color: rgba(226, 232, 240, 0.65);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 640px) {
+  .se-clock {
+    display: none;
+  }
+  .se-max span {
+    max-width: 140px;
+  }
+}
