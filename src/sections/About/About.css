@@ -13,6 +13,7 @@
   font-size: clamp(32px, 4vw, 52px);
   margin-bottom: 24px;
   line-height: 1.15;
+  text-shadow: var(--legibility-shadow);
 }
 
 .gradient-text {
@@ -27,6 +28,7 @@
   line-height: 1.8;
   color: var(--text);
   margin-bottom: 20px;
+  text-shadow: var(--legibility-shadow);
 }
 
 .about-resume {
@@ -80,12 +82,14 @@
   -webkit-text-fill-color: transparent;
   background-clip: text;
   line-height: 1;
+  text-shadow: var(--legibility-shadow);
 }
 
 .stat-label {
   font-size: 14px;
   color: var(--text-muted);
   font-weight: 500;
+  text-shadow: var(--legibility-shadow);
 }
 
 @media (max-width: 900px) {
