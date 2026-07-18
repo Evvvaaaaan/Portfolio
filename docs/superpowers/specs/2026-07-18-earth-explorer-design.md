@@ -1,7 +1,12 @@
 # Earth Explorer — Design Spec
 
 Date: 2026-07-18
-Status: Approved by Evan (chat, 2026-07-18)
+Status: Implemented (2026-07-19). Two deviations from this spec, decided
+during plan-writing and shipped as described in
+docs/superpowers/plans/2026-07-19-earth-explorer.md's Global Constraints:
+(1) fallback globe reuses the existing Guestbook land-mask/dot-matrix
+technique instead of a new NASA Blue Marble texture; (2) "spiral descent"
+is a single eased arc, not a literal spiral.
 
 ## Goal
 
