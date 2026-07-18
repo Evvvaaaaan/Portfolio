@@ -86,6 +86,7 @@ export default function Guestbook() {
       <GuestbookGlobe
         entries={entries}
         tempPin={selected}
+        activePin={activeEntry}
         onPickLocation={handlePickLocation}
         onPickPin={handlePickPin}
       />

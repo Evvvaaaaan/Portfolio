@@ -12,6 +12,7 @@
 .gb-canvas canvas {
   display: block;
   cursor: grab;
+  touch-action: none; /* 모바일에서 드래그 시 페이지 스크롤/바운스 방지 */
 }
 
 .gb-canvas canvas:active {
@@ -262,9 +263,31 @@
     bottom: 0;
     transform: none;
     width: 100%;
-    border-radius: 18px 18px 0 0;
-    max-height: 70vh;
+    border-radius: 20px 20px 0 0;
+    max-height: 60vh;
     overflow-y: auto;
+    padding: 24px 20px calc(20px + env(safe-area-inset-bottom)); /* 홈 인디케이터 간격 확보 */
+  }
+
+  /* 바텀시트 상단 드래그 핸들 데코레이션 */
+  .gb-form::before,
+  .gb-card::before {
+    content: '';
+    position: absolute;
+    top: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 40px;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 2px;
+  }
+
+  /* iOS에서 입력 필드 포커스 시 브라우저 강제 줌 방지 (최소 16px/1rem 권장) */
+  .gb-form input[type='text'],
+  .gb-form input:not([type]),
+  .gb-form textarea {
+    font-size: 1rem;
   }
 
   .gb-head {

@@ -9,7 +9,6 @@ const GLOBE_R = 1
 const PIN_R = 1.03
 const INTRO_MS = 1800
 const PIN_SCALE = 0.06
-const LATEST_SCALE = 0.1
 
 function makeGlowTexture(inner, outer) {
   const c = document.createElement('canvas')
@@ -24,7 +23,7 @@ function makeGlowTexture(inner, outer) {
   return new THREE.CanvasTexture(c)
 }
 
-function makePinSprite(texture, entry) {
+function makePinSprite(texture, entry, scale = PIN_SCALE) {
   const material = new THREE.SpriteMaterial({
     map: texture,
     blending: THREE.AdditiveBlending,
@@ -34,18 +33,18 @@ function makePinSprite(texture, entry) {
   const sprite = new THREE.Sprite(material)
   const [x, y, z] = latLngToVector3(entry.lat, entry.lng, PIN_R)
   sprite.position.set(x, y, z)
-  sprite.scale.setScalar(PIN_SCALE)
+  sprite.scale.setScalar(scale)
   sprite.userData.entry = entry
   return sprite
 }
 
-export default function GuestbookGlobe({ entries, tempPin, onPickLocation, onPickPin }) {
+export default function GuestbookGlobe({ entries, tempPin, activePin, onPickLocation, onPickPin }) {
   const mountRef = useRef(null)
   const stateRef = useRef(null)
-  // 콜백을 ref로 들고 있어 장면 재구성 없이 최신 콜백을 쓴다
+  // 콜백과 프롭을 ref로 들고 있어 장면 재구성 없이 최신 상태를 애니메이션 루프에서 참조한다
   const callbacksRef = useRef({})
   useEffect(() => {
-    callbacksRef.current = { onPickLocation, onPickPin }
+    callbacksRef.current = { onPickLocation, onPickPin, tempPin, activePin }
   })
 
   // 장면 구성 (마운트 시 1회)
@@ -147,9 +146,14 @@ export default function GuestbookGlobe({ entries, tempPin, onPickLocation, onPic
     }
     window.addEventListener('resize', onResize)
 
+    const isMobile = window.matchMedia('(max-width: 768px)').matches
+    const pinScaleLocal = isMobile ? 0.095 : 0.06
+    const latestScaleLocal = isMobile ? 0.15 : 0.1
+
     const state = {
-      globe, pinGroup, glowTex, tempTex, reduced,
+      globe, pinGroup, glowTex, tempTex, reduced, isMobile, pinScaleLocal, latestScaleLocal,
       latestSprite: null, tempSprite: null, intro: null, introPlayed: false, landDots: null,
+      currentTargetY: 0,
     }
     stateRef.current = state
 
@@ -168,11 +172,17 @@ export default function GuestbookGlobe({ entries, tempPin, onPickLocation, onPic
         globe.rotateY(0.0009) // 유휴 시 슬로우 스핀
       }
 
+      // 모바일에서 하단 폼/카드가 나타나면 지구본 중심을 위로 이동시킨다
+      const wantsOffset = state.isMobile && (callbacksRef.current.tempPin || callbacksRef.current.activePin)
+      const targetY = wantsOffset ? -0.38 : 0
+      state.currentTargetY += (targetY - state.currentTargetY) * 0.08
+      controls.target.set(0, state.currentTargetY, 0)
+
       if (state.latestSprite) {
-        state.latestSprite.scale.setScalar(LATEST_SCALE * (1 + 0.22 * Math.sin(t / 320)))
+        state.latestSprite.scale.setScalar(state.latestScaleLocal * (1 + 0.22 * Math.sin(t / 320)))
       }
       if (state.tempSprite) {
-        state.tempSprite.scale.setScalar(PIN_SCALE * 1.4 * (1 + 0.15 * Math.sin(t / 200)))
+        state.tempSprite.scale.setScalar(state.pinScaleLocal * 1.4 * (1 + 0.15 * Math.sin(t / 200)))
       }
 
       controls.update()
@@ -220,9 +230,9 @@ export default function GuestbookGlobe({ entries, tempPin, onPickLocation, onPic
     state.latestSprite = null
 
     entries.forEach((entry, i) => {
-      const sprite = makePinSprite(state.glowTex, entry)
+      const scale = i === 0 ? state.latestScaleLocal : state.pinScaleLocal
+      const sprite = makePinSprite(state.glowTex, entry, scale)
       if (i === 0) {
-        sprite.scale.setScalar(LATEST_SCALE)
         state.latestSprite = sprite
       }
       state.pinGroup.add(sprite)
@@ -253,12 +263,28 @@ export default function GuestbookGlobe({ entries, tempPin, onPickLocation, onPic
       state.tempSprite = null
     }
     if (tempPin) {
-      const sprite = makePinSprite(state.tempTex, tempPin)
+      const sprite = makePinSprite(state.tempTex, tempPin, state.pinScaleLocal)
       sprite.userData.entry = null
       state.globe.add(sprite)
       state.tempSprite = sprite
     }
   }, [tempPin])
+
+  // activePin 변경 시 해당 핀을 정면으로 카메라가 바라보게 회전 애니메이션
+  useEffect(() => {
+    const state = stateRef.current
+    if (!state || !activePin || state.reduced) return
+
+    const [x, y, z] = latLngToVector3(activePin.lat, activePin.lng, 1)
+    state.intro = {
+      from: state.globe.quaternion.clone(),
+      to: new THREE.Quaternion().setFromUnitVectors(
+        new THREE.Vector3(x, y, z).normalize(),
+        new THREE.Vector3(0, 0.12, 1).normalize(), // 카메라 방향(살짝 위)
+      ),
+      start: performance.now(),
+    }
+  }, [activePin])
 
   return <div ref={mountRef} className="gb-canvas" />
 }
