@@ -1,3 +1,41 @@
 .ee-wrap {
   background: #000;
 }
+
+.ee-landmarks {
+  position: absolute;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+  max-width: min(90vw, 640px);
+  z-index: 10;
+}
+
+.ee-landmark-btn {
+  padding: 6px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(10, 10, 15, 0.55);
+  color: rgba(255, 255, 255, 0.55);
+  font-family: var(--font-mono, monospace);
+  font-size: 11px;
+  border-radius: 999px;
+  cursor: pointer;
+  backdrop-filter: blur(10px);
+  transition: border-color 0.18s, color 0.18s, background 0.18s;
+  letter-spacing: 0.02em;
+}
+
+.ee-landmark-btn:hover {
+  border-color: rgba(255, 255, 255, 0.35);
+  color: #fff;
+}
+
+.ee-landmark-btn.active {
+  border-color: #7dd3fc;
+  color: #7dd3fc;
+  background: rgba(125, 211, 252, 0.1);
+}

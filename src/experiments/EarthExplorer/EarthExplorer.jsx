@@ -1,7 +1,10 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import * as THREE from 'three'
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
 import { loadLandDots } from './landDots.js'
+import { latLonToDirection } from './sphereFrame.js'
+import { computeFlightFrame } from './flightPath.js'
+import { LANDMARKS } from './landmarks.js'
 import landMaskUrl from '../../assets/earth-land-mask.png'
 import '../shared/exp.css'
 import './EarthExplorer.css'
@@ -22,6 +25,9 @@ function makeGlowTexture(size, color) {
 
 export default function EarthExplorer() {
   const wrapRef = useRef(null)
+  const flyToRef = useRef(() => {})
+  const flightRef = useRef(null) // { fromDir, toDir, startedAt, durationMs } | null
+  const [activeLandmark, setActiveLandmark] = useState(null)
 
   useEffect(() => {
     const wrap = wrapRef.current
@@ -93,6 +99,30 @@ export default function EarthExplorer() {
     controls.maxDistance = 6
     controls.rotateSpeed = 0.5
 
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    let currentDir = new THREE.Vector3(0, 0.5, 2.6).normalize() // 초기 카메라 방향(구면상 근사)
+
+    const flyTo = (landmark) => {
+      const toDir = latLonToDirection(landmark.lat, landmark.lon, new THREE.Vector3())
+      if (reducedMotion) {
+        const frame = computeFlightFrame(toDir, toDir, 1, GLOBE_R)
+        camera.position.copy(frame.position)
+        camera.up.copy(frame.up)
+        camera.lookAt(frame.lookAt)
+        controls.target.copy(frame.lookAt)
+        currentDir = toDir
+        return
+      }
+      flightRef.current = {
+        fromDir: currentDir.clone(),
+        toDir,
+        startedAt: performance.now(),
+        durationMs: 2200,
+      }
+      currentDir = toDir
+    }
+    flyToRef.current = flyTo
+
     const resize = () => {
       const w = wrap.clientWidth
       const h = wrap.clientHeight
@@ -108,6 +138,17 @@ export default function EarthExplorer() {
       raf = requestAnimationFrame(tick)
       globe.rotateY(0.0006)
       if (dotPoints) dotPoints.rotation.y = globe.rotation.y
+      const flight = flightRef.current
+      if (flight) {
+        const elapsed = performance.now() - flight.startedAt
+        const progress = Math.min(1, elapsed / flight.durationMs)
+        const frame = computeFlightFrame(flight.fromDir, flight.toDir, progress, GLOBE_R)
+        camera.position.copy(frame.position)
+        camera.up.copy(frame.up)
+        camera.lookAt(frame.lookAt)
+        controls.target.copy(frame.lookAt)
+        if (progress >= 1) flightRef.current = null
+      }
       controls.update()
       renderer.render(scene, camera)
     }
@@ -127,6 +168,18 @@ export default function EarthExplorer() {
   return (
     <div className="exp-wrap ee-wrap" ref={wrapRef}>
       <span className="exp-hint">드래그로 지구를 회전 · 휠로 확대/축소</span>
+      <div className="ee-landmarks">
+        {LANDMARKS.map((lm) => (
+          <button
+            key={lm.id}
+            type="button"
+            className={`ee-landmark-btn${activeLandmark === lm.id ? ' active' : ''}`}
+            onClick={() => { setActiveLandmark(lm.id); flyToRef.current(lm) }}
+          >
+            {lm.name}
+          </button>
+        ))}
+      </div>
     </div>
   )
 }
