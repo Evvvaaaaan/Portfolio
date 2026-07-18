@@ -1,5 +1,8 @@
 import { Vector3 } from 'three'
 
+const WORLD_UP = new Vector3(0, 1, 0)
+const FALLBACK_UP = new Vector3(0, 0, 1)
+
 function clamp01(t) {
   return Math.min(1, Math.max(0, t))
 }
@@ -39,6 +42,10 @@ export function computeFlightFrame(fromDir, toDir, progress, radius, options = {
   const altitude = radius * (1 + baseAltitudeFactor + climb * altitudeFactor)
   const position = dir.clone().multiplyScalar(altitude)
   const lookAt = dir.clone().multiplyScalar(radius)
-  const up = dir.clone()
+  // 카메라 up: 시선축(반경 방향 dir)에 평행하면 lookAt()이 불안정해진다.
+  // 월드 업을 접평면에 투영해 dir에 수직인 접선 up을 만든다. dir이 극점 근처라
+  // 투영이 붕괴하면(월드 업과 거의 평행) 다른 기준축으로 대체한다.
+  const ref = Math.abs(dir.dot(WORLD_UP)) > 0.999 ? FALLBACK_UP : WORLD_UP
+  const up = ref.clone().addScaledVector(dir, -ref.dot(dir)).normalize()
   return { position, lookAt, up }
 }

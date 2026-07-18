@@ -73,4 +73,11 @@ describe('computeFlightFrame', () => {
     expect(under.position.distanceTo(atZero.position)).toBeCloseTo(0, 4)
     expect(over.position.distanceTo(atOne.position)).toBeCloseTo(0, 4)
   })
+
+  it('up 벡터가 시선 방향과 수직이다 (안정적인 카메라 롤)', () => {
+    const { position, lookAt, up } = computeFlightFrame(from, to, 0.5, radius)
+    const view = lookAt.clone().sub(position).normalize()
+    expect(up.dot(view)).toBeCloseTo(0, 5)
+    expect(up.length()).toBeCloseTo(1, 5)
+  })
 })
