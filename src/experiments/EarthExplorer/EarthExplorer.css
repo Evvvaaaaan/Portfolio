@@ -39,3 +39,17 @@
   color: #7dd3fc;
   background: rgba(125, 211, 252, 0.1);
 }
+
+.ee-notice {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  font-family: var(--font-mono, monospace);
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.4);
+  letter-spacing: 0.02em;
+  max-width: 45vw;
+  text-align: right;
+  z-index: 10;
+  pointer-events: none;
+}
