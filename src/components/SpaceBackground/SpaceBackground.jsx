@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react'
 import * as THREE from 'three'
 import { computeTransitionIntensity } from './transitionIntensity.js'
-import { computeSectionTint } from './sectionTint.js'
+// sectionTint 제거됨 — 전체 배경 순수 검정 통일
 import { createWarpStreaks } from './warpStreaks.js'
 import { createPostFX } from './postfx.js'
 import {
@@ -48,8 +48,7 @@ export default function SpaceBackground({ warpEnabled = false }) {
     const renderer = new THREE.WebGLRenderer({ canvas, antialias: true })
     renderer.setSize(window.innerWidth, window.innerHeight)
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
-    renderer.setClearColor(0x0a0a0f, 1)
-    const clearColor = new THREE.Color(0x0a0a0f)
+    renderer.setClearColor(0x000000, 1)
 
     const scene = new THREE.Scene()
     const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 2000)
@@ -221,16 +220,6 @@ export default function SpaceBackground({ warpEnabled = false }) {
       // 부스트 피크(1.4)에서 기존 공식은 ~150°를 넘어 왜곡이 깨진다 — 클램프.
       camera.fov = Math.min(150, 75 + Math.pow(zoomDriver, 1.5) * 45)
       camera.updateProjectionMatrix()
-
-      // 섹션별 우주 좌표 틴트: 메인 데스크톱 슬라이드덱에서만 의미가 있다.
-      // (다른 라우트는 섹션이 100vh 고정이 아니므로 기본색 유지)
-      if (warpEnabledRef.current) {
-        const [r, g, b] = computeSectionTint(window.scrollY, window.innerHeight)
-        clearColor.setRGB(r, g, b)
-      } else {
-        clearColor.set(0x0a0a0f)
-      }
-      renderer.setClearColor(clearColor, 1)
 
       if (postfx) {
         postfx.render(intensitySmooth)

@@ -3,11 +3,18 @@ import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js'
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js'
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js'
 import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js'
-import { OutputPass } from 'three/addons/postprocessing/OutputPass.js'
 
 // 데스크톱 전용 포스트프로세싱 체인: 은은한 블룸(상시) + 워프 정점에서만
 // 걸리는 방사형 블러/색수차(uIntensity 드라이버, 0이면 입력 그대로 통과).
 // WebGL 컨텍스트가 필요해 vitest 대상이 아니다 — e2e 스모크와 수동 검증.
+//
+// 이 패스가 체인의 마지막이라 화면 출력을 담당한다. three.js의 OutputPass는
+// (이 버전 조합에서) linear→sRGB 변환을 한 번 더 겹쳐 적용해 검정 배경이
+// 뿌옇게 뜨는 버그가 있었다 — 실측: OutputPass 포함 시 클리어컬러
+// #0a0a0f가 화면에서 rgb(103,103,115)로 렌더됨(직접 렌더링 경로 대비
+// 훨씬 밝음). OutputPass를 걷어내고 표준 sRGB OETF를 이 셰이더의 마지막
+// 스텝에 직접 넣어 단일 변환만 일어나게 한다(three.js
+// ShaderChunk의 sRGBTransferOETF와 동일 공식).
 const WarpDistortShader = {
   uniforms: {
     tDiffuse: { value: null },
@@ -24,13 +31,18 @@ const WarpDistortShader = {
     uniform sampler2D tDiffuse;
     uniform float uIntensity;
     varying vec2 vUv;
+
+    vec3 sRGBEncode(vec3 c) {
+      return mix(pow(c, vec3(0.41666)) * 1.055 - vec3(0.055), c * 12.92, vec3(lessThanEqual(c, vec3(0.0031308))));
+    }
+
     void main() {
       vec2 center = vec2(0.5);
       vec2 toCenter = center - vUv;
       float dist = length(toCenter);
 
       // 방사형 블러: 중심 방향으로 6샘플 누적 (uIntensity=0이면 step=0 → 원본)
-      vec2 blurStep = toCenter * uIntensity * 0.05;
+      vec2 blurStep = toCenter * uIntensity * 0.03;
       vec3 acc = vec3(0.0);
       vec2 uv = vUv;
       for (int i = 0; i < 6; i++) {
@@ -47,7 +59,7 @@ const WarpDistortShader = {
       vec3 split = vec3(r, acc.g, b);
 
       vec3 color = mix(acc, split, min(1.0, uIntensity * 1.5));
-      gl_FragColor = vec4(color, 1.0);
+      gl_FragColor = vec4(sRGBEncode(color), 1.0);
     }
   `,
 }
@@ -57,16 +69,12 @@ export function createPostFX(renderer, scene, camera, width, height) {
   composer.addPass(new RenderPass(scene, camera))
 
   // 블룸은 은은하게: threshold를 높여 밝은 별심만 번지게 한다.
-  const bloom = new UnrealBloomPass(new THREE.Vector2(width, height), 0.35, 0.55, 0.82)
+  // threshold를 높이고 strength를 낮춰 어두운 영역에 빛 번짐(뿌연 느낌) 방지
+  const bloom = new UnrealBloomPass(new THREE.Vector2(width, height), 0.2, 0.4, 0.92)
   composer.addPass(bloom)
 
   const warpPass = new ShaderPass(WarpDistortShader)
   composer.addPass(warpPass)
-
-  // 커스텀 패스로 체인이 끝나면 linear→sRGB 출력 변환이 빠져 직접 렌더 경로보다
-  // 어둡게 나온다. OutputPass가 톤매핑/컬러스페이스 변환을 담당한다.
-  const outputPass = new OutputPass()
-  composer.addPass(outputPass)
 
   // EffectComposer.setSize는 각 패스에 pixelRatio를 곱해 전파한다. 생성 직후
   // 한 번 호출해 초기 상태와 리사이즈 후 상태의 해상도(디바이스 픽셀)를
@@ -87,7 +95,6 @@ export function createPostFX(renderer, scene, camera, width, height) {
       // 블러 밉체인)은 직접 해제해야 리마운트/HMR 시 GPU 누수가 없다.
       bloom.dispose()
       warpPass.dispose()
-      outputPass.dispose()
       composer.dispose()
     },
   }
