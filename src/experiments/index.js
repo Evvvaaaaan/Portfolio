@@ -10,6 +10,7 @@ const VoiceBloom = lazy(() => import('./VoiceBloom/VoiceBloom'))
 const PosterLab = lazy(() => import('./PosterLab/PosterLab'))
 const DeepSpace   = lazy(() => import('./DeepSpace/DeepSpace'))
 const SolarSystem = lazy(() => import('./SolarSystem/SolarSystem'))
+const EarthExplorer = lazy(() => import('./EarthExplorer/EarthExplorer'))
 
 export const experiments = [
   {
@@ -131,5 +132,17 @@ export const experiments = [
     symbol: '✧',
     fullscreen: true,
     component: DeepSpace,
+  },
+  {
+    id: 'earth-explorer',
+    title: 'Earth Explorer',
+    description: '실제 위성 3D 타일로 지구를 탐험하는 랜드마크 투어. 서울, 도쿄, 뉴욕 등 8개 도시로 시네마틱하게 날아가거나 자유롭게 지구를 둘러볼 수 있습니다.',
+    tags: ['three.js', '3d-tiles', 'geo'],
+    color: '#7dd3fc',
+    planet: 'earth',
+    planetName: 'TERRA',
+    symbol: '🌐',
+    fullscreen: true,
+    component: EarthExplorer,
   },
 ]
