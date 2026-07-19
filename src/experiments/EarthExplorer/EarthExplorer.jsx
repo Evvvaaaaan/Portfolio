@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import * as THREE from 'three'
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
-import { TilesRenderer, GlobeControls, WGS84_RADIUS } from '3d-tiles-renderer'
+import { TilesRenderer, WGS84_RADIUS } from '3d-tiles-renderer'
 import { GoogleCloudAuthPlugin, TilesFadePlugin, UpdateOnChangePlugin } from '3d-tiles-renderer/plugins'
 import { loadLandDots } from './landDots.js'
 import { latLonToDirection } from './sphereFrame.js'
@@ -10,6 +10,22 @@ import { LANDMARKS } from './landmarks.js'
 import landMaskUrl from '../../assets/earth-land-mask.png'
 import '../shared/exp.css'
 import './EarthExplorer.css'
+
+const DEG = Math.PI / 180
+
+function easeInOutCubic(x) {
+  return x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2
+}
+
+// tiles 모드 랜드마크 탐색: 착지 대상(도시 지표점)을 중심으로 OrbitControls가
+// 돈다. 드래그=대상 주위 회전, 휠=대상으로 다가가기/멀어지기. 지표 위
+// TILES_LANDING_HEIGHT 고도에서 접선 방향으로 TILES_LANDING_BACK 물러난 지점에
+// 착지해 건물을 비스듬히(약 30° 부감) 입체로 내려다본다. GlobeControls의
+// 지표-근처 회전 폭주 없이 예측 가능하게 둘러볼 수 있다.
+const TILES_LANDING_HEIGHT = 420 // 지표 위 고도(m)
+const TILES_LANDING_BACK = 760 // 접선 방향으로 물러난 거리(m) → 약 30° 부감
+const TILES_CLOSE_MIN = 45 // 착지 후 최소 줌 거리(대상에서 m) — 거의 거리 수준
+const TILES_CLOSE_MAX = 220000 // 착지 후 최대 줌 거리(대상에서 m) — 광역 조망
 
 const GLOBE_R = 1
 
@@ -120,12 +136,11 @@ export default function EarthExplorer() {
     let activeControls = controls
     let activeRadius = GLOBE_R
     let activeUpAxis = new THREE.Vector3(0, 1, 0)
-    // 착지 고도 배수(반지름 대비). tiles 모드는 실제 위성 타일이라 너무 낮게
-    // 착지하면 최고해상도 타일이 미처 못 불러와 흐릿하다 — 접근 중 이미 로드된
-    // 광역 타일로 선명하게 보이도록 조금 높은 고도(≈지구 반지름의 12%, 약 760km)에
-    // 착지시킨다. 폴백(단위구)은 기존 값 유지.
+    // 폴백(단위구) 비행의 착지 고도 배수(반지름 대비).
     let activeBaseAltitude = 0.05
     let getLandmarkDir = (landmark) => latLonToDirection(landmark.lat, landmark.lon, new THREE.Vector3())
+    // tiles 모드에서만 세팅 — 랜드마크의 착지 카메라 위치·시선대상·업벡터를 반환.
+    let getTilesLanding = null
 
     const teardownTiles = () => {
       if (tilesControls) { tilesControls.dispose(); tilesControls = null }
@@ -162,29 +177,77 @@ export default function EarthExplorer() {
         activateFallback('위성 타일을 불러올 수 없어 정적 지구본으로 표시 중')
       })
 
-      tilesControls = new GlobeControls(scene, camera, renderer.domElement)
-      tilesControls.setEllipsoid(tiles.ellipsoid, tiles.group)
+      // 폴백용 OrbitControls는 tiles 모드에서 비활성화 — 같은 캔버스에 두 컨트롤이
+      // 붙어 포인터/휠 입력을 두고 싸우면 조작이 폭주한다.
+      controls.enabled = false
+
+      // tiles 전용 OrbitControls: 지구 중심(초기) 또는 착지 지표점을 대상으로 돈다.
+      tilesControls = new OrbitControls(camera, renderer.domElement)
+      tilesControls.enableDamping = true
+      tilesControls.dampingFactor = 0.08
+      tilesControls.rotateSpeed = 0.4
+      tilesControls.zoomSpeed = 0.8
+      tilesControls.target.set(0, 0, 0)
+      tilesControls.minDistance = WGS84_RADIUS * 1.15 // 초기: 지구 표면 아래로 못 들어가게
+      tilesControls.maxDistance = WGS84_RADIUS * 6
       activeControls = tilesControls
       activeRadius = WGS84_RADIUS
-      activeUpAxis = new THREE.Vector3(0, 0, 1)
-      activeBaseAltitude = 0.12
-      getLandmarkDir = (landmark) => {
+
+      // 랜드마크 착지 지오메트리: 지표점(대상) + 그 위 비스듬한 카메라 위치 + 로컬 업.
+      // ECEF 좌표(중심이 원점)에서 계산한다.
+      getTilesLanding = (landmark) => {
         const target = new THREE.Vector3()
-        tiles.ellipsoid.getCartographicToPosition(
-          landmark.lat * (Math.PI / 180),
-          landmark.lon * (Math.PI / 180),
-          0,
-          target,
-        )
-        return target.normalize()
+        tiles.ellipsoid.getCartographicToPosition(landmark.lat * DEG, landmark.lon * DEG, 0, target)
+        target.applyMatrix4(tiles.group.matrixWorld)
+        const up = new THREE.Vector3()
+        tiles.ellipsoid.getPositionToNormal(target, up) // 로컬 수직(업)
+        // 접선 방향(동쪽 근사) — 업과 ECEF 북(+Z)의 외적
+        const tangent = new THREE.Vector3().crossVectors(new THREE.Vector3(0, 0, 1), up)
+        if (tangent.lengthSq() < 1e-6) tangent.set(1, 0, 0)
+        tangent.normalize()
+        const camPos = target.clone()
+          .addScaledVector(up, TILES_LANDING_HEIGHT)
+          .addScaledVector(tangent, TILES_LANDING_BACK)
+        return { camPos, target, up }
       }
       camera.position.set(0, WGS84_RADIUS * 0.4, WGS84_RADIUS * 2.6)
-      currentDir = new THREE.Vector3(0, 0.4, 2.6).normalize()
+      camera.up.set(0, 1, 0)
+      camera.lookAt(0, 0, 0)
     } else {
       buildFallbackGlobe()
     }
 
     const flyTo = (landmark) => {
+      // tiles 모드: 지표점 중심으로 도는 OrbitControls로 넘기기 위해 카메라 위치·
+      // 시선대상·업을 향해 보간한다. 비행 중엔 OrbitControls.update()를 돌리지 않는다
+      // (수동 구동과 충돌). 착지하면 대상/줌 범위를 도시 규모로 좁혀 둘러보게 한다.
+      if (mode === 'tiles' && getTilesLanding) {
+        const { camPos, target, up } = getTilesLanding(landmark)
+        if (reducedMotion) {
+          camera.up.copy(up)
+          camera.position.copy(camPos)
+          camera.lookAt(target)
+          tilesControls.target.copy(target)
+          tilesControls.minDistance = TILES_CLOSE_MIN
+          tilesControls.maxDistance = TILES_CLOSE_MAX
+          tilesControls.update()
+          return
+        }
+        flightRef.current = {
+          kind: 'tiles',
+          startPos: camera.position.clone(),
+          startTarget: tilesControls.target.clone(),
+          startUp: camera.up.clone(),
+          endPos: camPos,
+          endTarget: target,
+          endUp: up,
+          startedAt: performance.now(),
+          durationMs: 2600,
+        }
+        return
+      }
+
+      // 폴백(단위구) 모드: 기존 대권 비행.
       const toDir = getLandmarkDir(landmark)
       if (reducedMotion) {
         const frame = computeFlightFrame(toDir, toDir, 1, activeRadius, { upAxis: activeUpAxis, baseAltitudeFactor: activeBaseAltitude })
@@ -196,6 +259,7 @@ export default function EarthExplorer() {
         return
       }
       flightRef.current = {
+        kind: 'fallback',
         // 비행 시작점을 카메라의 실제 현재 방향에서 가져와 비행 중 재클릭 시 튐 방지
         fromDir: camera.position.clone().normalize(),
         toDir,
@@ -218,29 +282,60 @@ export default function EarthExplorer() {
     const ro = new ResizeObserver(resize)
     ro.observe(wrap)
 
+    // tiles 모드 near/far 관리: GlobeControls를 안 쓰므로 직접 잡는다. ECEF에서
+    // 지구 중심은 원점 — 카메라 고도로 near를, 지평선 접선거리로 far를 정해
+    // z-fighting과 지구 클리핑(멀 때 far 밖으로 나가 안 보이는 것)을 함께 막는다.
+    const _tgt = new THREE.Vector3()
+    const updateTilesNearFar = () => {
+      const distToCenter = camera.position.length()
+      const altitude = Math.max(1, distToCenter - WGS84_RADIUS)
+      const horizon = Math.sqrt(Math.max(1, distToCenter * distToCenter - WGS84_RADIUS * WGS84_RADIUS))
+      camera.near = Math.max(1, altitude * 0.1)
+      camera.far = horizon + altitude + 1000
+      camera.updateProjectionMatrix()
+    }
+
     let attributionFrameCount = 0
     const tick = () => {
       raf = requestAnimationFrame(tick)
 
       const flight = flightRef.current
       if (flight) {
-        const elapsed = performance.now() - flight.startedAt
-        const progress = Math.min(1, elapsed / flight.durationMs)
-        const frame = computeFlightFrame(flight.fromDir, flight.toDir, progress, activeRadius, { upAxis: activeUpAxis, baseAltitudeFactor: activeBaseAltitude })
-        camera.position.copy(frame.position)
-        camera.up.copy(frame.up)
-        camera.lookAt(frame.lookAt)
-        if (activeControls.target) activeControls.target.copy(frame.lookAt)
-        if (progress >= 1) flightRef.current = null
+        const progress = Math.min(1, (performance.now() - flight.startedAt) / flight.durationMs)
+        if (flight.kind === 'tiles') {
+          const t = easeInOutCubic(progress)
+          camera.position.lerpVectors(flight.startPos, flight.endPos, t)
+          _tgt.copy(flight.startTarget).lerp(flight.endTarget, t)
+          camera.up.copy(flight.startUp).lerp(flight.endUp, t).normalize()
+          camera.lookAt(_tgt)
+          tilesControls.target.copy(_tgt)
+          updateTilesNearFar()
+        } else {
+          const frame = computeFlightFrame(flight.fromDir, flight.toDir, progress, activeRadius, { upAxis: activeUpAxis, baseAltitudeFactor: activeBaseAltitude })
+          camera.position.copy(frame.position)
+          camera.up.copy(frame.up)
+          camera.lookAt(frame.lookAt)
+          if (activeControls.target) activeControls.target.copy(frame.lookAt)
+        }
+        if (progress >= 1) {
+          flightRef.current = null
+          if (flight.kind === 'tiles') {
+            // 착지 완료: 대상·업·줌 범위를 도시 규모로 확정해 OrbitControls로 인수.
+            camera.up.copy(flight.endUp)
+            tilesControls.target.copy(flight.endTarget)
+            tilesControls.minDistance = TILES_CLOSE_MIN
+            tilesControls.maxDistance = TILES_CLOSE_MAX
+            tilesControls.update()
+          }
+        }
       }
 
-      // 컨트롤을 먼저 갱신해 카메라 자세와 near/far를 확정한 뒤 타일 가시성을
-      // 계산한다. tiles 모드의 GlobeControls.adjustCamera가 WGS84 스케일에 맞게
-      // near/far를 매 프레임 보정한다 — 이게 뒤에 오면 지구가 far 평면 밖이라
-      // 프러스텀 컬링돼 타일이 안 뜬다.
-      activeControls.update()
-
       if (mode === 'tiles' && tiles) {
+        // 비행이 끝난 뒤에만 OrbitControls가 카메라를 소유한다(비행 중엔 수동 구동).
+        if (!flightRef.current) {
+          activeControls.update()
+          updateTilesNearFar()
+        }
         camera.updateMatrixWorld()
         // tiles.update()는 내부에서 UpdateOnChangePlugin.doTilesNeedUpdate()를
         // 호출해 순회 여부를 판단한다. 외부에서 그걸 먼저 호출해 게이팅하면
@@ -253,9 +348,12 @@ export default function EarthExplorer() {
           const text = attributions.find((a) => a.type === 'string')?.value ?? null
           setNotice((prev) => (prev && prev.startsWith('위성 타일을 불러올 수 없어') ? prev : text))
         }
-      } else if (globe) {
-        globe.rotateY(0.0006)
-        if (dotPoints) dotPoints.rotation.y = globe.rotation.y
+      } else {
+        activeControls.update()
+        if (globe) {
+          globe.rotateY(0.0006)
+          if (dotPoints) dotPoints.rotation.y = globe.rotation.y
+        }
       }
 
       renderer.render(scene, camera)
