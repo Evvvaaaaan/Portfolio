@@ -119,6 +119,7 @@ export default function EarthExplorer() {
     let tilesControls = null
     let activeControls = controls
     let activeRadius = GLOBE_R
+    let activeUpAxis = new THREE.Vector3(0, 1, 0)
     let getLandmarkDir = (landmark) => latLonToDirection(landmark.lat, landmark.lon, new THREE.Vector3())
 
     const teardownTiles = () => {
@@ -129,8 +130,10 @@ export default function EarthExplorer() {
     const activateFallback = (noticeText) => {
       teardownTiles()
       mode = 'fallback'
+      flightRef.current = null
       activeControls = controls
       activeRadius = GLOBE_R
+      activeUpAxis = new THREE.Vector3(0, 1, 0)
       getLandmarkDir = (landmark) => latLonToDirection(landmark.lat, landmark.lon, new THREE.Vector3())
       camera.position.set(currentDir.x * GLOBE_R * 2.6, currentDir.y * GLOBE_R * 2.6, currentDir.z * GLOBE_R * 2.6)
       buildFallbackGlobe()
@@ -157,6 +160,7 @@ export default function EarthExplorer() {
       tilesControls.setEllipsoid(tiles.ellipsoid, tiles.group)
       activeControls = tilesControls
       activeRadius = WGS84_RADIUS
+      activeUpAxis = new THREE.Vector3(0, 0, 1)
       getLandmarkDir = (landmark) => {
         const target = new THREE.Vector3()
         tiles.ellipsoid.getCartographicToPosition(
@@ -176,11 +180,11 @@ export default function EarthExplorer() {
     const flyTo = (landmark) => {
       const toDir = getLandmarkDir(landmark)
       if (reducedMotion) {
-        const frame = computeFlightFrame(toDir, toDir, 1, activeRadius)
+        const frame = computeFlightFrame(toDir, toDir, 1, activeRadius, { upAxis: activeUpAxis })
         camera.position.copy(frame.position)
         camera.up.copy(frame.up)
         camera.lookAt(frame.lookAt)
-        activeControls.target.copy(frame.lookAt)
+        if (activeControls.target) activeControls.target.copy(frame.lookAt)
         currentDir = toDir
         return
       }
@@ -215,11 +219,11 @@ export default function EarthExplorer() {
       if (flight) {
         const elapsed = performance.now() - flight.startedAt
         const progress = Math.min(1, elapsed / flight.durationMs)
-        const frame = computeFlightFrame(flight.fromDir, flight.toDir, progress, activeRadius)
+        const frame = computeFlightFrame(flight.fromDir, flight.toDir, progress, activeRadius, { upAxis: activeUpAxis })
         camera.position.copy(frame.position)
         camera.up.copy(frame.up)
         camera.lookAt(frame.lookAt)
-        activeControls.target.copy(frame.lookAt)
+        if (activeControls.target) activeControls.target.copy(frame.lookAt)
         if (progress >= 1) flightRef.current = null
       }
 

@@ -80,4 +80,14 @@ describe('computeFlightFrame', () => {
     expect(up.dot(view)).toBeCloseTo(0, 5)
     expect(up.length()).toBeCloseTo(1, 5)
   })
+
+  it('upAxis 옵션이 up 벡터의 기준 좌표축을 바꾼다 (Z-up 좌표계)', () => {
+    const zFrom = new Vector3(1, 0, 0)
+    const zTo = new Vector3(0, 0, 1)
+    const { position, lookAt, up } = computeFlightFrame(zFrom, zTo, 0.5, 10, { upAxis: new Vector3(0, 0, 1) })
+    const view = lookAt.clone().sub(position).normalize()
+    expect(up.dot(view)).toBeCloseTo(0, 5)      // 항상 시선에 수직
+    expect(up.length()).toBeCloseTo(1, 5)
+    expect(Math.abs(up.y)).toBeLessThan(1e-6)   // Z-up 기준이면 up에 Y성분이 없다 (기본 Y-up이었다면 up.y≈1)
+  })
 })

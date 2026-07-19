@@ -3,6 +3,12 @@ import { Vector3 } from 'three'
 const WORLD_UP = new Vector3(0, 1, 0)
 const FALLBACK_UP = new Vector3(0, 0, 1)
 
+// upAxis가 dir과 거의 평행한 극점에서 접선 up 투영이 붕괴하므로, upAxis에
+// 평행하지 않은 대체 축을 고른다. Y-up이면 Z축, 그 외(예: Z-up)면 Y축.
+function perpAxis(axis) {
+  return Math.abs(axis.y) < 0.9 ? WORLD_UP : FALLBACK_UP
+}
+
 function clamp01(t) {
   return Math.min(1, Math.max(0, t))
 }
@@ -35,7 +41,7 @@ export function slerpDirection(fromDir, toDir, t, target = new Vector3()) {
 // 참고). radius는 단위구(폴백, radius=1)든 실제 WGS84 미터(타일 모드)든
 // 그대로 대입해 쓸 수 있다 — 좌표계에 무관한 순수 함수.
 export function computeFlightFrame(fromDir, toDir, progress, radius, options = {}) {
-  const { altitudeFactor = 1.6, baseAltitudeFactor = 0.05 } = options
+  const { altitudeFactor = 1.6, baseAltitudeFactor = 0.05, upAxis = WORLD_UP } = options
   const t = easeInOutCubic(clamp01(progress))
   const dir = slerpDirection(fromDir, toDir, t)
   const climb = Math.sin(Math.PI * t)
@@ -45,7 +51,7 @@ export function computeFlightFrame(fromDir, toDir, progress, radius, options = {
   // 카메라 up: 시선축(반경 방향 dir)에 평행하면 lookAt()이 불안정해진다.
   // 월드 업을 접평면에 투영해 dir에 수직인 접선 up을 만든다. dir이 극점 근처라
   // 투영이 붕괴하면(월드 업과 거의 평행) 다른 기준축으로 대체한다.
-  const ref = Math.abs(dir.dot(WORLD_UP)) > 0.999 ? FALLBACK_UP : WORLD_UP
+  const ref = Math.abs(dir.dot(upAxis)) > 0.999 ? perpAxis(upAxis) : upAxis
   const up = ref.clone().addScaledVector(dir, -ref.dot(dir)).normalize()
   return { position, lookAt, up }
 }
