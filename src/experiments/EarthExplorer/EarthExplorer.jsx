@@ -120,6 +120,11 @@ export default function EarthExplorer() {
     let activeControls = controls
     let activeRadius = GLOBE_R
     let activeUpAxis = new THREE.Vector3(0, 1, 0)
+    // 착지 고도 배수(반지름 대비). tiles 모드는 실제 위성 타일이라 너무 낮게
+    // 착지하면 최고해상도 타일이 미처 못 불러와 흐릿하다 — 접근 중 이미 로드된
+    // 광역 타일로 선명하게 보이도록 조금 높은 고도(≈지구 반지름의 12%, 약 760km)에
+    // 착지시킨다. 폴백(단위구)은 기존 값 유지.
+    let activeBaseAltitude = 0.05
     let getLandmarkDir = (landmark) => latLonToDirection(landmark.lat, landmark.lon, new THREE.Vector3())
 
     const teardownTiles = () => {
@@ -134,6 +139,7 @@ export default function EarthExplorer() {
       activeControls = controls
       activeRadius = GLOBE_R
       activeUpAxis = new THREE.Vector3(0, 1, 0)
+      activeBaseAltitude = 0.05
       getLandmarkDir = (landmark) => latLonToDirection(landmark.lat, landmark.lon, new THREE.Vector3())
       camera.position.set(currentDir.x * GLOBE_R * 2.6, currentDir.y * GLOBE_R * 2.6, currentDir.z * GLOBE_R * 2.6)
       buildFallbackGlobe()
@@ -161,6 +167,7 @@ export default function EarthExplorer() {
       activeControls = tilesControls
       activeRadius = WGS84_RADIUS
       activeUpAxis = new THREE.Vector3(0, 0, 1)
+      activeBaseAltitude = 0.12
       getLandmarkDir = (landmark) => {
         const target = new THREE.Vector3()
         tiles.ellipsoid.getCartographicToPosition(
@@ -180,7 +187,7 @@ export default function EarthExplorer() {
     const flyTo = (landmark) => {
       const toDir = getLandmarkDir(landmark)
       if (reducedMotion) {
-        const frame = computeFlightFrame(toDir, toDir, 1, activeRadius, { upAxis: activeUpAxis })
+        const frame = computeFlightFrame(toDir, toDir, 1, activeRadius, { upAxis: activeUpAxis, baseAltitudeFactor: activeBaseAltitude })
         camera.position.copy(frame.position)
         camera.up.copy(frame.up)
         camera.lookAt(frame.lookAt)
@@ -219,7 +226,7 @@ export default function EarthExplorer() {
       if (flight) {
         const elapsed = performance.now() - flight.startedAt
         const progress = Math.min(1, elapsed / flight.durationMs)
-        const frame = computeFlightFrame(flight.fromDir, flight.toDir, progress, activeRadius, { upAxis: activeUpAxis })
+        const frame = computeFlightFrame(flight.fromDir, flight.toDir, progress, activeRadius, { upAxis: activeUpAxis, baseAltitudeFactor: activeBaseAltitude })
         camera.position.copy(frame.position)
         camera.up.copy(frame.up)
         camera.lookAt(frame.lookAt)
@@ -227,11 +234,19 @@ export default function EarthExplorer() {
         if (progress >= 1) flightRef.current = null
       }
 
+      // 컨트롤을 먼저 갱신해 카메라 자세와 near/far를 확정한 뒤 타일 가시성을
+      // 계산한다. tiles 모드의 GlobeControls.adjustCamera가 WGS84 스케일에 맞게
+      // near/far를 매 프레임 보정한다 — 이게 뒤에 오면 지구가 far 평면 밖이라
+      // 프러스텀 컬링돼 타일이 안 뜬다.
+      activeControls.update()
+
       if (mode === 'tiles' && tiles) {
-        const updatePlugin = tiles.getPluginByName('UPDATE_ON_CHANGE_PLUGIN')
-        if (!updatePlugin || updatePlugin.doTilesNeedUpdate()) {
-          tiles.update()
-        }
+        camera.updateMatrixWorld()
+        // tiles.update()는 내부에서 UpdateOnChangePlugin.doTilesNeedUpdate()를
+        // 호출해 순회 여부를 판단한다. 외부에서 그걸 먼저 호출해 게이팅하면
+        // needsUpdate 플래그·카메라 행렬 상태를 소모해버려 내부 판단이 항상
+        // false가 되고 자식 타일 순회가 통째로 스킵된다 — 매 프레임 그냥 호출한다.
+        tiles.update()
         attributionFrameCount += 1
         if (attributionFrameCount % 30 === 0) {
           const attributions = tiles.getAttributions([])
@@ -243,7 +258,6 @@ export default function EarthExplorer() {
         if (dotPoints) dotPoints.rotation.y = globe.rotation.y
       }
 
-      activeControls.update()
       renderer.render(scene, camera)
     }
     tick()
