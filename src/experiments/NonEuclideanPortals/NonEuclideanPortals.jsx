@@ -57,7 +57,6 @@ export default function NonEuclideanPortals() {
     }
     let currentRoomId = 'small'
     const manager = new PortalManager(renderer, roomScenes, portalsById)
-    const room = ROOMS.small
 
     // Player state.
     const player = { yaw: 0, pitch: 0, pos: new THREE.Vector3(0, EYE, 2) }
@@ -118,7 +117,7 @@ export default function NonEuclideanPortals() {
       const dt = Math.min(clock.getDelta(), 0.05)
       const prevPos = player.pos.clone()
       const delta = moveVector(player.yaw, keys, SPEED * dt)
-      player.pos = resolveMove(player.pos, delta, room.walls)
+      player.pos = resolveMove(player.pos, delta, ROOMS[currentRoomId].walls)
 
       // portal traversal: did we cross any portal in the current room?
       for (const portal of (portalsByRoom.get(currentRoomId) || [])) {
