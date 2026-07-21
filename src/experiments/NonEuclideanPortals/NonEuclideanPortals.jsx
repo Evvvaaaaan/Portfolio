@@ -142,7 +142,7 @@ export default function NonEuclideanPortals() {
       // render portal destination views, then the current room
       const curScene = roomScenes.get(currentRoomId)
       const curPortals = portalsByRoom.get(currentRoomId) || []
-      manager.renderPortalViews(currentRoomId, camera, curPortals)
+      manager.renderPortalViews(currentRoomId, camera, curPortals, currentRoomId === 'corridor' ? 2 : 1)
       renderer.render(curScene, camera)
 
       raf = requestAnimationFrame(tick)
@@ -192,7 +192,7 @@ export default function NonEuclideanPortals() {
 
 function clamp(v, a, b) { return Math.max(a, Math.min(b, v)) }
 
-const LABELS = { small: 'THE SMALL ROOM', hall: 'IMPOSSIBLE HALL' }
+const LABELS = { small: 'THE SMALL ROOM', hall: 'IMPOSSIBLE HALL', corridor: 'ENDLESS CORRIDOR' }
 
 function yawOf(m) {
   // extract yaw (rotation about y) from a rigid matrix

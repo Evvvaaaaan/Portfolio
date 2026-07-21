@@ -31,6 +31,11 @@ export class PortalManager {
       applyObliqueClip(this.virtualCam, exit.matrix)
 
       const exitScene = this.roomScenes.get(exit.roomId)
+      if (depth > 1) {
+        const exitPortals = []
+        exitScene.traverse((o) => { if (o.userData.portal) exitPortals.push(o.userData.portal) })
+        this.renderPortalViews(exit.roomId, this.virtualCam, exitPortals, depth - 1)
+      }
       const prevTarget = this.renderer.getRenderTarget()
       this.renderer.setRenderTarget(portal.target)
       this.renderer.clear()

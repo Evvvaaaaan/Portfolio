@@ -21,9 +21,28 @@ export const ROOMS = {
     size: { w: 40, d: 60, h: 14 },
     walls: wallBox(40, 60, [
       { side: 'south', gap: { center: 0, width: 2 } }, // doorway back to small
+      { side: 'east', gap: { center: 0, width: 2 } }, // arch to corridor
     ]),
     portals: [
       { id: 'hall-door', position: [0, 1.5, 30], yaw: Math.PI, halfW: 1, height: 3, link: 'small-door' },
+      { id: 'hall-arch', position: [18, 1.5, 0], yaw: Math.PI / 2, halfW: 1, height: 3, link: 'corridor-mouth' },
+    ],
+  },
+  // Long corridor whose two ends link to each other, so walking forward never ends.
+  corridor: {
+    id: 'corridor',
+    accent: 0x818cf8,
+    size: { w: 4, d: 40, h: 4 },
+    walls: wallBox(4, 40, [
+      { side: 'north', gap: { center: 0, width: 2 } }, // far loop portal
+      { side: 'south', gap: { center: 0, width: 2 } }, // near end + mouth
+    ]),
+    portals: [
+      // near end (entry from hall) and far end loop back to each other
+      { id: 'corridor-near', position: [0, 1.5, 20], yaw: Math.PI, halfW: 1, height: 3, link: 'corridor-far' },
+      { id: 'corridor-far',  position: [0, 1.5, -20], yaw: 0, halfW: 1, height: 3, link: 'corridor-near' },
+      // mouth: a side portal that returns to the hall
+      { id: 'corridor-mouth', position: [2, 1.5, 18], yaw: -Math.PI / 2, halfW: 1, height: 3, link: 'hall-arch' },
     ],
   },
 }
