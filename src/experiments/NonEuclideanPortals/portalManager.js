@@ -7,7 +7,6 @@ export class PortalManager {
     this.renderer = renderer
     this.roomScenes = roomScenes
     this.portalsById = portalsById
-    this.virtualCam = new THREE.PerspectiveCamera()
   }
 
   // Render each portal in the current room by drawing the linked room from a
@@ -18,28 +17,31 @@ export class PortalManager {
       if (!exit) continue
       const rel = relativePortalMatrix(portal.matrix, exit.matrix)
 
-      // Virtual camera = main camera transformed into the exit room.
-      this.virtualCam.copy(mainCam)
-      this.virtualCam.matrixWorld.multiplyMatrices(rel, mainCam.matrixWorld)
-      this.virtualCam.matrixWorld.decompose(
-        this.virtualCam.position, this.virtualCam.quaternion, this.virtualCam.scale,
+      // Virtual camera = main camera transformed into the exit room. A fresh
+      // camera per portal/recursion level avoids aliasing this.virtualCam
+      // across loop iterations and the recursive call below.
+      const vcam = new THREE.PerspectiveCamera()
+      vcam.copy(mainCam)
+      vcam.matrixWorld.multiplyMatrices(rel, mainCam.matrixWorld)
+      vcam.matrixWorld.decompose(
+        vcam.position, vcam.quaternion, vcam.scale,
       )
-      this.virtualCam.projectionMatrix.copy(mainCam.projectionMatrix)
-      this.virtualCam.updateMatrixWorld(true)
+      vcam.projectionMatrix.copy(mainCam.projectionMatrix)
+      vcam.updateMatrixWorld(true)
 
       // Oblique near plane at the exit portal so geometry behind it is clipped.
-      applyObliqueClip(this.virtualCam, exit.matrix)
+      applyObliqueClip(vcam, exit.matrix)
 
       const exitScene = this.roomScenes.get(exit.roomId)
       if (depth > 1) {
         const exitPortals = []
         exitScene.traverse((o) => { if (o.userData.portal) exitPortals.push(o.userData.portal) })
-        this.renderPortalViews(exit.roomId, this.virtualCam, exitPortals, depth - 1)
+        this.renderPortalViews(exit.roomId, vcam, exitPortals, depth - 1)
       }
       const prevTarget = this.renderer.getRenderTarget()
       this.renderer.setRenderTarget(portal.target)
       this.renderer.clear()
-      this.renderer.render(exitScene, this.virtualCam)
+      this.renderer.render(exitScene, vcam)
       this.renderer.setRenderTarget(prevTarget)
     }
   }

@@ -36,6 +36,7 @@ export const ROOMS = {
     walls: wallBox(4, 40, [
       { side: 'north', gap: { center: 0, width: 2 } }, // far loop portal
       { side: 'south', gap: { center: 0, width: 2 } }, // near end + mouth
+      { side: 'east', gap: { center: 18, width: 2 } }, // opening for corridor-mouth
     ]),
     portals: [
       // near end (entry from hall) and far end loop back to each other
