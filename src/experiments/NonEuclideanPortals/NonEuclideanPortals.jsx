@@ -4,6 +4,8 @@ import '../shared/exp.css'
 import './NonEuclideanPortals.css'
 import { ROOMS } from './rooms.js'
 import { moveVector, resolveMove } from './playerControls.js'
+import { Portal } from './Portal.js'
+import { PortalManager } from './portalManager.js'
 
 const EYE = 1.6
 const SPEED = 3.2 // units/sec
@@ -19,10 +21,6 @@ export default function NonEuclideanPortals() {
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
     let raf
 
-    const scene = new THREE.Scene()
-    scene.background = new THREE.Color(0x0a0a0f)
-    scene.fog = new THREE.Fog(0x0a0a0f, 8, 55)
-
     const camera = new THREE.PerspectiveCamera(72, wrap.clientWidth / wrap.clientHeight, 0.05, 500)
     camera.position.set(0, EYE, 2)
 
@@ -32,15 +30,33 @@ export default function NonEuclideanPortals() {
     renderer.setSize(wrap.clientWidth, wrap.clientHeight)
     wrap.appendChild(renderer.domElement)
 
-    scene.add(new THREE.AmbientLight(0x5560a0, 0.5))
-    const key = new THREE.DirectionalLight(0xffffff, 0.8)
-    key.position.set(4, 10, 6)
-    scene.add(key)
-
-    // Build the `small` room geometry.
+    // Build a scene per room (each with its own lights + portal meshes), and
+    // instantiate the manager that renders linked-room views into portal targets.
+    const roomScenes = new Map()
+    const portalsById = new Map()
+    const portalsByRoom = new Map()
+    for (const r of Object.values(ROOMS)) {
+      const s = new THREE.Scene()
+      s.background = new THREE.Color(0x0a0a0f)
+      s.fog = new THREE.Fog(0x0a0a0f, 8, 80)
+      s.add(new THREE.AmbientLight(0x5560a0, 0.5))
+      const dl = new THREE.DirectionalLight(0xffffff, 0.8)
+      dl.position.set(4, 10, 6)
+      s.add(dl)
+      s.add(buildRoomMesh(r))
+      const ps = []
+      for (const def of r.portals) {
+        const p = new Portal(def, r.id)
+        s.add(p.mesh)
+        portalsById.set(def.id, p)
+        ps.push(p)
+      }
+      portalsByRoom.set(r.id, ps)
+      roomScenes.set(r.id, s)
+    }
+    let currentRoomId = 'small'
+    const manager = new PortalManager(renderer, roomScenes, portalsById)
     const room = ROOMS.small
-    const group = buildRoomMesh(room)
-    scene.add(group)
 
     // Player state.
     const player = { yaw: 0, pitch: 0, pos: new THREE.Vector3(0, EYE, 2) }
@@ -105,7 +121,13 @@ export default function NonEuclideanPortals() {
       camera.rotation.set(0, 0, 0, 'YXZ')
       camera.rotateY(player.yaw)
       camera.rotateX(player.pitch)
-      renderer.render(scene, camera)
+
+      // render portal destination views, then the current room
+      const curScene = roomScenes.get(currentRoomId)
+      const curPortals = portalsByRoom.get(currentRoomId) || []
+      manager.renderPortalViews(currentRoomId, camera, curPortals)
+      renderer.render(curScene, camera)
+
       raf = requestAnimationFrame(tick)
     }
     tick()
@@ -119,13 +141,16 @@ export default function NonEuclideanPortals() {
       renderer.domElement.removeEventListener('pointerdown', onDown)
       window.removeEventListener('pointermove', onMove)
       window.removeEventListener('pointerup', onUp)
-      scene.traverse((o) => {
-        if (o.geometry) o.geometry.dispose()
-        if (o.material) {
-          const mats = Array.isArray(o.material) ? o.material : [o.material]
-          mats.forEach((m) => m.dispose())
-        }
+      roomScenes.forEach((s) => {
+        s.traverse((o) => {
+          if (o.geometry) o.geometry.dispose()
+          if (o.material) {
+            const mats = Array.isArray(o.material) ? o.material : [o.material]
+            mats.forEach((m) => m.dispose())
+          }
+        })
       })
+      portalsById.forEach((p) => p.dispose())
       renderer.dispose()
       if (renderer.domElement.parentNode === wrap) wrap.removeChild(renderer.domElement)
     }
