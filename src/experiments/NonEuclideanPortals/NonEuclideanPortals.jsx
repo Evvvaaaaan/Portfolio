@@ -6,6 +6,7 @@ import { ROOMS } from './rooms.js'
 import { moveVector, resolveMove } from './playerControls.js'
 import { Portal } from './Portal.js'
 import { PortalManager } from './portalManager.js'
+import { crossedPortal, relativePortalMatrix } from './portalMath.js'
 
 const EYE = 1.6
 const SPEED = 3.2 // units/sec
@@ -100,7 +101,7 @@ export default function NonEuclideanPortals() {
     window.addEventListener('pointermove', onMove)
     window.addEventListener('pointerup', onUp)
 
-    apiRef.current.requestLock = () => renderer.domElement.requestPointerLock?.()
+    apiRef.current.requestLock = () => renderer.domElement.requestPointerLock?.()?.catch?.(() => {})
 
     const resize = () => {
       const w = wrap.clientWidth, h = wrap.clientHeight
@@ -115,8 +116,25 @@ export default function NonEuclideanPortals() {
     const clock = new THREE.Clock()
     const tick = () => {
       const dt = Math.min(clock.getDelta(), 0.05)
+      const prevPos = player.pos.clone()
       const delta = moveVector(player.yaw, keys, SPEED * dt)
       player.pos = resolveMove(player.pos, delta, room.walls)
+
+      // portal traversal: did we cross any portal in the current room?
+      for (const portal of (portalsByRoom.get(currentRoomId) || [])) {
+        if (crossedPortal(prevPos, player.pos, portal.matrix, portal.def.halfW, portal.def.height)) {
+          const exit = portalsById.get(portal.def.link)
+          const rel = relativePortalMatrix(portal.matrix, exit.matrix)
+          // rebase position
+          player.pos.applyMatrix4(rel)
+          // rebase yaw: the relative matrix includes a 180° flip
+          player.yaw += yawOf(rel)
+          currentRoomId = exit.roomId
+          setRoomLabel(LABELS[currentRoomId] || currentRoomId.toUpperCase())
+          break
+        }
+      }
+
       camera.position.copy(player.pos)
       camera.rotation.set(0, 0, 0, 'YXZ')
       camera.rotateY(player.yaw)
@@ -174,6 +192,14 @@ export default function NonEuclideanPortals() {
 }
 
 function clamp(v, a, b) { return Math.max(a, Math.min(b, v)) }
+
+const LABELS = { small: 'THE SMALL ROOM', hall: 'IMPOSSIBLE HALL' }
+
+function yawOf(m) {
+  // extract yaw (rotation about y) from a rigid matrix
+  const e = m.elements
+  return Math.atan2(e[8], e[10])
+}
 
 // Floor + ceiling + perimeter walls (from room.walls AABBs), matte greyscale.
 function buildRoomMesh(room) {
