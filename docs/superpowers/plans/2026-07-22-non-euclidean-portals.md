@@ -1371,6 +1371,10 @@ git commit -m "feat(non-euclidean-portals): gravity-flip room via floor portal w
 - Consumes: everything above.
 - Produces: shipping-quality experiment; green unit + e2e suites.
 
+- [ ] **Step 0: Visibility / lighting pass (from live QA finding)**
+
+Live QA of Task 5 found the scene renders too dark to perceive the illusion: the near-black materials (`floorMat 0x14141c`, `wallMat 0x1c1c26`) under `AmbientLight(0x5560a0, 0.5)` + `DirectionalLight(0xffffff, 0.8)` make both the room and the hall-through-the-portal read as near-black, so the "bigger inside" effect is invisible. Raise legibility while keeping the dark, minimal concrete mood (the spec calls for "dark, minimal … soft ambient" — do not over-brighten to flat grey). Confirmed-legible starting values from QA (tune to taste, keep it moody): `AmbientLight(0x8090c0, ~1.1)`, `DirectionalLight(0xffffff, ~1.35)`, `floorMat ~0x2c2c38`, `wallMat ~0x3c3c48`. Use each room's `accent` (already in `rooms.js`) so destination rooms read as visually distinct from the room you stand in — e.g. tint that room's ambient or add a low-intensity accent-colored fill light per scene keyed off `room.accent` — which strengthens every illusion (you can tell you've entered a different space). Keep `prefers-reduced-motion` untouched here. After changing, reload `/gallery/non-euclidean-portals` and confirm via the controller's browser QA that through the small room's doorway the larger hall is clearly visible and distinctly toned.
+
 - [ ] **Step 1: Touch move affordance**
 
 On touch devices Pointer Lock is unavailable; drag-look already works, but there is no forward input. Add a hold-to-walk button shown only when `'ontouchstart' in window`. In the component render, after the crosshair:
