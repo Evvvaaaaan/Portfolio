@@ -11,6 +11,7 @@ const PosterLab = lazy(() => import('./PosterLab/PosterLab'))
 const DeepSpace   = lazy(() => import('./DeepSpace/DeepSpace'))
 const SolarSystem = lazy(() => import('./SolarSystem/SolarSystem'))
 const EarthExplorer = lazy(() => import('./EarthExplorer/EarthExplorer'))
+const NonEuclideanPortals = lazy(() => import('./NonEuclideanPortals/NonEuclideanPortals'))
 
 export const experiments = [
   {
@@ -144,5 +145,17 @@ export const experiments = [
     symbol: '🌐',
     fullscreen: true,
     component: EarthExplorer,
+  },
+  {
+    id: 'non-euclidean-portals',
+    title: 'Non-Euclidean Portals',
+    description: '겉보기보다 큰 방, 끝없는 복도, 불가능한 고리 — 포탈로 이어진 비유클리드 갤러리를 1인칭으로 걷습니다. 카메라가 움직여야만 착시가 드러납니다.',
+    tags: ['three.js', 'portals', 'non-euclidean'],
+    color: '#818cf8',
+    planet: 'mercury',
+    planetName: 'ESCHER',
+    symbol: '⧉',
+    fullscreen: true,
+    component: NonEuclideanPortals,
   },
 ]

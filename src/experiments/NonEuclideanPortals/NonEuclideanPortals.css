@@ -1,0 +1,52 @@
+.nep-wrap { cursor: default; }
+.nep-wrap.locked { cursor: none; }
+
+.nep-start {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  background: rgba(8, 8, 14, 0.72);
+  z-index: 20;
+  cursor: pointer;
+}
+.nep-start h2 {
+  font-family: var(--font-mono, monospace);
+  font-size: 15px;
+  letter-spacing: 0.14em;
+  color: rgba(255, 255, 255, 0.82);
+  font-weight: 500;
+}
+.nep-start p {
+  font-family: var(--font-mono, monospace);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  color: rgba(255, 255, 255, 0.45);
+}
+.nep-crosshair {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 4px;
+  height: 4px;
+  margin: -2px 0 0 -2px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.5);
+  pointer-events: none;
+  z-index: 10;
+}
+.nep-roomlabel {
+  position: absolute;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: var(--font-mono, monospace);
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  color: rgba(255, 255, 255, 0.3);
+  pointer-events: none;
+  z-index: 10;
+}

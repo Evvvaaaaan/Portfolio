@@ -12,11 +12,12 @@ const ids = [
   'solar-system',
   'deep-space',
   'earth-explorer',
+  'non-euclidean-portals',
 ]
 
-test('gallery shows 11 curated works', async ({ page }) => {
+test('gallery shows 12 curated works', async ({ page }) => {
   await page.goto('/gallery')
-  await expect(page.locator('.carousel-card')).toHaveCount(11)
+  await expect(page.locator('.carousel-card')).toHaveCount(12)
 })
 
 for (const id of ids) {
