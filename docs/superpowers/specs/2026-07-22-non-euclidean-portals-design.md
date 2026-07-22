@@ -1,7 +1,30 @@
 # Non-Euclidean Portals — Design Spec
 
 Date: 2026-07-22
-Status: Approved (brainstorming). Not yet implemented.
+Status: Implemented (2026-07-22)
+
+## Deviations
+
+- **Gravity flip was cut.** A floor portal is incompatible with the fixed-eye-height,
+  no-gravity movement model: a floor portal never satisfies `crossedPortal`'s
+  front-to-back crossing test (there is no "in front of" a horizontal plane in
+  the same sense as a vertical doorway), and a reverse-triggered flip has no
+  crossable inverse portal, so it would permanently tilt other rooms once
+  triggered. Task 9 implemented then removed this per user decision; the
+  experiment ships with the three other illusions (bigger-inside room,
+  endless corridor, impossible loop).
+- **Visibility/lighting boost added beyond the original spec.** Live QA found
+  the originally-specified near-black materials and dim lights (`AmbientLight
+  0x5560a0 @ 0.5`, `DirectionalLight 0xffffff @ 0.8`, `floorMat 0x14141c`,
+  `wallMat 0x1c1c26`) made the portal illusions imperceptible — both the room
+  and the destination seen through a portal read as near-black. Task 10 raised
+  ambient to `0x8090c0 @ 1.15`, directional to `0xffffff @ 1.4`, and lightened
+  `floorMat`/`wallMat` to `0x2c2c38`/`0x3c3c48`, while keeping the dark,
+  minimal concrete mood the spec calls for. A low-intensity `PointLight` fill,
+  colored per-room from `room.accent` (already present in `rooms.js`), was
+  also added so each destination room reads as visually distinct from the room
+  the visitor is standing in — strengthening the "you entered a different
+  space" effect for all three illusions.
 
 ## Goal
 

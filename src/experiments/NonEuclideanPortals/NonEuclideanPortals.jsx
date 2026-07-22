@@ -16,6 +16,7 @@ export default function NonEuclideanPortals() {
   const [started, setStarted] = useState(false)
   const [roomLabel, setRoomLabel] = useState('THE SMALL ROOM')
   const apiRef = useRef({})
+  const isTouch = typeof window !== 'undefined' && 'ontouchstart' in window
 
   useEffect(() => {
     const wrap = wrapRef.current
@@ -40,10 +41,13 @@ export default function NonEuclideanPortals() {
       const s = new THREE.Scene()
       s.background = new THREE.Color(0x0a0a0f)
       s.fog = new THREE.Fog(0x0a0a0f, 8, 80)
-      s.add(new THREE.AmbientLight(0x5560a0, 0.5))
-      const dl = new THREE.DirectionalLight(0xffffff, 0.8)
+      s.add(new THREE.AmbientLight(0x8090c0, 1.15))
+      const dl = new THREE.DirectionalLight(0xffffff, 1.4)
       dl.position.set(4, 10, 6)
       s.add(dl)
+      const fill = new THREE.PointLight(r.accent, 0.5, 40)
+      fill.position.set(0, r.size.h * 0.6, 0)
+      s.add(fill)
       s.add(buildRoomMesh(r))
       const ps = []
       for (const def of r.portals) {
@@ -117,7 +121,8 @@ export default function NonEuclideanPortals() {
     const tick = () => {
       const dt = Math.min(clock.getDelta(), 0.05)
       const prevPos = player.pos.clone()
-      const delta = moveVector(player.yaw, keys, SPEED * dt)
+      const effectiveKeys = { ...keys, f: keys.f || !!apiRef.current.touchForward }
+      const delta = moveVector(player.yaw, effectiveKeys, SPEED * dt)
       player.pos = resolveMove(player.pos, delta, ROOMS[currentRoomId].walls)
 
       // portal traversal: did we cross any portal in the current room?
@@ -182,6 +187,13 @@ export default function NonEuclideanPortals() {
   return (
     <div ref={wrapRef} className={`exp-wrap nep-wrap${started ? ' locked' : ''}`}>
       {started && <div className="nep-crosshair" />}
+      {started && isTouch && (
+        <button
+          className="nep-move"
+          onTouchStart={() => (apiRef.current.touchForward = true)}
+          onTouchEnd={() => (apiRef.current.touchForward = false)}
+        >▲ 이동</button>
+      )}
       {started && <div className="nep-roomlabel">{roomLabel}</div>}
       {!started && (
         <div
@@ -217,8 +229,8 @@ function yawOf(m) {
 function buildRoomMesh(room) {
   const g = new THREE.Group()
   const { w, d, h } = room.size
-  const floorMat = new THREE.MeshStandardMaterial({ color: 0x14141c, roughness: 0.95 })
-  const wallMat = new THREE.MeshStandardMaterial({ color: 0x1c1c26, roughness: 0.9 })
+  const floorMat = new THREE.MeshStandardMaterial({ color: 0x2c2c38, roughness: 0.95 })
+  const wallMat = new THREE.MeshStandardMaterial({ color: 0x3c3c48, roughness: 0.9 })
   const floor = new THREE.Mesh(new THREE.PlaneGeometry(w, d), floorMat)
   floor.rotation.x = -Math.PI / 2
   g.add(floor)
