@@ -113,6 +113,7 @@ export default function NonEuclideanPortals() {
     ro.observe(wrap)
 
     const clock = new THREE.Clock()
+    let bobPhase = 0
     const tick = () => {
       const dt = Math.min(clock.getDelta(), 0.05)
       const prevPos = player.pos.clone()
@@ -134,7 +135,12 @@ export default function NonEuclideanPortals() {
         }
       }
 
+      // head-bob (skipped under reduced-motion)
+      const moving = keys.f || keys.b || keys.l || keys.r
+      bobPhase += moving ? dt * 9 : 0
+      const bob = reduced || !moving ? 0 : Math.sin(bobPhase) * 0.035
       camera.position.copy(player.pos)
+      camera.position.y += bob
       camera.rotation.set(0, 0, 0, 'YXZ')
       camera.rotateY(player.yaw)
       camera.rotateX(player.pitch)
@@ -192,7 +198,14 @@ export default function NonEuclideanPortals() {
 
 function clamp(v, a, b) { return Math.max(a, Math.min(b, v)) }
 
-const LABELS = { small: 'THE SMALL ROOM', hall: 'IMPOSSIBLE HALL', corridor: 'ENDLESS CORRIDOR' }
+const LABELS = {
+  small: 'THE SMALL ROOM',
+  hall: 'IMPOSSIBLE HALL',
+  corridor: 'ENDLESS CORRIDOR',
+  loopA: 'THE LOOP',
+  loopB: 'THE LOOP',
+  loopC: 'THE LOOP',
+}
 
 function yawOf(m) {
   // extract yaw (rotation about y) from a rigid matrix

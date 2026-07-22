@@ -22,10 +22,12 @@ export const ROOMS = {
     walls: wallBox(40, 60, [
       { side: 'south', gap: { center: 0, width: 2 } }, // doorway back to small
       { side: 'east', gap: { center: 0, width: 2 } }, // arch to corridor
+      { side: 'west', gap: { center: 0, width: 2 } }, // connector to the loop
     ]),
     portals: [
       { id: 'hall-door', position: [0, 1.5, 30], yaw: Math.PI, halfW: 1, height: 3, link: 'small-door' },
       { id: 'hall-arch', position: [18, 1.5, 0], yaw: Math.PI / 2, halfW: 1, height: 3, link: 'corridor-mouth' },
+      { id: 'hall-loop', position: [-18, 1.5, 0], yaw: -Math.PI / 2, halfW: 1, height: 3, link: 'loopA-in' },
     ],
   },
   // Long corridor whose two ends link to each other, so walking forward never ends.
@@ -44,6 +46,44 @@ export const ROOMS = {
       { id: 'corridor-far',  position: [0, 1.5, -20], yaw: 0, halfW: 1, height: 3, link: 'corridor-near' },
       // mouth: a side portal that returns to the hall
       { id: 'corridor-mouth', position: [2, 1.5, 18], yaw: -Math.PI / 2, halfW: 1, height: 3, link: 'hall-arch' },
+    ],
+  },
+  // Three chambers whose exit portals chain A→B→C→A, each turn a same-handed
+  // 90°, so three left turns return to the start — topologically impossible
+  // in Euclidean space.
+  loopA: {
+    id: 'loopA', accent: 0x9f7cf8, size: { w: 8, d: 8, h: 3.5 },
+    walls: wallBox(8, 8, [
+      { side: 'south', gap: { center: 0, width: 2 } }, // in from hall
+      { side: 'east',  gap: { center: 0, width: 2 } }, // out to B
+      { side: 'west',  gap: { center: 0, width: 2 } }, // in from C (loop closure)
+    ]),
+    portals: [
+      { id: 'loopA-in',   position: [0, 1.5, 4],  yaw: Math.PI,      halfW: 1, height: 3, link: 'hall-loop' },
+      { id: 'loopA-out',  position: [4, 1.5, 0],  yaw: Math.PI / 2,  halfW: 1, height: 3, link: 'loopB-in' },
+      { id: 'loopA-in2',  position: [-4, 1.5, 0], yaw: -Math.PI / 2, halfW: 1, height: 3, link: 'loopC-out' },
+    ],
+  },
+  loopB: {
+    id: 'loopB', accent: 0x9f7cf8, size: { w: 8, d: 8, h: 3.5 },
+    walls: wallBox(8, 8, [
+      { side: 'south', gap: { center: 0, width: 2 } },
+      { side: 'east',  gap: { center: 0, width: 2 } },
+    ]),
+    portals: [
+      { id: 'loopB-in',  position: [0, 1.5, 4], yaw: Math.PI,     halfW: 1, height: 3, link: 'loopA-out' },
+      { id: 'loopB-out', position: [4, 1.5, 0], yaw: Math.PI / 2, halfW: 1, height: 3, link: 'loopC-in' },
+    ],
+  },
+  loopC: {
+    id: 'loopC', accent: 0x9f7cf8, size: { w: 8, d: 8, h: 3.5 },
+    walls: wallBox(8, 8, [
+      { side: 'south', gap: { center: 0, width: 2 } },
+      { side: 'east',  gap: { center: 0, width: 2 } },
+    ]),
+    portals: [
+      { id: 'loopC-in',  position: [0, 1.5, 4], yaw: Math.PI,     halfW: 1, height: 3, link: 'loopB-out' },
+      { id: 'loopC-out', position: [4, 1.5, 0], yaw: Math.PI / 2, halfW: 1, height: 3, link: 'loopA-in2' },
     ],
   },
 }
