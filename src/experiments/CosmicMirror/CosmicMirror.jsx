@@ -5,7 +5,6 @@ import './CosmicMirror.css'
 import { selectAnchors, faceCenter, readExpression, isBurst } from './faceMap.js'
 
 // 웹캠 표정으로 별 초상을 그리는 실험 — MediaPipe FaceLandmarker + 마우스 폴백
-// (카메라 감지 루프는 Task 3에서 채워짐)
 
 const N = 3000
 export const BURST_MS = 550
@@ -226,7 +225,10 @@ export default function CosmicMirror() {
           numFaces: 1,
           outputFaceBlendshapes: true,
         })
-        if (cancelled) return
+        if (cancelled) {
+          landmarker.close()
+          return
+        }
 
         const octx = overlayRef.current?.getContext('2d')
         let lastT = -1
