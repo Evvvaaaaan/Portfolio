@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from 'react'
 import '../shared/exp.css'
 import './CosmicMirror.css'
+import { selectAnchors, faceCenter, readExpression, isBurst } from './faceMap.js'
 
 // 웹캠 표정으로 별 초상을 그리는 실험 — MediaPipe FaceLandmarker + 마우스 폴백
 // (카메라 감지 루프는 Task 3에서 채워짐)
@@ -10,6 +11,10 @@ const N = 3000
 export const BURST_MS = 550
 const BASE_STAR = [200, 210, 255] // 차가운 별빛
 const WARM_STAR = [255, 214, 170] // 미소 시 따뜻한 색
+
+const WASM_BASE = 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10/wasm'
+const MODEL_URL =
+  'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task'
 
 export default function CosmicMirror() {
   const wrapRef = useRef(null)
@@ -185,6 +190,111 @@ export default function CosmicMirror() {
     return () => {
       wrap.removeEventListener('pointermove', onMove)
       wrap.removeEventListener('pointerdown', onDown)
+      anchorsRef.current = []
+      sceneRef.current = { warmth: 0, dim: 0 }
+    }
+  }, [mode])
+
+  // 카메라 + MediaPipe FaceLandmarker
+  useEffect(() => {
+    if (mode !== 'camera') return undefined
+    let cancelled = false
+    let landmarker = null
+    let stream = null
+    let raf = 0
+    let bursting = false // jawOpen 디바운스
+    const wrap = wrapRef.current
+    const video = videoRef.current
+
+    ;(async () => {
+      try {
+        const [{ FilesetResolver, FaceLandmarker }, media] = await Promise.all([
+          import('@mediapipe/tasks-vision'),
+          navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480 }, audio: false }),
+        ])
+        if (cancelled) {
+          media.getTracks().forEach((t) => t.stop())
+          return
+        }
+        stream = media
+        video.srcObject = stream
+        await video.play()
+        const fileset = await FilesetResolver.forVisionTasks(WASM_BASE)
+        landmarker = await FaceLandmarker.createFromOptions(fileset, {
+          baseOptions: { modelAssetPath: MODEL_URL, delegate: 'GPU' },
+          runningMode: 'VIDEO',
+          numFaces: 1,
+          outputFaceBlendshapes: true,
+        })
+        if (cancelled) return
+
+        const octx = overlayRef.current?.getContext('2d')
+        let lastT = -1
+        const detect = () => {
+          raf = requestAnimationFrame(detect)
+          if (video.currentTime === lastT) return
+          lastT = video.currentTime
+          const res = landmarker.detectForVideo(video, performance.now())
+          const W = wrap.clientWidth
+          const H = wrap.clientHeight
+          const lm = res.faceLandmarks?.[0]
+
+          if (octx) {
+            octx.clearRect(0, 0, overlayRef.current.width, overlayRef.current.height)
+          }
+
+          if (!lm) {
+            anchorsRef.current = []
+            sceneRef.current = { warmth: 0, dim: 0 }
+            return
+          }
+
+          anchorsRef.current = selectAnchors(lm, W, H)
+          centerRef.current = faceCenter(lm, W, H)
+
+          const bs = res.faceBlendshapes?.[0]?.categories ?? []
+          const expr = readExpression(bs)
+          sceneRef.current = { warmth: Math.min(1, expr.smile * 1.4), dim: expr.blink }
+
+          // 입을 벌리는 "순간"에만 버스트 (한 번 트리거 후 다물어야 재발동)
+          if (isBurst(expr.jawOpen)) {
+            if (!bursting) {
+              bursting = true
+              burstRef.current = { t0: performance.now() }
+            }
+          } else if (expr.jawOpen < 0.25) {
+            bursting = false
+          }
+
+          if (octx) {
+            const ow = overlayRef.current.width
+            const oh = overlayRef.current.height
+            octx.fillStyle = 'rgba(196, 181, 253, 0.9)'
+            for (const pt of lm) {
+              octx.beginPath()
+              octx.arc((1 - pt.x) * ow, pt.y * oh, 1, 0, Math.PI * 2)
+              octx.fill()
+            }
+          }
+        }
+        detect()
+      } catch (err) {
+        if (!cancelled) {
+          setCamError(
+            err.name === 'NotAllowedError'
+              ? '카메라 권한이 거부되어 마우스 모드로 전환했습니다.'
+              : '카메라를 사용할 수 없어 마우스 모드로 전환했습니다.',
+          )
+          setMode('mouse')
+        }
+      }
+    })()
+
+    return () => {
+      cancelled = true
+      cancelAnimationFrame(raf)
+      stream?.getTracks().forEach((t) => t.stop())
+      landmarker?.close()
       anchorsRef.current = []
       sceneRef.current = { warmth: 0, dim: 0 }
     }
