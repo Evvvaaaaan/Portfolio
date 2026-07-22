@@ -141,7 +141,7 @@ export default function NonEuclideanPortals() {
       }
 
       // head-bob (skipped under reduced-motion)
-      const moving = keys.f || keys.b || keys.l || keys.r
+      const moving = effectiveKeys.f || effectiveKeys.b || effectiveKeys.l || effectiveKeys.r
       bobPhase += moving ? dt * 9 : 0
       const bob = reduced || !moving ? 0 : Math.sin(bobPhase) * 0.035
       camera.position.copy(player.pos)

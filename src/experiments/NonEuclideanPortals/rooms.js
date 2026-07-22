@@ -17,7 +17,7 @@ export const ROOMS = {
   // The hall the doorway opens into is vastly larger than the small room.
   hall: {
     id: 'hall',
-    accent: 0x818cf8,
+    accent: 0x6f9ff5, // cool steel-blue — a vast, distinct space through the doorway
     size: { w: 40, d: 60, h: 14 },
     walls: wallBox(40, 60, [
       { side: 'south', gap: { center: 0, width: 2 } }, // doorway back to small
@@ -33,7 +33,7 @@ export const ROOMS = {
   // Long corridor whose two ends link to each other, so walking forward never ends.
   corridor: {
     id: 'corridor',
-    accent: 0x818cf8,
+    accent: 0x5fd0c8, // teal — the endless corridor reads distinctly from the hall
     size: { w: 4, d: 40, h: 4 },
     walls: wallBox(4, 40, [
       { side: 'north', gap: { center: 0, width: 2 } }, // far loop portal
