@@ -15,9 +15,9 @@ const ids = [
   'non-euclidean-portals',
 ]
 
-test('gallery shows 12 curated works', async ({ page }) => {
+test('gallery shows 13 curated works', async ({ page }) => {
   await page.goto('/gallery')
-  await expect(page.locator('.carousel-card')).toHaveCount(12)
+  await expect(page.locator('.carousel-card')).toHaveCount(13)
 })
 
 for (const id of ids) {

@@ -12,6 +12,7 @@ const DeepSpace   = lazy(() => import('./DeepSpace/DeepSpace'))
 const SolarSystem = lazy(() => import('./SolarSystem/SolarSystem'))
 const EarthExplorer = lazy(() => import('./EarthExplorer/EarthExplorer'))
 const NonEuclideanPortals = lazy(() => import('./NonEuclideanPortals/NonEuclideanPortals'))
+const CosmicMirror = lazy(() => import('./CosmicMirror/CosmicMirror'))
 
 export const experiments = [
   {
@@ -157,5 +158,18 @@ export const experiments = [
     symbol: '⧉',
     fullscreen: true,
     component: NonEuclideanPortals,
+  },
+  {
+    id: 'cosmic-mirror',
+    title: 'Cosmic Mirror',
+    description:
+      '웹캠 속 당신의 얼굴이 별로 그린 초상이 됩니다. 입을 벌리면 초신성처럼 터져 성운으로 흩어졌다가 다물면 다시 얼굴로 모이고, 미소는 성운을 따뜻하게, 깜빡임은 별을 반짝이게 합니다. 카메라가 없으면 마우스 모드로 동작합니다.',
+    tags: ['mediapipe', 'webcam', 'face'],
+    color: '#c4b5fd',
+    planet: 'saturn',
+    planetName: 'MIRROR',
+    symbol: '◐',
+    fullscreen: true,
+    component: CosmicMirror,
   },
 ]
