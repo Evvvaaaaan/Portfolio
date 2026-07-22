@@ -26,8 +26,8 @@ export const ROOMS = {
     ]),
     portals: [
       { id: 'hall-door', position: [0, 1.5, 30], yaw: Math.PI, halfW: 1, height: 3, link: 'small-door' },
-      { id: 'hall-arch', position: [18, 1.5, 0], yaw: Math.PI / 2, halfW: 1, height: 3, link: 'corridor-mouth' },
-      { id: 'hall-loop', position: [-18, 1.5, 0], yaw: -Math.PI / 2, halfW: 1, height: 3, link: 'loopA-in' },
+      { id: 'hall-arch', position: [18, 1.5, 0], yaw: -Math.PI / 2, halfW: 1, height: 3, link: 'corridor-mouth' },
+      { id: 'hall-loop', position: [-18, 1.5, 0], yaw: Math.PI / 2, halfW: 1, height: 3, link: 'loopA-in' },
     ],
   },
   // Long corridor whose two ends link to each other, so walking forward never ends.
@@ -60,8 +60,8 @@ export const ROOMS = {
     ]),
     portals: [
       { id: 'loopA-in',   position: [0, 1.5, 4],  yaw: Math.PI,      halfW: 1, height: 3, link: 'hall-loop' },
-      { id: 'loopA-out',  position: [4, 1.5, 0],  yaw: Math.PI / 2,  halfW: 1, height: 3, link: 'loopB-in' },
-      { id: 'loopA-in2',  position: [-4, 1.5, 0], yaw: -Math.PI / 2, halfW: 1, height: 3, link: 'loopC-out' },
+      { id: 'loopA-out',  position: [4, 1.5, 0],  yaw: -Math.PI / 2, halfW: 1, height: 3, link: 'loopB-in' },
+      { id: 'loopA-in2',  position: [-4, 1.5, 0], yaw: Math.PI / 2,  halfW: 1, height: 3, link: 'loopC-out' },
     ],
   },
   loopB: {
@@ -72,7 +72,7 @@ export const ROOMS = {
     ]),
     portals: [
       { id: 'loopB-in',  position: [0, 1.5, 4], yaw: Math.PI,     halfW: 1, height: 3, link: 'loopA-out' },
-      { id: 'loopB-out', position: [4, 1.5, 0], yaw: Math.PI / 2, halfW: 1, height: 3, link: 'loopC-in' },
+      { id: 'loopB-out', position: [4, 1.5, 0], yaw: -Math.PI / 2, halfW: 1, height: 3, link: 'loopC-in' },
     ],
   },
   loopC: {
@@ -83,7 +83,7 @@ export const ROOMS = {
     ]),
     portals: [
       { id: 'loopC-in',  position: [0, 1.5, 4], yaw: Math.PI,     halfW: 1, height: 3, link: 'loopB-out' },
-      { id: 'loopC-out', position: [4, 1.5, 0], yaw: Math.PI / 2, halfW: 1, height: 3, link: 'loopA-in2' },
+      { id: 'loopC-out', position: [4, 1.5, 0], yaw: -Math.PI / 2, halfW: 1, height: 3, link: 'loopA-in2' },
     ],
   },
 }
