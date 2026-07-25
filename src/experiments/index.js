@@ -13,6 +13,7 @@ const SolarSystem = lazy(() => import('./SolarSystem/SolarSystem'))
 const EarthExplorer = lazy(() => import('./EarthExplorer/EarthExplorer'))
 const NonEuclideanPortals = lazy(() => import('./NonEuclideanPortals/NonEuclideanPortals'))
 const CosmicMirror = lazy(() => import('./CosmicMirror/CosmicMirror'))
+const CloudGallery = lazy(() => import('./CloudGallery/CloudGallery'))
 
 export const experiments = [
   {
@@ -171,5 +172,18 @@ export const experiments = [
     symbol: '◐',
     fullscreen: true,
     component: CosmicMirror,
+  },
+  {
+    id: 'cloud-gallery',
+    title: 'Cloud Gallery',
+    description:
+      '구름바다 위를 미끄러지듯 흐르는 시네마틱 투어. 코드로 빚은 추상 조각들이 맑은 공중에 떠 있고, 유리·금속·대리석 재질이 환경광을 실시간으로 반사합니다. 스크롤이나 방향키로 다음 작품으로 부드럽게 날아갑니다.',
+    tags: ['glsl', 'raymarching', 'pbr'],
+    color: '#8ec5ff',
+    planet: 'cloud',
+    planetName: 'NIMBUS',
+    symbol: '☁',
+    fullscreen: true,
+    component: CloudGallery,
   },
 ]
