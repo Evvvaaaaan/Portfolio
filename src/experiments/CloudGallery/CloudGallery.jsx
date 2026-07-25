@@ -12,6 +12,7 @@ import '../shared/exp.css'
 import './CloudGallery.css'
 
 const SUN_DIR = new THREE.Vector3(0.6, 0.7, 0.35).normalize()
+const LAID = layout(SCULPTURES, { spacing: 16, height: 0 })
 
 function buildGeometry(form) {
   switch (form) {
@@ -43,7 +44,6 @@ function buildMaterial(kind) {
 
 export default function CloudGallery() {
   const mountRef = useRef(null)
-  const laidRef = useRef(layout(SCULPTURES, { spacing: 16, height: 0 }))
   const [stopIdx, setStopIdx] = useState(0)
   const targetStopRef = useRef(0)
 
@@ -53,7 +53,7 @@ export default function CloudGallery() {
   useEffect(() => {
     const mount = mountRef.current
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    const laid = laidRef.current
+    const laid = LAID
     const wps = waypoints(laid, { back: 8, up: 2.6, side: 4.5 })
     const count = laid.length
 
@@ -81,7 +81,6 @@ export default function CloudGallery() {
       uCamUp: { value: new THREE.Vector3() },
       uCamFwd: { value: new THREE.Vector3() },
       uTanFov: { value: Math.tan((50 / 2) * Math.PI / 180) },
-      uAspect: { value: 1 },
       uSunDir: { value: SUN_DIR.clone() },
     }
     const bgMat = new THREE.ShaderMaterial({
@@ -134,7 +133,6 @@ export default function CloudGallery() {
       cam.updateProjectionMatrix()
       const buf = renderer.getDrawingBufferSize(new THREE.Vector2())
       bgUniforms.uRes.value.copy(buf)
-      bgUniforms.uAspect.value = w / h
     }
     setSize()
 
@@ -227,7 +225,7 @@ export default function CloudGallery() {
     }
   }, [])
 
-  const laid = laidRef.current
+  const laid = LAID
   const current = laid[stopIdx]
 
   return (

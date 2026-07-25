@@ -13,7 +13,6 @@ export const CLOUD_FRAG = /* glsl */ `
   uniform vec3 uCamUp;
   uniform vec3 uCamFwd;
   uniform float uTanFov;
-  uniform float uAspect;
   uniform vec3 uSunDir;
 
   float hash(vec3 p) {
@@ -59,7 +58,7 @@ export const CLOUD_FRAG = /* glsl */ `
     vec2 uv = (gl_FragCoord.xy * 2.0 - uRes) / uRes.y;
     vec3 ro = uCamPos;
     vec3 rd = normalize(
-      uCamFwd + uv.x * uTanFov * uAspect * uCamRight + uv.y * uTanFov * uCamUp);
+      uCamFwd + uv.x * uTanFov * uCamRight + uv.y * uTanFov * uCamUp);
 
     vec3 sun = normalize(uSunDir);
     float up = clamp(rd.y * 0.5 + 0.5, 0.0, 1.0);
