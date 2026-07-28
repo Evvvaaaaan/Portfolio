@@ -80,6 +80,11 @@ export const translations = {
       },
     },
     footer: { built: 'Built with React + Vite' },
+    hwAccel: {
+      title: 'Hardware acceleration is off',
+      body: 'Your browser is rendering graphics in software mode, so animations may run slowly. For the best experience, turn on “Use hardware acceleration when available” in your browser settings.',
+      close: 'Dismiss',
+    },
   },
 
   ko: {
@@ -163,6 +168,11 @@ export const translations = {
       },
     },
     footer: { built: 'React + Vite로 제작' },
+    hwAccel: {
+      title: '하드웨어 가속이 꺼져 있어요',
+      body: '브라우저가 그래픽을 소프트웨어 모드로 렌더링하고 있어 애니메이션이 느릴 수 있어요. 최적의 경험을 위해 브라우저 설정에서 ‘가능한 경우 하드웨어 가속 사용’을 켜주세요.',
+      close: '닫기',
+    },
   },
 
   ja: {
@@ -246,6 +256,11 @@ export const translations = {
       },
     },
     footer: { built: 'React + Viteで制作' },
+    hwAccel: {
+      title: 'ハードウェアアクセラレーションがオフです',
+      body: 'ブラウザがグラフィックをソフトウェアモードで描画しているため、アニメーションが遅くなることがあります。最適な体験のために、ブラウザ設定で「使用可能な場合はハードウェアアクセラレーションを使用する」をオンにしてください。',
+      close: '閉じる',
+    },
   },
 
   zh: {
@@ -329,5 +344,10 @@ export const translations = {
       },
     },
     footer: { built: '使用 React + Vite 构建' },
+    hwAccel: {
+      title: '硬件加速已关闭',
+      body: '浏览器正在以软件模式渲染图形，动画可能会卡顿。为获得最佳体验，请在浏览器设置中开启“可用时使用硬件加速”。',
+      close: '关闭',
+    },
   },
 }

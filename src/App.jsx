@@ -7,6 +7,7 @@ import { computeTransitionIntensity } from './components/SpaceBackground/transit
 import Cursor from './components/Cursor/Cursor'
 import Navbar from './components/Navbar/Navbar'
 import SpaceBackground from './components/SpaceBackground/SpaceBackground'
+import HardwareAccelNotice from './components/HardwareAccelNotice/HardwareAccelNotice'
 import Hero from './sections/Hero/Hero'
 import About from './sections/About/About'
 import Projects from './sections/Projects/Projects'
@@ -297,6 +298,7 @@ function AppContent() {
         </Routes>
         {isMainPage && <ModeLayer />}
         {showGlobalFooter && <Footer />}
+        <HardwareAccelNotice />
       </ModeProvider>
     </LangProvider>
   )
