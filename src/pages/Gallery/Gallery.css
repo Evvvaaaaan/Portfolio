@@ -1,14 +1,58 @@
 /* ── Page: 100vh, no scroll ── */
 .gallery-page {
-  position: relative; /* SpaceBackground(fixed, z:0, 불투명) 위에 올라오도록 */
+  position: relative; /* SpaceBackground(fixed, z:0) 위에 올라오도록 */
   z-index: 1;
   height: 100vh;
-  padding: 72px 24px 0;
   overflow: hidden;
+  box-sizing: border-box;
+}
+
+/* 배경 하늘 — 페이지 스택 컨텍스트 안에서 가장 아래 */
+.lab-sky {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 0;
+  display: block;
+  pointer-events: none;
+}
+
+/* WebGL을 못 쓸 때의 대체 하늘: 검정 → 파랑 → 지평선 주황 */
+.lab-sky--fallback {
+  background:
+    linear-gradient(
+      180deg,
+      #000000 0%,
+      #030814 42%,
+      #0d2b63 72%,
+      #7a3a12 88%,
+      #05070d 100%
+    );
+}
+
+/* 콘텐츠 레이어 */
+.lab-stage {
+  position: relative;
+  z-index: 1;
+  height: 100%;
+  padding: 72px 24px 0;
   display: flex;
   flex-direction: column;
   align-items: center;
   box-sizing: border-box;
+}
+
+/* 하강 중에는 UI를 눌러 둔다 — 떨어지는 동안 읽을 것이 없어야 한다 */
+.lab-stage[data-landed='false'] .gallery-header,
+.lab-stage[data-landed='false'] .carousel-cta {
+  opacity: 0.18;
+  pointer-events: none;
+}
+
+.lab-stage .gallery-header,
+.lab-stage .carousel-cta {
+  transition: opacity 700ms ease;
 }
 
 /* ── Header ── */
@@ -42,25 +86,63 @@
   letter-spacing: 0.04em;
 }
 
-/* ── 3D Carousel scene: fills remaining space ── */
-.carousel-scene {
-  perspective-origin: 50% 46%;
+/* ── 360° ring scene ── */
+.lab-scene {
+  position: relative;
   width: 100%;
   flex: 1;
   min-height: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   cursor: grab;
   touch-action: none;
   user-select: none;
+  outline: none;
 }
 
-.carousel-scene:active { cursor: grabbing; }
+.lab-scene:active { cursor: grabbing; }
 
-.carousel-track {
-  position: relative;
+.lab-scene:focus-visible {
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.28);
+  border-radius: 12px;
+}
+
+/* 링은 화면 중앙을 축으로 회전한다. translateZ로 원근 중심까지 끌어와야
+   패널이 관람자를 둘러싸는 것처럼 보인다. */
+.lab-ring {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
   transform-style: preserve-3d;
+  will-change: transform, opacity;
+}
+
+/* 뒤편 패널은 브라우저가 알아서 감춘다 — 컬링 코드가 필요 없다 */
+.lab-ring .carousel-card {
+  backface-visibility: hidden;
+}
+
+/* 착지 문구 */
+.lab-arrived {
+  position: fixed;
+  left: 50%;
+  bottom: 14%;
+  transform: translateX(-50%);
+  z-index: 3;
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.86);
+  text-shadow: 0 0 24px rgba(120, 170, 255, 0.55);
+  animation: lab-arrived-in 520ms ease both;
+  pointer-events: none;
+}
+
+@keyframes lab-arrived-in {
+  from { opacity: 0; transform: translate(-50%, 10px); }
+  to   { opacity: 1; transform: translate(-50%, 0); }
 }
 
 /* ── Card (Core Glassmorphism, 3D layered) ──
@@ -833,25 +915,6 @@
   font-weight: 600;
 }
 
-.carousel-open-btn {
-  padding: 10px 32px;
-  border-radius: 40px;
-  border: 1px solid var(--border-hover);
-  background: none;
-  color: var(--text-h);
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-  letter-spacing: 0.01em;
-  transition: background 0.2s, border-color 0.2s, color 0.2s;
-  white-space: nowrap;
-}
-.carousel-open-btn:hover {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: #050507;
-}
-
 /* ── ☁ Sky (Drifting Clouds): soft daytime sky with drifting cloud puffs ── */
 .planet-sky .planet-surface {
   background: linear-gradient(168deg, #3a8db5 0%, #7ec8e3 52%, #b8dff0 100%);
@@ -1485,7 +1548,6 @@
   .gallery-header { padding: 12px 0 10px; }
   .gallery-title { margin: 6px 0 6px; }
   .carousel-cta { padding: 10px 0 14px; gap: 10px; }
-  .carousel-open-btn { padding: 8px 24px; font-size: 12px; }
   .card-symbol-glyph { font-size: 16px; }
 }
 
