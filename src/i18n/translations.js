@@ -85,6 +85,14 @@ export const translations = {
       body: 'Your browser is rendering graphics in software mode, so animations may run slowly. For the best experience, turn on “Use hardware acceleration when available” in your browser settings.',
       close: 'Dismiss',
     },
+    lab: {
+      eyebrow: 'interactive lab — orbital descent',
+      title: 'Experiments',
+      hint: 'Drag to look around · click a work to enter',
+      arrived: 'Lab arrived',
+      enter: 'Enter',
+      descending: 'Entering atmosphere...',
+    },
   },
 
   ko: {
@@ -172,6 +180,14 @@ export const translations = {
       title: '하드웨어 가속이 꺼져 있어요',
       body: '브라우저가 그래픽을 소프트웨어 모드로 렌더링하고 있어 애니메이션이 느릴 수 있어요. 최적의 경험을 위해 브라우저 설정에서 ‘가능한 경우 하드웨어 가속 사용’을 켜주세요.',
       close: '닫기',
+    },
+    lab: {
+      eyebrow: 'interactive lab — 궤도 진입',
+      title: '실험실',
+      hint: '드래그해 둘러보고, 작품을 클릭해 들어가세요',
+      arrived: 'Lab에 도착하였습니다',
+      enter: '들어가기',
+      descending: '대기권 진입 중...',
     },
   },
 
@@ -261,6 +277,14 @@ export const translations = {
       body: 'ブラウザがグラフィックをソフトウェアモードで描画しているため、アニメーションが遅くなることがあります。最適な体験のために、ブラウザ設定で「使用可能な場合はハードウェアアクセラレーションを使用する」をオンにしてください。',
       close: '閉じる',
     },
+    lab: {
+      eyebrow: 'interactive lab — 軌道降下',
+      title: '実験室',
+      hint: 'ドラッグで見回し、作品をクリックして入ります',
+      arrived: 'Lab に到着しました',
+      enter: '入る',
+      descending: '大気圏に突入中...',
+    },
   },
 
   zh: {
@@ -348,6 +372,14 @@ export const translations = {
       title: '硬件加速已关闭',
       body: '浏览器正在以软件模式渲染图形，动画可能会卡顿。为获得最佳体验，请在浏览器设置中开启“可用时使用硬件加速”。',
       close: '关闭',
+    },
+    lab: {
+      eyebrow: 'interactive lab — 轨道降落',
+      title: '实验室',
+      hint: '拖动环视，点击作品进入',
+      arrived: '已抵达 Lab',
+      enter: '进入',
+      descending: '正在进入大气层...',
     },
   },
 }
