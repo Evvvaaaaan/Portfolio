@@ -17,10 +17,12 @@ const REDUCED_DONE_MS = 800
 // 카메라를 지나쳐 사라지고, 정점의 화이트 플래시 순간 라우트를 바꾼 뒤
 // 워프가 풀리며 갤러리가 드러난다. origin prop은 시각적으로 더 이상
 // 쓰지 않지만 Navbar 계약 유지를 위해 시그니처에 남긴다.
+//
+// 도착 문구는 Gallery가 하강 완료 시점에 로케일에 맞춰 띄운다 — 여기서
+// 한국어로 하드코딩해 두면 언어 설정과 어긋나고 문구가 두 번 보인다.
 // eslint-disable-next-line no-unused-vars
 export default function LabTransition({ origin, onNavigate, onDone }) {
   const [flash, setFlash] = useState(false)
-  const [showText, setShowText] = useState(false)
   const [released, setReleased] = useState(false)
 
   // onNavigate/onDone은 부모(Navbar)가 매 렌더 새 인라인 함수로 넘긴다.
@@ -37,11 +39,9 @@ export default function LabTransition({ origin, onNavigate, onDone }) {
 
   useEffect(() => {
     if (reducedMotion) {
-      // 부스트 없이 어두운 오버레이 + 문구만 짧게.
+      // 부스트 없이 어두운 오버레이만 짧게.
       const timers = [
         setTimeout(() => callbacksRef.current.onNavigate(), REDUCED_NAV_MS),
-        setTimeout(() => setShowText(true), REDUCED_NAV_MS),
-        setTimeout(() => setShowText(false), REDUCED_NAV_MS + TEXT_HOLD_MS),
         setTimeout(
           () => callbacksRef.current.onDone(),
           REDUCED_DONE_MS + TEXT_HOLD_MS,
@@ -71,11 +71,6 @@ export default function LabTransition({ origin, onNavigate, onDone }) {
         // 플래시가 걷히면 오버레이가 갤러리 입력을 막지 않게 한다.
         setReleased(true)
       }, BOOST_CHARGE_MS + BOOST_PEAK_MS),
-      setTimeout(() => setShowText(true), BOOST_CHARGE_MS + BOOST_PEAK_MS),
-      setTimeout(
-        () => setShowText(false),
-        BOOST_CHARGE_MS + BOOST_PEAK_MS + TEXT_HOLD_MS,
-      ),
       setTimeout(
         () => callbacksRef.current.onDone(),
         BOOST_CHARGE_MS + BOOST_PEAK_MS + BOOST_RELEASE_MS + TEXT_HOLD_MS + TEXT_OUT_MS,
@@ -95,9 +90,6 @@ export default function LabTransition({ origin, onNavigate, onDone }) {
       className={`labtransition-overlay ${reducedMotion ? 'labtransition-overlay--reduced' : ''} ${released ? 'labtransition-overlay--released' : ''}`}
     >
       <div className={`labtransition-flash ${flash ? 'labtransition-flash--on' : ''}`} />
-      <p className={`labtransition-text ${showText ? 'labtransition-text--in' : ''}`}>
-        Lab에 도착하였습니다.
-      </p>
     </div>
   )
 }

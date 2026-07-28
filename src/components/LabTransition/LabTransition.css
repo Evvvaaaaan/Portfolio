@@ -10,7 +10,7 @@
   cursor: none;
 }
 
-/* reduced-motion: 워프 없이 어두운 배경 위에 문구만 */
+/* reduced-motion: 워프 없이 어두운 오버레이만 */
 .labtransition-overlay--reduced {
   background: rgba(5, 6, 12, 0.88);
 }
@@ -34,31 +34,6 @@
   transition-duration: 150ms;
 }
 
-.labtransition-text {
-  position: relative;
-  z-index: 1;
-  color: #f0f0ff;
-  font-family: var(--font-mono, ui-monospace, monospace);
-  font-size: clamp(1rem, 2.4vw, 1.3rem);
-  letter-spacing: 0.08em;
-  text-align: center;
-  padding: 0 24px;
-  text-shadow: 0 2px 18px rgba(5, 6, 12, 0.9);
-  opacity: 0;
-  filter: blur(6px);
-  transform: translateY(8px);
-  transition: opacity 400ms ease, filter 400ms ease, transform 400ms ease;
-}
-
-.labtransition-text--in {
-  opacity: 1;
-  filter: blur(0);
-  transform: translateY(0);
-  /* 홀드(900ms) 안에 페이드인이 끝나도록 700ms — 1200ms였을 때는
-     90% 불투명도에서 바로 아웃이 시작돼 미완성으로 보였다. */
-  transition-duration: 700ms;
-}
-
 /* 플래시가 걷힌 뒤에는 갤러리 조작을 막지 않는다 — 문구는 표시 전용 */
 .labtransition-overlay--released {
   pointer-events: none;
@@ -68,8 +43,5 @@
 @media (prefers-reduced-motion: reduce) {
   .labtransition-flash {
     display: none;
-  }
-  .labtransition-text {
-    transition-duration: 1ms;
   }
 }
