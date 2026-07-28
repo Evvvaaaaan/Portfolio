@@ -10,7 +10,7 @@ describe('CLOUD_FRAG', () => {
   it('declares every uniform the component drives', () => {
     for (const u of [
       'uRes', 'uTime', 'uCamPos', 'uCamRight', 'uCamUp',
-      'uCamFwd', 'uTanFov', 'uSunDir',
+      'uCamFwd', 'uTanFov', 'uSunDir', 'uSunColor',
     ]) {
       expect(CLOUD_FRAG).toContain(u)
     }

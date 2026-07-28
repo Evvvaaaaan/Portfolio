@@ -7,21 +7,67 @@ import { OutputPass } from 'three/addons/postprocessing/OutputPass.js'
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js'
 import { samplePath, stopT } from './cloudPath'
 import { SCULPTURES, layout, waypoints } from './sculptures'
+import { formFor, superPoint, maxExtent } from './forms'
+import { sunAt } from './sun'
 import { CLOUD_FRAG } from './clouds.glsl'
 import '../shared/exp.css'
 import './CloudGallery.css'
 
-const SUN_DIR = new THREE.Vector3(0.6, 0.7, 0.35).normalize()
-const LAID = layout(SCULPTURES, { spacing: 16, height: 0 })
+
+// 배치 프로토타입 스위치: ?layout=arc&sweep=200&side=-4.5 로 눈으로 비교한다.
+// side가 음수면 카메라가 호 안쪽에 서서 작품들이 둘러싸는 구도가 된다.
+const PARAMS = new URLSearchParams(window.location.search)
+const SHAPE = PARAMS.get('layout') === 'arc' ? 'arc' : 'line'
+const SWEEP = Number(PARAMS.get('sweep')) || 200
+const SIDE = PARAMS.has('side') ? Number(PARAMS.get('side')) : 4.5
+const BLOOM = PARAMS.has('bloom') ? Number(PARAMS.get('bloom')) : 0.35
+const LAID = layout(SCULPTURES, { spacing: 16, height: 0, shape: SHAPE, sweep: SWEEP })
+
+// 슈퍼포뮬러 표면을 격자로 샘플링해 BufferGeometry로 굽는다. 14개가 비슷한
+// 덩치로 읽히도록 최대 반경으로 정규화한다. 프로토타입이라 감기 방향을 따지지
+// 않고 DoubleSide로 그린다 — 실루엣만 보면 되는 단계라서.
+function buildSuperGeometry(params, target = 1.6) {
+  const segU = 128
+  const segV = 64
+  const scale = target / maxExtent(params)
+  const positions = new Float32Array((segU + 1) * (segV + 1) * 3)
+
+  for (let i = 0; i <= segU; i++) {
+    const theta = -Math.PI + (i / segU) * Math.PI * 2
+    for (let j = 0; j <= segV; j++) {
+      const phi = -Math.PI / 2 + (j / segV) * Math.PI
+      const [x, y, z] = superPoint(params, theta, phi)
+      const k = (i * (segV + 1) + j) * 3
+      positions[k] = x * scale
+      positions[k + 1] = y * scale
+      positions[k + 2] = z * scale
+    }
+  }
+
+  const indices = []
+  for (let i = 0; i < segU; i++) {
+    for (let j = 0; j < segV; j++) {
+      const a = i * (segV + 1) + j
+      const b = a + 1
+      const c = (i + 1) * (segV + 1) + j
+      const d = c + 1
+      indices.push(a, c, b, b, c, d)
+    }
+  }
+
+  const geo = new THREE.BufferGeometry()
+  geo.setAttribute('position', new THREE.BufferAttribute(positions, 3))
+  geo.setIndex(indices)
+  geo.computeVertexNormals()
+  return geo
+}
 
 function buildGeometry(form) {
-  switch (form) {
-    case 'torusKnot': return new THREE.TorusKnotGeometry(1.2, 0.38, 220, 32)
-    case 'crystal':   return new THREE.IcosahedronGeometry(1.6, 0)
-    case 'wave':      return new THREE.TorusGeometry(1.3, 0.45, 32, 220)
-    case 'sphere':    return new THREE.SphereGeometry(1.5, 96, 96)
-    default:          return new THREE.IcosahedronGeometry(1.4, 1)
+  if (form.family === 'knot') {
+    const { p, q, tube } = form.params
+    return new THREE.TorusKnotGeometry(1.15, 1.15 * tube, 240, 32, p, q)
   }
+  return buildSuperGeometry(form.params)
 }
 
 function buildMaterial(kind) {
@@ -54,7 +100,7 @@ export default function CloudGallery() {
     const mount = mountRef.current
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
     const laid = LAID
-    const wps = waypoints(laid, { back: 8, up: 2.6, side: 4.5 })
+    const wps = waypoints(laid, { back: 8, up: 2.6, side: SIDE })
     const count = laid.length
 
     // ── renderer ──
@@ -81,7 +127,8 @@ export default function CloudGallery() {
       uCamUp: { value: new THREE.Vector3() },
       uCamFwd: { value: new THREE.Vector3() },
       uTanFov: { value: Math.tan((50 / 2) * Math.PI / 180) },
-      uSunDir: { value: SUN_DIR.clone() },
+      uSunDir: { value: new THREE.Vector3() },
+      uSunColor: { value: new THREE.Color() },
     }
     const bgMat = new THREE.ShaderMaterial({
       uniforms: bgUniforms,
@@ -96,30 +143,32 @@ export default function CloudGallery() {
     scene.add(bgQuad)
 
     // ── key light so metals/marble read directional ──
-    const sunLight = new THREE.DirectionalLight(0xfff2e0, 2.2)
-    sunLight.position.copy(SUN_DIR).multiplyScalar(20)
+    // 방향·색·세기 모두 투어 진행도에 따라 매 프레임 갱신된다 (loop 참조).
+    const sunLight = new THREE.DirectionalLight(0xffffff, 2.2)
     scene.add(sunLight)
     scene.add(new THREE.AmbientLight(0x334455, 0.4))
 
     // ── sculptures ──
     const geoms = []
     const mats = []
-    const meshes = laid.map((s) => {
-      const g = buildGeometry(s.form)
+    const meshes = laid.map((s, i) => {
+      const form = formFor(s.id, i)
+      const g = buildGeometry(form)
       const m = buildMaterial(s.material)
+      if (form.family === 'super') m.side = THREE.DoubleSide
       geoms.push(g)
       mats.push(m)
       const mesh = new THREE.Mesh(g, m)
       mesh.position.set(s.position[0], s.position[1], s.position[2])
       scene.add(mesh)
-      return mesh
+      return { mesh, spin: form.spin }
     })
 
     // ── postprocessing ──
     const composer = new EffectComposer(renderer)
     composer.addPass(new RenderPass(scene, cam))
     const bloom = new UnrealBloomPass(
-      new THREE.Vector2(mount.clientWidth, mount.clientHeight), 0.35, 0.6, 0.85,
+      new THREE.Vector2(mount.clientWidth, mount.clientHeight), BLOOM, 0.6, 0.85,
     )
     composer.addPass(bloom)
     composer.addPass(new OutputPass())
@@ -176,6 +225,7 @@ export default function CloudGallery() {
     const right = new THREE.Vector3()
     const upv = new THREE.Vector3()
     const fwd = new THREE.Vector3()
+    const spinAxis = new THREE.Vector3()
     const loop = () => {
       raf = requestAnimationFrame(loop)
       if (!running) return
@@ -195,7 +245,19 @@ export default function CloudGallery() {
       bgUniforms.uCamFwd.value.copy(fwd.clone().negate()) // camera looks down -Z
       bgUniforms.uTime.value = reduced ? 8 : time
 
-      for (const mesh of meshes) mesh.rotation.y = reduced ? 0.4 : time * 0.15
+      // 태양을 투어에 연동: 새벽의 낮고 따뜻한 빛에서 정오를 지나 황혼까지.
+      // 조명과 하늘이 같은 값을 쓰므로 둘이 어긋나지 않는다.
+      const sky = sunAt(progress)
+      bgUniforms.uSunDir.value.set(sky.dir[0], sky.dir[1], sky.dir[2])
+      bgUniforms.uSunColor.value.setRGB(sky.color[0], sky.color[1], sky.color[2])
+      sunLight.position.set(sky.dir[0], sky.dir[1], sky.dir[2]).multiplyScalar(20)
+      sunLight.color.setRGB(sky.color[0], sky.color[1], sky.color[2])
+      sunLight.intensity = sky.intensity
+
+      for (const { mesh, spin } of meshes) {
+        spinAxis.set(spin.axis[0], spin.axis[1], spin.axis[2])
+        mesh.quaternion.setFromAxisAngle(spinAxis, reduced ? 0.4 : time * spin.speed)
+      }
 
       composer.render()
     }
@@ -239,7 +301,10 @@ export default function CloudGallery() {
           <span key={s.id} className={`cg-dot${i === stopIdx ? ' active' : ''}`} />
         ))}
       </div>
-      <p className="cg-hint">스크롤 / ↑↓ — 다음 작품</p>
+      <p className="cg-hint">
+        스크롤 / ↑↓ — 다음 작품 · layout={SHAPE}
+        {SHAPE === 'arc' && ` sweep=${SWEEP}° side=${SIDE}`}
+      </p>
     </div>
   )
 }

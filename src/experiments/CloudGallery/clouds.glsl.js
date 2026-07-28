@@ -14,6 +14,7 @@ export const CLOUD_FRAG = /* glsl */ `
   uniform vec3 uCamFwd;
   uniform float uTanFov;
   uniform vec3 uSunDir;
+  uniform vec3 uSunColor;
 
   float hash(vec3 p) {
     p = fract(p * 0.3183099 + 0.1);
@@ -62,8 +63,10 @@ export const CLOUD_FRAG = /* glsl */ `
 
     vec3 sun = normalize(uSunDir);
     float up = clamp(rd.y * 0.5 + 0.5, 0.0, 1.0);
-    vec3 sky = mix(vec3(0.55, 0.62, 0.74), vec3(0.10, 0.22, 0.48), up);
-    sky += vec3(1.0, 0.85, 0.6) * pow(max(dot(rd, sun), 0.0), 64.0) * 0.6;
+    // 지평선 쪽 하늘만 태양색으로 물들인다 — 천정은 시간대와 무관하게 푸르다.
+    vec3 horizon = vec3(0.55, 0.62, 0.74) * mix(vec3(1.0), uSunColor, 0.7);
+    vec3 sky = mix(horizon, vec3(0.10, 0.22, 0.48), up);
+    sky += uSunColor * pow(max(dot(rd, sun), 0.0), 64.0) * 0.6;
 
     float trans = 1.0;
     vec3 acc = vec3(0.0);
@@ -77,7 +80,7 @@ export const CLOUD_FRAG = /* glsl */ `
       if (dens > 0.001) {
         float shadow = density(p + sun * 1.2);
         float light = clamp(1.0 - shadow, 0.0, 1.0);
-        vec3 lit = mix(vec3(0.45, 0.5, 0.62), vec3(1.0, 0.97, 0.92), light);
+        vec3 lit = mix(vec3(0.45, 0.5, 0.62), uSunColor, light);
         float a = dens * 0.5;
         acc += trans * a * lit;
         trans *= 1.0 - a;
