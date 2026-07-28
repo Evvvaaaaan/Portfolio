@@ -42,6 +42,7 @@ Pure module. No React, no DOM. Owns where panels sit on the cylinder, which one 
   - `signedOffset(index: number, count: number, yawDeg: number) => number` — degrees in `(-180, 180]`; `0` means dead ahead
   - `activeIndex(count: number, yawDeg: number) => number`
   - `stepYaw(yawDeg: number, count: number, dir: 1 | -1) => number` — target yaw one panel away
+  - `yawForIndex(yawDeg: number, count: number, index: number) => number` — nearest yaw that puts `index` dead ahead, without unwinding accumulated turns
   - `panelGeometry(vw: number, count: number) => { width, height, radius, perspective }` — all px
   - `PITCH_LIMIT_DEG: number` (25)
 
@@ -58,6 +59,7 @@ import {
   signedOffset,
   activeIndex,
   stepYaw,
+  yawForIndex,
   panelGeometry,
   PITCH_LIMIT_DEG,
 } from './ring.js'
@@ -155,6 +157,29 @@ describe('stepYaw', () => {
   })
 })
 
+describe('yawForIndex', () => {
+  const step = 360 / 14
+
+  it('목표 패널이 정면에 오는 yaw를 준다', () => {
+    const y = yawForIndex(0, 14, 5)
+    expect(activeIndex(14, y)).toBe(5)
+  })
+
+  it('최단 방향으로 간다 — 13번은 뒤로 한 칸', () => {
+    expect(yawForIndex(0, 14, 13)).toBeCloseTo(-step)
+  })
+
+  it('누적 회전을 풀지 않는다', () => {
+    // yaw 720(두 바퀴)에서 1번 패널로 가면 745.7 근처여야지 25.7로 돌아가면 안 된다.
+    const y = yawForIndex(720, 14, 1)
+    expect(y).toBeCloseTo(720 + step)
+  })
+
+  it('이미 정면이면 그대로 둔다', () => {
+    expect(yawForIndex(step * 3, 14, 3)).toBeCloseTo(step * 3)
+  })
+})
+
 describe('panelGeometry', () => {
   it('패널이 겹치지 않을 만큼 반지름을 잡는다', () => {
     for (const vw of [360, 768, 1440, 2560]) {
@@ -222,6 +247,16 @@ export function activeIndex(count, yawDeg) {
 export function stepYaw(yawDeg, count, dir) {
   const step = 360 / count
   return (Math.round(yawDeg / step) + dir) * step
+}
+
+// 임의의 패널을 정면으로 가져오는 yaw. 누적 회전수를 유지한 채 최단 방향을
+// 고른다 — 그러지 않으면 여러 바퀴 돈 뒤 패널을 누를 때 링이 통째로 되감긴다.
+export function yawForIndex(yawDeg, count, index) {
+  const step = 360 / count
+  const current = Math.round(yawDeg / step)
+  let delta = (((index - current) % count) + count) % count
+  if (delta > count / 2) delta -= count
+  return (current + delta) * step
 }
 
 // 패널 크기와 링 반지름. 반지름은 원주가 패널 폭 합의 1.25배 이상이 되도록
@@ -671,9 +706,17 @@ describe('SKY_FRAG', () => {
   })
 
   it('컴포넌트가 구동하는 유니폼을 모두 선언한다', () => {
+    // 이름이 본문 어딘가에 등장하는 것으로는 부족하다 — 실제 uniform
+    // 선언문이 있어야 SkyCanvas가 값을 밀어 넣을 수 있다.
     for (const u of SKY_UNIFORM_NAMES) {
-      expect(SKY_FRAG).toContain(`uniform`)
-      expect(SKY_FRAG).toContain(u)
+      expect(SKY_FRAG).toMatch(new RegExp(`uniform\\s+\\w+\\s+${u}\\s*;`))
+    }
+  })
+
+  it('선언만 하고 쓰지 않는 유니폼이 없다', () => {
+    for (const u of SKY_UNIFORM_NAMES) {
+      const uses = SKY_FRAG.match(new RegExp(`\\b${u}\\b`, 'g')) || []
+      expect(uses.length).toBeGreaterThan(1)
     }
   })
 
@@ -1056,6 +1099,7 @@ Pointer drag with inertia, wheel, and keyboard. Orientation lives in a ref (read
   - `handlers: { onPointerDown, onPointerMove, onPointerUp, onPointerCancel, onWheel }` — spread onto the scene element
   - `stepBy(dir: 1 | -1): void` — animate one panel step
   - `nudgePitch(deltaDeg: number): void` — keyboard up/down look, clamped
+  - `snapToYaw(targetYawDeg: number): void` — ease to an absolute yaw (used when a side panel is clicked)
   - `tick(dtSec: number): void` — call once per frame; applies inertia and eased snapping
   - `wasDrag(): boolean` — true if the gesture that just ended moved far enough to count as a drag rather than a click
 
@@ -1148,6 +1192,12 @@ export default function useLookAround(count, { enabled, reducedMotion }) {
     targetRef.current = stepYaw(orientationRef.current.yaw, count, dir)
   }, [enabled, count])
 
+  const snapToYaw = useCallback((targetYawDeg) => {
+    if (!enabled) return
+    velocityRef.current = 0
+    targetRef.current = targetYawDeg
+  }, [enabled])
+
   const nudgePitch = useCallback((deltaDeg) => {
     if (!enabled) return
     const o = orientationRef.current
@@ -1189,6 +1239,7 @@ export default function useLookAround(count, { enabled, reducedMotion }) {
       onWheel,
     },
     stepBy,
+    snapToYaw,
     nudgePitch,
     tick,
     wasDrag,
@@ -1244,7 +1295,7 @@ import { experiments } from '../../experiments/index.js'
 import { useLang } from '../../context/LangContext'
 import SkyCanvas from './SkyCanvas.jsx'
 import useLookAround from './useLookAround.js'
-import { activeIndex, panelAngle, panelGeometry } from './ring.js'
+import { activeIndex, panelAngle, panelGeometry, yawForIndex } from './ring.js'
 import { computeDescent, landedState, DESCENT_DURATION_MS } from './descent.js'
 import './Gallery.css'
 
@@ -1350,13 +1401,23 @@ export default function Gallery() {
     navigate(`/gallery/${experiments[idx].id}`)
   }, [navigate])
 
-  // 정면 패널만 진입시킨다. 옆에 있는 패널을 누르면 그쪽으로 돌기만 한다 —
-  // 실수로 작품이 열리지 않게 하려는 의도적인 동작이다.
-  const onPanelClick = useCallback((idx) => {
+  // 선택은 패널의 onClick이 아니라 씬의 pointerup에서 위임 처리한다.
+  // onPointerDown에서 setPointerCapture를 걸기 때문에 이후 포인터 이벤트가
+  // 씬으로 향하고, 자식 패널의 click이 오지 않을 수 있다 — 기존 캐러셀도
+  // 같은 이유로 pointerup + closest()를 썼다.
+  //
+  // 정면 패널만 진입시킨다. 옆 패널을 누르면 그쪽으로 돌기만 한다 — 실수로
+  // 작품이 열리지 않게 하려는 의도적인 동작이다.
+  const onScenePointerUp = useCallback((e) => {
+    look.handlers.onPointerUp(e)
     if (!landed || look.wasDrag()) return
+    const el = e.target?.closest?.('.carousel-card')
+    if (!el) return
+    const idx = Number(el.dataset.idx)
+    if (Number.isNaN(idx)) return
     if (idx === active) openPanel(idx)
-    else look.stepBy(idx > active ? 1 : -1)
-  }, [landed, active, look, openPanel])
+    else look.snapToYaw(yawForIndex(orientationRef.current.yaw, n, idx))
+  }, [landed, active, look, openPanel, orientationRef, n])
 
   const onKeyDown = useCallback((e) => {
     if (!landed) return
@@ -1386,6 +1447,7 @@ export default function Gallery() {
           aria-label={t.lab.title}
           onKeyDown={onKeyDown}
           {...look.handlers}
+          onPointerUp={onScenePointerUp}
         >
           <div className="lab-ring" ref={ringRef} style={{ opacity: 0 }}>
             {experiments.map((exp, i) => {
@@ -1406,7 +1468,6 @@ export default function Gallery() {
                     transform: `rotateY(${panelAngle(i, n)}deg) translateZ(${-geo.radius}px)`,
                     '--exp-color': exp.color,
                   }}
-                  onClick={() => onPanelClick(i)}
                 >
                   <div className="card-bg" />
                   <div className="card-glow" />
