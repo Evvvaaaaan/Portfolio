@@ -38,7 +38,9 @@ export default function useLookAround(count, { enabled, reducedMotion }) {
 
   const onPointerMove = useCallback((e) => {
     const drag = dragRef.current
-    if (!drag.active) return
+    // enabled가 드래그 도중에 꺼져도 방향이 계속 돌아가지 않게 막는다.
+    // pointerdown만 막으면 이미 시작된 제스처는 그대로 살아남는다.
+    if (!drag.active || !enabled) return
 
     const dx = e.clientX - drag.x
     const dy = e.clientY - drag.y
@@ -59,7 +61,7 @@ export default function useLookAround(count, { enabled, reducedMotion }) {
     drag.y = e.clientY
     drag.lastX = e.clientX
     drag.lastT = now
-  }, [])
+  }, [enabled])
 
   const endDrag = useCallback(() => {
     const drag = dragRef.current
