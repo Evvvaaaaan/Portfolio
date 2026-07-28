@@ -92,6 +92,8 @@ export const translations = {
       arrived: 'Lab arrived',
       enter: 'Enter',
       descending: 'Entering atmosphere...',
+      prev: 'Previous',
+      next: 'Next',
     },
   },
 
@@ -188,6 +190,8 @@ export const translations = {
       arrived: 'Lab에 도착하였습니다',
       enter: '들어가기',
       descending: '대기권 진입 중...',
+      prev: '이전',
+      next: '다음',
     },
   },
 
@@ -284,6 +288,8 @@ export const translations = {
       arrived: 'Lab に到着しました',
       enter: '入る',
       descending: '大気圏に突入中...',
+      prev: '前へ',
+      next: '次へ',
     },
   },
 
@@ -380,6 +386,8 @@ export const translations = {
       arrived: '已抵达 Lab',
       enter: '进入',
       descending: '正在进入大气层...',
+      prev: '上一个',
+      next: '下一个',
     },
   },
 }

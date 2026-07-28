@@ -1544,7 +1544,7 @@
 
 /* ── Mobile adjustments ── */
 @media (max-width: 479px) {
-  .gallery-page { padding: 64px 12px 0; }
+  .lab-stage { padding: 64px 12px 0; }
   .gallery-header { padding: 12px 0 10px; }
   .gallery-title { margin: 6px 0 6px; }
   .carousel-cta { padding: 10px 0 14px; gap: 10px; }
@@ -1552,6 +1552,6 @@
 }
 
 @media (max-width: 767px) and (min-width: 480px) {
-  .gallery-page { padding: 68px 16px 0; }
+  .lab-stage { padding: 68px 16px 0; }
   .gallery-header { padding: 14px 0 10px; }
 }

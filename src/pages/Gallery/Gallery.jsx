@@ -49,7 +49,7 @@ export default function Gallery() {
     let raf
     let last = performance.now()
     const start = performance.now()
-    let landedFired = reducedMotion
+    let landedFired = false
 
     const frame = (now) => {
       raf = requestAnimationFrame(frame)
@@ -60,6 +60,7 @@ export default function Gallery() {
       if (d.done && !landedFired) {
         landedFired = true
         setLanded(true)
+        setShowArrived(true)
       }
 
       tick(dtSec)
@@ -98,10 +99,10 @@ export default function Gallery() {
     return () => cancelAnimationFrame(raf)
   }, [n, reducedMotion, tick, orientationRef])
 
-  // 착지 문구는 잠깐 떴다 사라진다.
+  // 착지 문구는 잠깐 떴다 사라진다. 문구를 띄우는 쪽은 하강 루프의
+  // landedFired 분기가 맡고, 여기서는 사라지는 타이머만 소유한다.
   useEffect(() => {
     if (!landed) return
-    setShowArrived(true)
     const id = setTimeout(() => setShowArrived(false), ARRIVED_HOLD_MS)
     return () => clearTimeout(id)
   }, [landed])
@@ -209,13 +210,13 @@ export default function Gallery() {
 
         <div className="carousel-cta">
           <div className="carousel-nav">
-            <button className="carousel-arrow" onClick={() => look.stepBy(-1)} aria-label="Previous">←</button>
+            <button className="carousel-arrow" onClick={() => look.stepBy(-1)} aria-label={t.lab.prev}>←</button>
             <div className="carousel-info">
               <span className="carousel-active-num">{String(active + 1).padStart(2, '0')}</span>
               <span className="carousel-slash">/</span>
               <span className="carousel-total">{String(n).padStart(2, '0')}</span>
             </div>
-            <button className="carousel-arrow" onClick={() => look.stepBy(1)} aria-label="Next">→</button>
+            <button className="carousel-arrow" onClick={() => look.stepBy(1)} aria-label={t.lab.next}>→</button>
           </div>
           <div className="carousel-progress">
             <span style={{ width: `${((active + 1) / n) * 100}%` }} />

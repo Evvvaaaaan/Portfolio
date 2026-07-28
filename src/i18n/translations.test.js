@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { translations } from './translations.js'
 
 const LOCALES = ['en', 'ko', 'ja', 'zh']
-const LAB_KEYS = ['eyebrow', 'title', 'hint', 'arrived', 'enter', 'descending']
+const LAB_KEYS = ['eyebrow', 'title', 'hint', 'arrived', 'enter', 'descending', 'prev', 'next']
 
 describe('translations.lab', () => {
   it('네 개 로케일이 모두 있다', () => {
