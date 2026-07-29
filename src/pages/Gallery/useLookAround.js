@@ -1,5 +1,5 @@
 import { useCallback, useRef } from 'react'
-import { clampPitch, stepYaw } from './ring.js'
+import { clampPitch, stepYaw, isDragGesture } from './ring.js'
 
 // 드래그로 시선을 돌리는 입력. 방위(yaw)는 되감지 않고 계속 누적한다 —
 // ±180에서 되감으면 그 순간 링이 한 바퀴 튄다.
@@ -8,7 +8,6 @@ import { clampPitch, stepYaw } from './ring.js'
 // 돈다(yaw 감소). 회전 상태는 React state가 아니라 ref에 둔다 — 60fps로
 // 패널 14개를 리렌더할 이유가 없다.
 
-const DRAG_THRESHOLD_PX = 6
 const YAW_PER_PX = 0.22
 const PITCH_PER_PX = 0.12
 const INERTIA_DAMPING = 3.2   // 초당 감쇠율
@@ -19,7 +18,9 @@ export default function useLookAround(count, { enabled, reducedMotion }) {
   const orientationRef = useRef({ yaw: 0, pitch: 0 })
   const velocityRef = useRef(0)
   const targetRef = useRef(null)
-  const dragRef = useRef({ active: false, moved: false, x: 0, y: 0, lastX: 0, lastT: 0 })
+  const dragRef = useRef({
+    active: false, moved: false, startX: 0, startY: 0, x: 0, y: 0, lastX: 0, lastT: 0,
+  })
 
   const onPointerDown = useCallback((e) => {
     if (!enabled) return
@@ -29,6 +30,10 @@ export default function useLookAround(count, { enabled, reducedMotion }) {
     dragRef.current = {
       active: true,
       moved: false,
+      // startX/startY는 드래그 판정 기준점 — 이동 중에 갱신하지 않는다.
+      startX: e.clientX,
+      startY: e.clientY,
+      // x/y는 회전 증분 기준점 — 매 이벤트 갱신한다.
       x: e.clientX,
       y: e.clientY,
       lastX: e.clientX,
@@ -44,7 +49,7 @@ export default function useLookAround(count, { enabled, reducedMotion }) {
 
     const dx = e.clientX - drag.x
     const dy = e.clientY - drag.y
-    if (Math.abs(dx) > DRAG_THRESHOLD_PX || Math.abs(dy) > DRAG_THRESHOLD_PX) {
+    if (isDragGesture(drag.startX, drag.startY, e.clientX, e.clientY)) {
       drag.moved = true
     }
 

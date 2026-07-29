@@ -76,6 +76,10 @@ float stars(vec3 d) {
 // 화면을 스쳐 지나가는 근거리 입자. 속도는 가까운 기준점이 있어야 읽히므로
 // 이게 가장 강한 속도 단서다. 멈추면 완전히 사라진다.
 float motes(vec2 uv) {
+  // 착지 후에는 결과가 어차피 0으로 곱해져 버려진다. 유니폼 분기라 워프
+  // 전체가 같은 길을 타므로 발산 비용이 없다.
+  if (uVelocity < 0.002) return 0.0;
+
   float acc = 0.0;
   for (int i = 0; i < 14; i++) {
     float fi = float(i);
@@ -83,8 +87,13 @@ float motes(vec2 uv) {
     float speed = 0.8 + hash21(vec2(fi, 3.0)) * 1.6;
     float y = 1.6 - fract(hash21(vec2(fi, 11.0)) + uTime * speed * (0.15 + uVelocity * 1.4)) * 3.2;
     vec2 p = uv - vec2(x, y);
-    p.y /= (0.015 + uVelocity * 0.42);
-    acc += exp(-dot(p, p) * 520.0);
+    // 진행 방향(세로)으로 길고 가로로는 좁아야 "스쳐 지나간다"로 읽힌다.
+    // 가로를 눌러주지 않으면 이동 방향을 가로지르는 납작한 타원이 되어
+    // 흐름이 아니라 깜빡임으로 보인다. 세로 길이는 프레임 간 이동량보다
+    // 길어야 궤적이 끊기지 않는다.
+    p.x *= 3.5;
+    p.y /= (0.02 + uVelocity * 1.6);
+    acc += exp(-dot(p, p) * 320.0);
   }
   return clamp(acc, 0.0, 1.0) * uVelocity;
 }
@@ -139,7 +148,10 @@ void main() {
   col += vec3(0.80, 0.88, 1.0) * motes(uv) * 0.9;
 
   // ── 재진입 플라즈마: 화면 아래쪽에서 타오른다
-  float edge = smoothstep(0.2, -1.0, uv.y);
+  // edge0 > edge1인 smoothstep은 GLSL 스펙상 미정의라 드라이버에 따라
+  // 플라즈마가 통째로 사라질 수 있다. 1 - smoothstep(작은쪽, 큰쪽)은
+  // 수학적으로 동일하면서 정의된 형태다.
+  float edge = 1.0 - smoothstep(-1.0, 0.2, uv.y);
   col += vec3(1.0, 0.36, 0.09) * edge * uPlasma * 1.1;
   col += vec3(1.0, 0.62, 0.25) * pow(edge, 3.0) * uPlasma * 0.6;
 

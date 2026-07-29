@@ -4,6 +4,16 @@
 
 export const PITCH_LIMIT_DEG = 25
 
+// 클릭과 드래그를 가르는 문턱(px).
+export const DRAG_THRESHOLD_PX = 6
+
+// 제스처가 드래그인지 판정한다. 기준점은 반드시 pointerdown 지점이어야 한다 —
+// 직전 이벤트와의 델타로 재면 부드러운 포인터 스트림(초당 수백 이벤트)에서는
+// 한 번도 문턱을 넘지 못해, 화면을 크게 끌어도 클릭으로 오인된다.
+export function isDragGesture(startX, startY, x, y) {
+  return Math.hypot(x - startX, y - startY) > DRAG_THRESHOLD_PX
+}
+
 // (-180, 180] 로 정규화. -180은 180으로 접어 경계에서 부호가 튀지 않게 한다.
 export function wrapDeg(deg) {
   const m = ((deg % 360) + 360) % 360

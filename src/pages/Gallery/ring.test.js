@@ -8,6 +8,7 @@ import {
   stepYaw,
   yawForIndex,
   panelGeometry,
+  isDragGesture,
   PITCH_LIMIT_DEG,
 } from './ring.js'
 
@@ -145,5 +146,33 @@ describe('panelGeometry', () => {
     const g = panelGeometry(1440, 14)
     expect(g.height).toBeCloseTo(g.width * 0.62, 0)
     expect(g.perspective).toBeGreaterThan(g.radius)
+  })
+})
+
+describe('isDragGesture', () => {
+  it('문턱 안의 미세한 흔들림은 클릭으로 남는다', () => {
+    expect(isDragGesture(100, 100, 100, 100)).toBe(false)
+    expect(isDragGesture(100, 100, 104, 100)).toBe(false)
+    expect(isDragGesture(100, 100, 100, 104)).toBe(false)
+  })
+
+  it('문턱을 넘으면 드래그다 — 축이 아닌 방향도 포함', () => {
+    expect(isDragGesture(100, 100, 110, 100)).toBe(true)
+    expect(isDragGesture(100, 100, 100, 110)).toBe(true)
+    expect(isDragGesture(100, 100, 90, 90)).toBe(true)
+  })
+
+  it('부드러운 포인터 스트림에서도 누적 이동을 잡아낸다', () => {
+    // 실기기는 이벤트당 1px 미만으로 움직인다. 직전 이벤트와의 델타로 재면
+    // 300px를 끌어도 영영 문턱을 넘지 못한다 — 기준점은 시작점이어야 한다.
+    const startX = 500
+    let x = startX
+    let dragged = false
+    for (let i = 0; i < 600; i++) {
+      x += 0.5
+      dragged = dragged || isDragGesture(startX, 300, x, 300)
+    }
+    expect(x - startX).toBe(300)
+    expect(dragged).toBe(true)
   })
 })

@@ -164,6 +164,10 @@ export default function Gallery() {
           tabIndex={0}
           role="listbox"
           aria-label={t.lab.title}
+          // 포커스는 씬에 머무르므로, 활성 작품이 바뀐 걸 스크린리더에
+          // 알리는 건 aria-activedescendant뿐이다. 없으면 방향키로 14개를
+          // 훑어도 아무 것도 읽히지 않는다.
+          aria-activedescendant={`lab-panel-${active}`}
           onKeyDown={onKeyDown}
           {...look.handlers}
           onPointerDown={onScenePointerDown}
@@ -175,6 +179,7 @@ export default function Gallery() {
               return (
                 <div
                   key={exp.id}
+                  id={`lab-panel-${i}`}
                   data-idx={i}
                   data-id={exp.id}
                   role="option"
@@ -234,7 +239,7 @@ export default function Gallery() {
         </div>
       </div>
 
-      {showArrived && <p className="lab-arrived">{t.lab.arrived}</p>}
+      {showArrived && <p className="lab-arrived" role="status">{t.lab.arrived}</p>}
     </section>
   )
 }
