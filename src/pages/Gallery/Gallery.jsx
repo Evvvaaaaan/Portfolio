@@ -111,20 +111,29 @@ export default function Gallery() {
     navigate(`/gallery/${experiments[idx].id}`)
   }, [navigate])
 
-  // 선택은 패널의 onClick이 아니라 씬의 pointerup에서 위임 처리한다.
-  // onPointerDown에서 setPointerCapture를 걸기 때문에 이후 포인터 이벤트가
-  // 씬으로 향하고, 자식 패널의 click이 오지 않을 수 있다 — 기존 캐러셀도
-  // 같은 이유로 pointerup + closest()를 썼다.
-  //
+  // 선택은 패널의 onClick이 아니라 씬의 pointerdown/pointerup에서 위임
+  // 처리한다. onPointerDown에서 setPointerCapture를 걸면 이후 포인터
+  // 이벤트(pointerup 포함)는 브라우저가 캡처한 요소(.lab-scene)로
+  // 리타겟한다 — pointerup 시점의 e.target은 항상 씬 자신이라 어떤
+  // 패널을 눌렀는지 더 이상 읽어낼 수 없다. 그래서 캡처가 리타겟하기
+  // 전인 pointerdown 시점에 눌린 패널을 ref에 적어두고, pointerup에서는
+  // 그 ref를 읽는다.
+  const pressedIdxRef = useRef(null)
+
+  const onScenePointerDown = useCallback((e) => {
+    const el = e.target?.closest?.('.carousel-card')
+    pressedIdxRef.current = el ? Number(el.dataset.idx) : null
+    look.handlers.onPointerDown(e)
+  }, [look])
+
   // 정면 패널만 진입시킨다. 옆 패널을 누르면 그쪽으로 돌기만 한다 — 실수로
   // 작품이 열리지 않게 하려는 의도적인 동작이다.
   const onScenePointerUp = useCallback((e) => {
     look.handlers.onPointerUp(e)
+    const idx = pressedIdxRef.current
+    pressedIdxRef.current = null
     if (!landed || look.wasDrag()) return
-    const el = e.target?.closest?.('.carousel-card')
-    if (!el) return
-    const idx = Number(el.dataset.idx)
-    if (Number.isNaN(idx)) return
+    if (idx === null || Number.isNaN(idx)) return
     if (idx === active) openPanel(idx)
     else look.snapToYaw(yawForIndex(orientationRef.current.yaw, n, idx))
   }, [landed, active, look, openPanel, orientationRef, n])
@@ -157,6 +166,7 @@ export default function Gallery() {
           aria-label={t.lab.title}
           onKeyDown={onKeyDown}
           {...look.handlers}
+          onPointerDown={onScenePointerDown}
           onPointerUp={onScenePointerUp}
         >
           <div className="lab-ring" ref={ringRef} style={{ opacity: 0 }}>
