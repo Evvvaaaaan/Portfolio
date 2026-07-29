@@ -28,6 +28,24 @@ test('descent completes and the gallery lands', async ({ page }) => {
   await expect(page.locator('.lab-arrived')).toBeVisible()
 })
 
+// 링이 3D로 서 있는지 검사한다. transform-style이 flat으로 무너지면 정사영이
+// 되어 각도 θ와 180-θ 패널이 같은 자리에 완전히 포개진다 — 14개가 7자리만
+// 차지하게 되고, 아무리 돌려도 절반의 작품에는 영영 닿을 수 없다.
+test('all 14 works occupy distinct positions on the ring', async ({ page }) => {
+  await page.goto('/gallery')
+  await expect(page.locator('.lab-stage[data-landed="true"]')).toBeVisible({ timeout: 15000 })
+
+  const distinct = await page.evaluate(() => {
+    const places = [...document.querySelectorAll('.carousel-card')].map((c) => {
+      const r = c.getBoundingClientRect()
+      return `${Math.round(r.x + r.width / 2)}/${Math.round(r.width)}`
+    })
+    return new Set(places).size
+  })
+
+  expect(distinct).toBe(14)
+})
+
 test('exactly one work is active at a time', async ({ page }) => {
   await page.goto('/gallery')
   await expect(page.locator('.lab-stage[data-landed="true"]')).toBeVisible({ timeout: 15000 })

@@ -96,6 +96,9 @@
   touch-action: none;
   user-select: none;
   outline: none;
+  /* 하강 중 패널을 감추는 페이드는 여기서 건다. 3D 컨텍스트를 세우는
+     .lab-ring에 opacity를 걸면 브라우저에 따라 preserve-3d가 무너진다. */
+  will-change: opacity;
 }
 
 .lab-scene:active { cursor: grabbing; }
@@ -114,7 +117,11 @@
   width: 0;
   height: 0;
   transform-style: preserve-3d;
-  will-change: transform, opacity;
+  /* opacity를 will-change에 올리면 transform-style이 flat으로 강등되어 링이
+     정사영으로 무너진다. 그러면 각도 θ와 180-θ 패널이 같은 자리에 포개져
+     14개가 7자리만 차지하고, 절반의 작품에 영영 닿을 수 없다. 페이드는
+     3D 컨텍스트 밖인 .lab-scene이 맡는다. */
+  will-change: transform;
 }
 
 /* 뒤편 패널은 브라우저가 알아서 감춘다 — 컬링 코드가 필요 없다 */

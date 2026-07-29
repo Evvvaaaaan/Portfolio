@@ -38,6 +38,7 @@ export default function Gallery() {
 
   const skyRef = useRef(null)
   const ringRef = useRef(null)
+  const sceneRef = useRef(null)
   const stageRef = useRef(null)
 
   const look = useLookAround(n, { enabled: landed, reducedMotion })
@@ -88,8 +89,11 @@ export default function Gallery() {
       if (ring) {
         ring.style.transform =
           `rotateX(${(o.pitch + shakeY).toFixed(3)}deg) rotateY(${(-o.yaw).toFixed(3)}deg)`
-        ring.style.opacity = String(d.panelReveal)
       }
+
+      // 페이드는 씬에 건다 — 링에 걸면 3D 컨텍스트가 무너진다.
+      const scene = sceneRef.current
+      if (scene) scene.style.opacity = String(d.panelReveal)
 
       const next = activeIndex(n, o.yaw)
       setActive((prev) => (prev === next ? prev : next))
@@ -160,7 +164,8 @@ export default function Gallery() {
 
         <div
           className="lab-scene"
-          style={{ perspective: `${geo.perspective}px` }}
+          ref={sceneRef}
+          style={{ perspective: `${geo.perspective}px`, opacity: 0 }}
           tabIndex={0}
           role="listbox"
           aria-label={t.lab.title}
@@ -173,7 +178,7 @@ export default function Gallery() {
           onPointerDown={onScenePointerDown}
           onPointerUp={onScenePointerUp}
         >
-          <div className="lab-ring" ref={ringRef} style={{ opacity: 0 }}>
+          <div className="lab-ring" ref={ringRef}>
             {experiments.map((exp, i) => {
               const hasRing = exp.planet === 'saturn' || exp.planet === 'uranus'
               return (
