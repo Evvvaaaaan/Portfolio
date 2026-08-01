@@ -4,7 +4,6 @@ import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom'
 import { LangProvider, useLang } from './context/LangContext'
 import { useLenis, getLenis } from './hooks/useLenis'
 import { computeTransitionIntensity } from './components/SpaceBackground/transitionIntensity.js'
-import Cursor from './components/Cursor/Cursor'
 import Navbar from './components/Navbar/Navbar'
 import SpaceBackground from './components/SpaceBackground/SpaceBackground'
 import HardwareAccelNotice from './components/HardwareAccelNotice/HardwareAccelNotice'
@@ -91,6 +90,23 @@ function MainPage() {
   const isDesktop = useMediaQuery('(min-width: 769px) and (min-height: 701px)')
   const containerRef = useRef(null)
   const slidesRef = useRef([])
+
+  // Links like ProjectPage's "Back to Projects" navigate to `/#section` via
+  // react-router's <Link>, which only does a pushState - unlike a real
+  // browser navigation, it never scrolls to the hash target. Consume the
+  // hash once on mount and clear it so it doesn't re-fire on later remounts.
+  useEffect(() => {
+    if (!window.location.hash) return
+    const el = document.querySelector(window.location.hash)
+    if (el) {
+      // Must be instant, not smooth: this runs before the Lenis instance for
+      // this route is (re)created (see useLenis), and Lenis snapshots
+      // whatever window.scrollY is at construction time as its own target.
+      // A smooth/animated scroll here races that snapshot and usually loses.
+      el.scrollIntoView({ behavior: 'auto', block: 'start' })
+      window.history.replaceState(null, '', window.location.pathname + window.location.search)
+    }
+  }, [])
 
   useEffect(() => {
     if (!isDesktop) return
@@ -286,7 +302,6 @@ function AppContent() {
     <LangProvider>
       <ModeProvider>
         <SpaceBackground warpEnabled={isMainPage && isDesktop} />
-        <Cursor />
         <Navbar />
         <Routes>
           <Route path="/" element={<MainPage />} />
