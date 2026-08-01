@@ -14,16 +14,36 @@ const LANGS = [
 
 function LangSwitcher() {
   const { lang, setLang } = useLang()
+  const [open, setOpen] = useState(false)
+  const rootRef = useRef(null)
   const btnRefs = useRef([])
+  const current = LANGS.find((l) => l.code === lang) ?? LANGS[0]
+
+  useEffect(() => {
+    if (!open) return
+    const onDown = (e) => {
+      if (!rootRef.current?.contains(e.target)) setOpen(false)
+    }
+    window.addEventListener('pointerdown', onDown)
+    return () => window.removeEventListener('pointerdown', onDown)
+  }, [open])
+
+  const pick = (code) => {
+    setOpen(false)
+    setLang(code)
+  }
 
   const handleKeyDown = (e, idx) => {
     let next = null
-    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+    if (e.key === 'ArrowDown') {
       e.preventDefault()
       next = (idx + 1) % LANGS.length
-    } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+    } else if (e.key === 'ArrowUp') {
       e.preventDefault()
       next = (idx - 1 + LANGS.length) % LANGS.length
+    } else if (e.key === 'Escape') {
+      setOpen(false)
+      return
     }
     if (next !== null) {
       setLang(LANGS[next].code)
@@ -32,23 +52,41 @@ function LangSwitcher() {
   }
 
   return (
-    <div role="radiogroup" aria-label="Select language" className="lang-switcher">
-      {LANGS.map((l, idx) => (
-        <button
-          key={l.code}
-          ref={(el) => (btnRefs.current[idx] = el)}
-          role="radio"
-          aria-checked={lang === l.code}
-          aria-label={l.ariaLabel}
-          lang={l.code}
-          className={`lang-btn ${lang === l.code ? 'active' : ''}`}
-          tabIndex={lang === l.code ? 0 : -1}
-          onClick={() => setLang(l.code)}
-          onKeyDown={(e) => handleKeyDown(e, idx)}
-        >
-          {l.label}
-        </button>
-      ))}
+    <div className="lang-menu" ref={rootRef}>
+      <button
+        type="button"
+        className="nav-icon-btn lang-menu-btn"
+        aria-haspopup="menu"
+        aria-expanded={open}
+        title="Language"
+        onClick={() => setOpen((v) => !v)}
+      >
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="9" />
+          <ellipse cx="12" cy="12" rx="4" ry="9" />
+          <line x1="3" y1="12" x2="21" y2="12" />
+        </svg>
+        <span className="nav-icon-btn-label">{current.label}</span>
+      </button>
+      {open && (
+        <div className="lang-menu-panel" role="menu" aria-label="Select language">
+          {LANGS.map((l, idx) => (
+            <button
+              key={l.code}
+              ref={(el) => (btnRefs.current[idx] = el)}
+              type="button"
+              role="menuitemradio"
+              aria-checked={lang === l.code}
+              lang={l.code}
+              className={`lang-menu-item ${lang === l.code ? 'lang-menu-item--on' : ''}`}
+              onClick={() => pick(l.code)}
+              onKeyDown={(e) => handleKeyDown(e, idx)}
+            >
+              {l.ariaLabel}
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
@@ -139,7 +177,6 @@ export default function Navbar() {
           >
             {t.nav.guestbook}
           </a>
-          {location.pathname === '/' && <ModeMenu />}
           <a href="#contact" className="nav-cta" onClick={(e) => handleNav(e, '#contact')}>
             {t.nav.hire}
           </a>
@@ -147,7 +184,9 @@ export default function Navbar() {
 
         {/* Right controls */}
         <div className="nav-controls">
+          {location.pathname === '/' && <ModeMenu />}
           <LangSwitcher />
+          <span className="nav-divider" aria-hidden="true" />
           <button
             className={`nav-burger ${menuOpen ? 'open' : ''}`}
             onClick={() => setMenuOpen((v) => !v)}
