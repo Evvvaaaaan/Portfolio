@@ -206,4 +206,9 @@
     z-index: 200;
     position: relative;
   }
+
+  /* Icon-only: logo + Mode + Language + burger no longer fit on one row
+     with text labels at narrow widths (measured overflow past ~375px). */
+  .nav-icon-btn-label { display: none; }
+  .nav-icon-btn { padding: 6px; }
 }

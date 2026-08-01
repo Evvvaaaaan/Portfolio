@@ -196,40 +196,42 @@ export default function Navbar() {
             <span /><span /><span />
           </button>
         </div>
-
-        {/* Mobile menu overlay */}
-        {menuOpen && (
-          <nav
-            className="nav-mobile"
-            aria-label="Mobile navigation"
-          >
-            {navItems.map((item) => (
-              <a
-                key={item.href}
-                href={item.href}
-                className="nav-link"
-                onClick={(e) => handleNav(e, item.href)}
-              >
-                {item.label}
-              </a>
-            ))}
-            <a
-              href="/gallery"
-              className="nav-link"
-              onClick={handleLabClick}
-            >
-              Lab
-            </a>
-            <a href="/guestbook" className="nav-link" onClick={handleGuestbookClick}>
-              {t.nav.guestbook}
-            </a>
-            <a href="#contact" className="nav-cta" onClick={(e) => handleNav(e, '#contact')}>
-              {t.nav.hire}
-            </a>
-          </nav>
-        )}
       </div>
     </header>
+    {/* Mobile menu overlay - rendered outside .navbar: backdrop-filter on
+        .navbar.scrolled would otherwise make it a fixed-position containing
+        block, trapping this position:fixed overlay inside the navbar's own
+        (much shorter) box instead of the viewport. */}
+    {menuOpen && (
+      <nav
+        className="nav-mobile"
+        aria-label="Mobile navigation"
+      >
+        {navItems.map((item) => (
+          <a
+            key={item.href}
+            href={item.href}
+            className="nav-link"
+            onClick={(e) => handleNav(e, item.href)}
+          >
+            {item.label}
+          </a>
+        ))}
+        <a
+          href="/gallery"
+          className="nav-link"
+          onClick={handleLabClick}
+        >
+          Lab
+        </a>
+        <a href="/guestbook" className="nav-link" onClick={handleGuestbookClick}>
+          {t.nav.guestbook}
+        </a>
+        <a href="#contact" className="nav-cta" onClick={(e) => handleNav(e, '#contact')}>
+          {t.nav.hire}
+        </a>
+      </nav>
+    )}
     {labOrigin && (
       <LabTransition
         origin={labOrigin}
