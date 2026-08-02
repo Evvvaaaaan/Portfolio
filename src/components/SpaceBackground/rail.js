@@ -10,6 +10,8 @@ import { PLANETS, planetPosition } from './system.js'
 // 행성을 화면 중앙에서 옆으로 밀어내는 시선(target) 오프셋 — 도킹 패널 자리 확보.
 // 카메라를 접선 방향으로 트는 것만으로는 lookAt이 여전히 행성을 정조준하므로
 // 화면 중앙에 그대로 렌더된다 — target 자체를 옆으로 옮겨야 행성이 밀려난다.
+// 부호는 카메라 오프셋과 반대(-t) — 같은 방향(+t)으로 밀면 시선이 태양을
+// 향해 태양+글로우가 화면 절반을 압도한다 (브라우저 시각 QA로 확인됨).
 const TARGET_SHIFT = 55
 
 function planetStation(id, dist, height) {
@@ -18,9 +20,11 @@ function planetStation(id, dist, height) {
   const len = Math.hypot(x, z) || 1
   const ox = x / len
   const oz = z / len
-  // XZ 평면에서 바깥 방향에 수직인 접선 방향 — 카메라 위치와 시선(target)을
-  // 같은 방향으로 밀어 카메라가 옆에서 보되, 행성은 화면 중앙이 아니라
-  // 한쪽으로 치우쳐 렌더되게 한다 (도킹 패널 자리).
+  // XZ 평면에서 바깥 방향에 수직인 접선 방향 — 카메라는 +t 쪽으로 틀어
+  // 옆에서 보게 하고, 시선(target)은 반대인 -t 쪽으로 밀어낸다. 같은
+  // 방향으로 밀면 시선이 태양 쪽을 향해 태양+글로우가 화면을 압도하고
+  // 행성은 프레임 밖으로 밀려났다 (브라우저 시각 QA에서 확인) — 반대
+  // 방향이어야 행성이 화면 중앙이 아닌 한쪽으로 치우쳐 렌더된다 (도킹 패널 자리).
   const tx = -oz
   const tz = ox
   return {
@@ -30,7 +34,7 @@ function planetStation(id, dist, height) {
       height,
       z + oz * dist + tz * dist * 0.55,
     ],
-    target: [x + tx * TARGET_SHIFT, 0, z + tz * TARGET_SHIFT],
+    target: [x - tx * TARGET_SHIFT, 0, z - tz * TARGET_SHIFT],
   }
 }
 
