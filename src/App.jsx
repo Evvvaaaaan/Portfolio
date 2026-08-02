@@ -3,7 +3,7 @@ import './index.css'
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom'
 import { LangProvider, useLang } from './context/LangContext'
 import { useLenis, getLenis } from './hooks/useLenis'
-import { computeTransitionIntensity } from './components/SpaceBackground/transitionIntensity.js'
+import { computeDockStyle } from './components/dockLayout.js'
 import Navbar from './components/Navbar/Navbar'
 import SpaceBackground from './components/SpaceBackground/SpaceBackground'
 import HardwareAccelNotice from './components/HardwareAccelNotice/HardwareAccelNotice'
@@ -112,48 +112,21 @@ function MainPage() {
     if (!isDesktop) return
 
     let scrollTimeout
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
     const handleScroll = () => {
       const progress = window.scrollY / window.innerHeight
-      // DOM blur를 배경 워프와 같은 커브(0→1→0 포물선)로 구동해 두 레이어의
-      // 타이밍을 일치시킨다. 기존 |offset| 비례 blur는 슬라이드가 떠날수록
-      // 계속 증가해 카메라 워프(중간점 정점)와 어긋났다.
-      const transitionBlur = computeTransitionIntensity(window.scrollY, window.innerHeight) * 12
       const slides = slidesRef.current
 
       slides.forEach((slide, idx) => {
         if (!slide) return
-        const offset = progress - idx
-        let scale = 1
-        let opacity = 1
-        let blur = 0
-        let pointerEvents = 'none'
-
-        if (offset > 0) {
-          // Scrolled past: zoom out (scale up) and fade
-          scale = 1 + offset * 1.6
-          opacity = Math.max(0, 1 - offset * 2.2)
-          blur = transitionBlur
-        } else if (offset < 0) {
-          // Coming in: zoom in from center (scale up from 0.25 to 1.0)
-          scale = 0.25 + (1 + offset) * 0.75
-          opacity = Math.max(0, 1 + offset)
-          blur = transitionBlur
-        } else {
-          // Active
-          scale = 1
-          opacity = 1
-          blur = 0
-          pointerEvents = 'auto'
-        }
-
-        const isVisible = Math.abs(offset) < 1.15
-        slide.style.display = isVisible ? 'flex' : 'none'
-        if (isVisible) {
-          slide.style.transform = `scale(${scale})`
-          slide.style.opacity = opacity
-          slide.style.filter = blur > 0.1 ? `blur(${blur}px)` : 'none'
-          slide.style.pointerEvents = pointerEvents
+        const dock = computeDockStyle(progress, idx, reducedMotion)
+        slide.style.display = dock.visible ? 'flex' : 'none'
+        if (dock.visible) {
+          slide.style.transform = `translateY(${dock.translateY}px)`
+          slide.style.opacity = dock.opacity
+          slide.style.filter = 'none'
+          slide.style.pointerEvents = dock.pointerEvents
         }
       })
 
@@ -238,30 +211,35 @@ function MainPage() {
           pointerEvents: 'none',
         }}
       >
-        {sections.map((sec, idx) => (
-          <div
-            key={sec.id}
-            ref={(el) => (slidesRef.current[idx] = el)}
-            className="scroll-slide"
-            style={{
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              width: '100%',
-              height: '100%',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              transformStyle: 'preserve-3d',
-              willChange: 'transform, opacity, filter',
-              pointerEvents: 'none',
-            }}
-          >
-            <div style={{ width: '100%', pointerEvents: 'auto' }}>
-              {sec.component}
+        {sections.map((sec, idx) => {
+          // About/Skills/Contact는 우측 도킹(행성이 화면 왼쪽에 걸리므로),
+          // Hero/Projects/Footer는 카드 그리드 폭 등을 위해 중앙 유지.
+          const docked = idx === 1 || idx === 2 || idx === 4
+          return (
+            <div
+              key={sec.id}
+              ref={(el) => (slidesRef.current[idx] = el)}
+              className={docked ? 'scroll-slide scroll-slide--dock' : 'scroll-slide'}
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                width: '100%',
+                height: '100%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                transformStyle: 'preserve-3d',
+                willChange: 'transform, opacity, filter',
+                pointerEvents: 'none',
+              }}
+            >
+              <div className="slide-content" style={{ width: '100%', pointerEvents: 'auto' }}>
+                {sec.component}
+              </div>
             </div>
-          </div>
-        ))}
+          )
+        })}
       </div>
     </div>
   )

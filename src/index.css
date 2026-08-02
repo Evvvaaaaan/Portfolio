@@ -355,3 +355,13 @@ body.warp-exit main {
     opacity: 1;
   }
 }
+
+/* Evan System 도킹 패널: 행성이 화면 왼쪽에 걸리도록 카메라를 틀었으므로
+   (rail.js의 접선 오프셋) 콘텐츠는 오른쪽 절반에 도킹한다. */
+@media (min-width: 769px) and (min-height: 701px) {
+  .scroll-slide--dock .slide-content {
+    max-width: 680px;
+    margin-left: auto;
+    margin-right: 4vw;
+  }
+}
