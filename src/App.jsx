@@ -301,7 +301,10 @@ function AppContent() {
   return (
     <LangProvider>
       <ModeProvider>
-        <SpaceBackground warpEnabled={isMainPage && isDesktop} />
+        <SpaceBackground
+          warpEnabled={isMainPage && isDesktop}
+          stageEnabled={isMainPage && isDesktop}
+        />
         <Navbar />
         <Routes>
           <Route path="/" element={<MainPage />} />

@@ -11,6 +11,9 @@ import {
   computeArrivalIntensity,
 } from './arrivalSequence.js'
 import { WARP_BOOST_EVENT, computeBoostIntensity } from './warpBoost.js'
+import { createEvanSystem } from './evanSystem.js'
+import { computeRailPose } from './rail.js'
+import { projects } from '../../data/projects.js'
 
 function createStarTexture() {
   const canvas = document.createElement('canvas')
@@ -33,19 +36,31 @@ function createStarTexture() {
   return texture
 }
 
-export default function SpaceBackground({ warpEnabled = false }) {
+export default function SpaceBackground({ warpEnabled = false, stageEnabled = false }) {
   const ref = useRef(null)
   const warpEnabledRef = useRef(warpEnabled)
+  const stageEnabledRef = useRef(stageEnabled)
 
   useEffect(() => {
     warpEnabledRef.current = warpEnabled
   }, [warpEnabled])
 
   useEffect(() => {
+    stageEnabledRef.current = stageEnabled
+  }, [stageEnabled])
+
+  useEffect(() => {
     const canvas = ref.current
     if (!canvas) return
 
-    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true })
+    let renderer
+    try {
+      renderer = new THREE.WebGLRenderer({ canvas, antialias: true })
+    } catch {
+      // WebGL 사용 불가 — 배경 없이 DOM 콘텐츠만으로 동작한다 (스펙 5.4).
+      // HardwareAccelNotice가 별도로 사용자에게 안내한다.
+      return
+    }
     renderer.setSize(window.innerWidth, window.innerHeight)
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
     renderer.setClearColor(0x000000, 1)
@@ -104,9 +119,24 @@ export default function SpaceBackground({ warpEnabled = false }) {
     const streaks = createWarpStreaks({ count: 400 })
     scene.add(streaks.object3d)
 
+    // Evan System: 스테이지가 켜질 때 1회 생성. SpaceBackground는 라우트가
+    // 바뀌어도 언마운트되지 않으므로 메인 재방문 시 재사용된다.
+    let evanSystem = null
+    const satelliteColors = projects.slice(0, 3).map((p) => p.accent)
+    const ensureSystem = () => {
+      if (!evanSystem) {
+        evanSystem = createEvanSystem({ satelliteColors })
+        scene.add(evanSystem.group)
+      }
+      evanSystem.group.visible = true
+    }
+
     let scrollPercent = 0
     let scrollPercentSmooth = 0
     let intensitySmooth = 0
+    // 스테이지 모드 스크롤 진행도 스무딩. 첫 프레임 점프 방지를 위해 실제
+    // scrollY로 초기화한다 (스크롤 복원 리로드 대응).
+    let progressSmooth = window.scrollY / window.innerHeight
 
     // 메인 페이지의 데스크톱 슬라이드덱(섹션마다 정확히 100vh)에서만 섹션 전환
     // 구간 가속을 쓴다. warpEnabled는 App.jsx에서 "메인 페이지 && 데스크톱"일
@@ -201,25 +231,51 @@ export default function SpaceBackground({ warpEnabled = false }) {
         ? intensitySmooth
         : scrollPercentSmooth
 
-      // 1. Vortex rotation: spin the stars on Z axis as we scroll down
-      starsPoints.rotation.z = scrollPercentSmooth * 1.8
+      const stageOn = stageEnabledRef.current
+      if (stageOn) ensureSystem()
+      else if (evanSystem) evanSystem.group.visible = false
 
-      // Y/X slow rotation + scroll drift
-      starsPoints.rotation.y = t * 0.005 + scrollPercentSmooth * 0.15
-      starsPoints.rotation.x = Math.sin(t * 0.003) * 0.04 + scrollPercentSmooth * 0.08
+      if (stageOn && evanSystem) {
+        // --- 스테이지 모드: 스크롤 진행도 → 레일 포즈.
+        // 슬라이드덱이 섹션당 정확히 100vh이므로 진행도 = scrollY/vh.
+        const progress = window.scrollY / window.innerHeight
+        // 도착 시퀀스와 무관하게 레일이 카메라를 소유한다 — 시퀀스의
+        // 워프감은 스트릭+포스트FX(intensity)가 담당한다.
+        progressSmooth += (progress - progressSmooth) * (reducedMotion ? 1 : 0.08)
+        const pose = computeRailPose(progressSmooth, reducedMotion)
+        camera.position.set(pose.position[0], pose.position[1], pose.position[2])
+        camera.lookAt(pose.target[0], pose.target[1], pose.target[2])
+        camera.fov = Math.min(150, 60 + Math.pow(intensitySmooth, 1.5) * 45)
+        camera.updateProjectionMatrix()
 
-      // 스트릭은 별필드와 같은 회전을 따라가 한 몸처럼 보이게 한다.
-      streaks.object3d.rotation.copy(starsPoints.rotation)
-      streaks.update(intensitySmooth)
+        // 별은 카메라와 독립적으로 아주 느리게만 회전 (스크롤 소용돌이는
+        // 카메라 이동으로 대체됨).
+        starsPoints.rotation.set(
+          Math.sin(t * 0.003) * 0.04,
+          t * 0.005,
+          0,
+        )
+        // 스트릭은 카메라를 감싸야 도착/부스트 워프가 화면에 보인다.
+        streaks.object3d.position.copy(camera.position)
+        streaks.object3d.rotation.copy(camera.rotation)
+        streaks.update(intensitySmooth)
 
-      // 2. Camera flies deep into the starfield (Z: 400 down to 40)
-      // We use a power curve so the zoom feels like it accelerates (sucked-in feeling)
-      camera.position.z = 400 - Math.pow(zoomDriver, 1.2) * 360
-
-      // 3. Field of View Expansion: creates an edge-stretching warp speed optical illusion
-      // 부스트 피크(1.4)에서 기존 공식은 ~150°를 넘어 왜곡이 깨진다 — 클램프.
-      camera.fov = Math.min(150, 75 + Math.pow(zoomDriver, 1.5) * 45)
-      camera.updateProjectionMatrix()
+        evanSystem.update(t)
+      } else {
+        // --- 기존 워프/배경 모드 (변경 없음: 아래는 기존 코드 그대로)
+        starsPoints.rotation.z = scrollPercentSmooth * 1.8
+        starsPoints.rotation.y = t * 0.005 + scrollPercentSmooth * 0.15
+        starsPoints.rotation.x = Math.sin(t * 0.003) * 0.04 + scrollPercentSmooth * 0.08
+        streaks.object3d.position.set(0, 0, 0)
+        streaks.object3d.rotation.copy(starsPoints.rotation)
+        streaks.update(intensitySmooth)
+        camera.position.z = 400 - Math.pow(zoomDriver, 1.2) * 360
+        camera.position.x = 0
+        camera.position.y = 0
+        camera.lookAt(0, 0, 0)
+        camera.fov = Math.min(150, 75 + Math.pow(zoomDriver, 1.5) * 45)
+        camera.updateProjectionMatrix()
+      }
 
       if (postfx) {
         postfx.render(intensitySmooth)
@@ -246,6 +302,7 @@ export default function SpaceBackground({ warpEnabled = false }) {
       starGeo.dispose()
       starMat.dispose()
       starTexture.dispose()
+      evanSystem?.dispose()
       postfx?.dispose()
       renderer.dispose()
     }
