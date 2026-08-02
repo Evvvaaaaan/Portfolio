@@ -57,7 +57,10 @@ export function computeRailPose(progress, reduced = false) {
     return { position: [...s.position], target: [...s.target] }
   }
 
-  // 정수 progress에서는 정확히 해당 정거장 포즈를 반환 (부동소수 오차 방지)
+  // t=1 경계(마지막 정거장 진입)에서 catmullRom 항 합산이 대수적으로는 2*p2로
+  // 소거되지만 부동소수 합산에서는 파국적 소거(catastrophic cancellation)로 오차가 남는다.
+  // t=0 경로(정거장 0~4)는 IEEE 754에서 비트 정확하므로, 이 분기가 실제로 막는 것은
+  // 마지막 정거장 도착뿐이다 (i 클램프에서 t=1이 된다).
   const isIntegerProgress = Math.abs(p - Math.round(p)) < 1e-10
   if (isIntegerProgress) {
     const s = STATIONS[Math.round(p)]

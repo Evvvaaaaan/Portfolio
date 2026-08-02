@@ -51,4 +51,17 @@ describe('카메라 레일', () => {
     expect(computeRailPose(1.4, true)).toEqual(computeRailPose(1))
     expect(computeRailPose(1.6, true)).toEqual(computeRailPose(2))
   })
+
+  it('엡실론 경계: 1e-10 이내는 스냅, 범위 밖은 보간', () => {
+    // 엡실론 경계 안 (< 1e-10): 마지막 정거장으로 스냅
+    const insideEpsilon = computeRailPose(5 - 1e-11)
+    expect(insideEpsilon).toEqual(computeRailPose(5))
+
+    // 엡실론 경계 밖 (> 1e-10): 유한한 보간, 정거장 5와 다름
+    const outsideEpsilon = computeRailPose(4.999)
+    expect(Number.isFinite(outsideEpsilon.position[0])).toBe(true)
+    expect(Number.isFinite(outsideEpsilon.position[1])).toBe(true)
+    expect(Number.isFinite(outsideEpsilon.position[2])).toBe(true)
+    expect(outsideEpsilon).not.toEqual(computeRailPose(5))
+  })
 })
