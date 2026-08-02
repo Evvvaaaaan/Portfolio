@@ -7,14 +7,20 @@ import { PLANETS, planetPosition } from './system.js'
 // 행성 정거장: 카메라를 행성의 "태양 반대쪽 + 옆" 오프셋에 두어
 // 행성 뒤로 태양·안쪽 궤도가 배경으로 걸리게 한다 (깊이감).
 // 높이(y)를 조금 주어 궤도면을 비스듬히 내려다본다.
+// 행성을 화면 중앙에서 옆으로 밀어내는 시선(target) 오프셋 — 도킹 패널 자리 확보.
+// 카메라를 접선 방향으로 트는 것만으로는 lookAt이 여전히 행성을 정조준하므로
+// 화면 중앙에 그대로 렌더된다 — target 자체를 옆으로 옮겨야 행성이 밀려난다.
+const TARGET_SHIFT = 55
+
 function planetStation(id, dist, height) {
   const p = PLANETS.find((pl) => pl.id === id)
   const [x, , z] = planetPosition(p)
   const len = Math.hypot(x, z) || 1
   const ox = x / len
   const oz = z / len
-  // XZ 평면에서 바깥 방향에 수직인 접선 방향 — 카메라를 옆으로 틀어
-  // 행성이 화면 정중앙이 아니라 살짝 왼쪽에 오게 한다 (도킹 패널 자리).
+  // XZ 평면에서 바깥 방향에 수직인 접선 방향 — 카메라 위치와 시선(target)을
+  // 같은 방향으로 밀어 카메라가 옆에서 보되, 행성은 화면 중앙이 아니라
+  // 한쪽으로 치우쳐 렌더되게 한다 (도킹 패널 자리).
   const tx = -oz
   const tz = ox
   return {
@@ -24,7 +30,7 @@ function planetStation(id, dist, height) {
       height,
       z + oz * dist + tz * dist * 0.55,
     ],
-    target: [x, 0, z],
+    target: [x + tx * TARGET_SHIFT, 0, z + tz * TARGET_SHIFT],
   }
 }
 

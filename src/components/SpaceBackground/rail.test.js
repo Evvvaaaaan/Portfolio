@@ -15,10 +15,14 @@ describe('카메라 레일', () => {
     })
   })
 
-  it('행성 정거장의 target은 그 행성 위치다', () => {
+  it('행성 정거장의 target은 행성 위치에서 화면 옆으로 밀려난 지점이다 (행성이 화면 중앙을 가리지 않도록)', () => {
+    const TARGET_SHIFT = 55
     for (const p of PLANETS) {
       const st = STATIONS.find((s) => s.id === p.id)
-      expect(st.target).toEqual(planetPosition(p))
+      const planetPos = planetPosition(p)
+      expect(st.target[1]).toBe(0)
+      const shiftDist = Math.hypot(st.target[0] - planetPos[0], st.target[2] - planetPos[2])
+      expect(shiftDist).toBeCloseTo(TARGET_SHIFT, 5)
     }
   })
 
