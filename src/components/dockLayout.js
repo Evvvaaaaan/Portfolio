@@ -10,7 +10,8 @@ export function computeDockStyle(progress, idx, reduced = false) {
   const abs = Math.abs(offset)
   if (abs >= HIDE_AT) return { visible: false }
   const fade = 1 - abs / HIDE_AT
-  const translateY = reduced ? 0 : -offset * DRIFT_PX || 0
+  // -0 방지: offset=0일 때 -offset*DRIFT_PX는 -0이 되어 Object.is 기반 toBe(0) 단언이 깨진다
+  const translateY = reduced ? 0 : (offset === 0 ? 0 : -offset * DRIFT_PX)
   return {
     visible: true,
     // 페이드를 앞당겨(1.6배) 정착 구간에서는 확실한 opacity 1.
