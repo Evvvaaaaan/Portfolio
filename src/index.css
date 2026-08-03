@@ -357,11 +357,164 @@ body.warp-exit main {
 }
 
 /* Evan System 도킹 패널: 행성이 화면 왼쪽에 걸리도록 카메라를 틀었으므로
-   (rail.js의 접선 오프셋) 콘텐츠는 오른쪽 절반에 도킹한다. */
+   (rail.js의 접선 오프셋) 콘텐츠는 오른쪽 절반에 도킹한다. 다크 글라스
+   배경은 정거장마다 뒤에 뭐가 걸리든(태양 글로우 등) 텍스트 판독성을
+   보장하기 위한 것 — 배경에 텍스트가 그대로 노출되지 않게 한다. */
 @media (min-width: 769px) and (min-height: 701px) {
   .scroll-slide--dock .slide-content {
-    max-width: 680px;
+    max-width: 720px;
     margin-left: auto;
     margin-right: 4vw;
+    background: rgba(7, 11, 20, 0.62);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border: 1px solid rgba(109, 181, 255, 0.14);
+    border-radius: 16px;
+    padding: clamp(20px, 3vh, 40px) clamp(24px, 2.5vw, 44px);
+    max-height: 88vh;
+    overflow: hidden;
+  }
+
+  /* 각 섹션 자체의 상하 패딩(120px)은 패널 padding과 중복돼 900px 안팎
+     뷰포트에서 콘텐츠 상하가 잘린다 — 도킹 컨텍스트에서는 0으로 대체. */
+  .scroll-slide--dock .about,
+  .scroll-slide--dock .skills,
+  .scroll-slide--dock .contact {
+    padding: 0;
+  }
+
+  /* About: 텍스트+스탯 2열 그리드가 88vh 안에 넘치기 쉬워 1열로 쌓고
+     타이틀/본문/스탯 크기와 간격을 좁힌다. */
+  .scroll-slide--dock .about-grid {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+  .scroll-slide--dock .about-title {
+    font-size: clamp(24px, 2.6vw, 34px);
+    margin-bottom: 12px;
+  }
+  .scroll-slide--dock .about-body {
+    font-size: 14px;
+    line-height: 1.6;
+    margin-bottom: 10px;
+  }
+  .scroll-slide--dock .about-resume {
+    padding: 10px 24px;
+  }
+  .scroll-slide--dock .about-stats {
+    gap: 10px;
+  }
+  .scroll-slide--dock .stat-card {
+    padding: 14px 16px;
+  }
+  .scroll-slide--dock .stat-value {
+    font-size: 30px;
+  }
+
+  /* Skills: 4열 그리드는 720px 폭 패널에서 카드가 으스러지므로 2열로 접는다
+     (skills-grid의 기존 1024px 미디어쿼리는 뷰포트 폭 기준이라 도킹 폭
+     좁아짐과 무관하게 4열을 유지해버린다). Frontend/Design 카테고리가
+     6개 항목이라 2열이면 두 행 모두 그 높이로 늘어나 88vh를 넘기 쉬워
+     헤더/카드/리스트 크기를 전반적으로 좁힌다. */
+  .scroll-slide--dock .section-header {
+    margin-bottom: 20px;
+  }
+  .scroll-slide--dock .section-title {
+    font-size: clamp(20px, 2.2vw, 26px);
+    margin-bottom: 8px;
+  }
+  .scroll-slide--dock .section-sub {
+    font-size: 13px;
+  }
+  .scroll-slide--dock .skills-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+  .scroll-slide--dock .skill-card {
+    padding: 14px 16px;
+  }
+  .scroll-slide--dock .skill-card-header {
+    margin-bottom: 10px;
+  }
+  .scroll-slide--dock .skill-icon {
+    font-size: 16px;
+  }
+  .scroll-slide--dock .skill-category {
+    font-size: 14px;
+  }
+  .scroll-slide--dock .skill-list {
+    gap: 5px;
+  }
+  .scroll-slide--dock .skill-item {
+    font-size: 12px;
+  }
+
+  /* Contact: 정보/폼 2열 자체는 유지(1열로 쌓으면 정보+폼 높이가 합산돼
+     88vh를 크게 넘김) — 대신 720px 패널 폭에 맞춰 gap과 각 요소 크기를
+     좁혀 두 컬럼이 나란히 들어가게 한다. */
+  .scroll-slide--dock .contact-inner {
+    gap: 28px;
+  }
+  /* 그리드 아이템의 기본 min-width는 auto라 <input>의 고유 최소폭(기본
+     size≈20자)이 열을 밀어낸다 — 720px 패널에서는 폼 열이 패널 밖으로
+     삐져나와 잘렸다. 도킹 컨텍스트에서만 0으로 풀고 입력을 열 폭에 맞춘다. */
+  .scroll-slide--dock .contact-inner > *,
+  .scroll-slide--dock .form-group {
+    min-width: 0;
+  }
+  .scroll-slide--dock .form-group input,
+  .scroll-slide--dock .form-group textarea {
+    width: 100%;
+  }
+  .scroll-slide--dock .contact-title {
+    font-size: clamp(20px, 2.2vw, 26px);
+    margin-bottom: 10px;
+  }
+  .scroll-slide--dock .contact-body {
+    font-size: 13px;
+    line-height: 1.5;
+    margin-bottom: 16px;
+  }
+  .scroll-slide--dock .contact-links {
+    gap: 8px;
+  }
+  .scroll-slide--dock .contact-link {
+    padding: 10px;
+  }
+  .scroll-slide--dock .contact-link-icon {
+    width: 32px;
+    height: 32px;
+  }
+  .scroll-slide--dock .link-label {
+    font-size: 10px;
+  }
+  .scroll-slide--dock .link-value {
+    font-size: 12px;
+  }
+  .scroll-slide--dock .contact-form-wrap {
+    padding: 16px;
+  }
+  .scroll-slide--dock .contact-form {
+    gap: 12px;
+  }
+  .scroll-slide--dock .form-row {
+    gap: 10px;
+  }
+  .scroll-slide--dock .form-group {
+    gap: 4px;
+  }
+  .scroll-slide--dock .form-group label {
+    font-size: 11px;
+  }
+  .scroll-slide--dock .form-group input,
+  .scroll-slide--dock .form-group textarea {
+    padding: 8px 10px;
+    font-size: 12px;
+  }
+  .scroll-slide--dock .form-group textarea {
+    height: 70px;
+  }
+  .scroll-slide--dock .form-submit {
+    padding: 10px;
   }
 }
