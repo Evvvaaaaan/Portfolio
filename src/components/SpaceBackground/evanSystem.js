@@ -201,8 +201,13 @@ export function createEvanSystem({ satelliteColors = [] } = {}) {
         // 완전히 실체화되면 불투명 큐로 되돌린다 — 단, 링처럼 Phase 1에서도
         // 원래 반투명(baseOpacity < 1)이던 머티리얼은 build=1에서도 계속
         // 투명 큐에 남아야 "오늘과 픽셀 동일" 계약이 지켜진다.
-        mat.transparent = solid < 1 || baseOpacity < 1
-        mat.needsUpdate = true
+        const wantTransparent = solid < 1 || baseOpacity < 1
+        // transparent 변경은 셰이더 재컴파일을 유발할 수 있다 — 값이 실제로
+        // 바뀔 때만 needsUpdate를 세워 매 프레임 무의미한 재컴파일을 막는다.
+        if (mat.transparent !== wantTransparent) {
+          mat.transparent = wantTransparent
+          mat.needsUpdate = true
+        }
       }
     },
     setOrbitDraw(progress) {

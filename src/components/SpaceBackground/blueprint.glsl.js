@@ -59,6 +59,10 @@ void main() {
   float hot = (1.0 - smoothstep(0.0, 0.12, abs(h - front))) * fade;
 
   gl_FragColor = vec4(uLineColor * (0.75 + 1.6 * hot), alpha);
+  // 일반 ShaderMaterial은 three가 linearToOutputTexel을 정의만 하고 호출하지
+  // 않는다 — 직접 인코딩해야 내장 머티리얼(LineBasicMaterial 등)과 같은
+  // 색으로 나온다. 빠뜨리면 linear 값이 sRGB 버퍼에 그대로 쓰여 어두워진다.
+  gl_FragColor = linearToOutputTexel(gl_FragColor);
   if (gl_FragColor.a < 0.003) discard;
 }
 `

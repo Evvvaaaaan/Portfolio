@@ -42,6 +42,10 @@ void main() {
 
   float a = (fine * 0.16 + coarse * 0.42) * vignette * uOpacity;
   gl_FragColor = vec4(uLineColor, a);
+  // 일반 ShaderMaterial은 three가 linearToOutputTexel을 정의만 하고 호출하지
+  // 않는다 — 직접 인코딩해야 내장 머티리얼(LineBasicMaterial 등)과 같은
+  // 색으로 나온다. 빠뜨리면 linear 값이 sRGB 버퍼에 그대로 쓰여 어두워진다.
+  gl_FragColor = linearToOutputTexel(gl_FragColor);
   if (a < 0.002) discard;
 }
 `
@@ -76,6 +80,10 @@ void main() {
 
   float a = drawn * uBaseOpacity * (1.0 + 2.2 * hot);
   gl_FragColor = vec4(uLineColor * (1.0 + 1.8 * hot), a);
+  // 일반 ShaderMaterial은 three가 linearToOutputTexel을 정의만 하고 호출하지
+  // 않는다 — 직접 인코딩해야 Phase 1의 LineBasicMaterial과 같은 색으로
+  // 나온다. 빠뜨리면 linear 값이 sRGB 버퍼에 그대로 쓰여 궤도가 어두워진다.
+  gl_FragColor = linearToOutputTexel(gl_FragColor);
   if (a < 0.002) discard;
 }
 `

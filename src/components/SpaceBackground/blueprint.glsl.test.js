@@ -52,4 +52,11 @@ describe('blueprint 셰이더', () => {
     // smoothstep(edge0, edge1, x)는 edge0 >= edge1이면 결과가 미정의다.
     expect(BLUEPRINT_FRAG).not.toMatch(/smoothstep\(\s*0\.12\s*,\s*0\.0\s*,/)
   })
+
+  it('sRGB 출력 인코딩을 호출한다 (내장 머티리얼과 색이 맞아야 한다)', () => {
+    // 일반 ShaderMaterial은 three가 linearToOutputTexel을 정의만 하고 호출은
+    // 하지 않는다 — 직접 부르지 않으면 linear 색이 sRGB 버퍼에 그대로 쓰여
+    // MeshStandardMaterial 등 내장 머티리얼보다 어둡게 렌더된다.
+    expect(BLUEPRINT_FRAG).toMatch(/linearToOutputTexel\(/)
+  })
 })
