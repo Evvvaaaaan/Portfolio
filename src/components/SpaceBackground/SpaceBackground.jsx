@@ -249,7 +249,10 @@ export default function SpaceBackground({ warpEnabled = false, stageEnabled = fa
           markIntroSeen()
         }
         const intro = computeIntroState((t - introStartT) * 1000)
-        gridUniforms.uOpacity.value = intro.gridOpacity
+        // 그리드는 스테이지(메인 데스크톱)에서만 의미가 있다. 인트로 도중
+        // 라우트를 옮기면 SpaceBackground는 살아 있으므로, 게이트가 없으면
+        // 다른 페이지 위에 격자가 그대로 남는다.
+        gridUniforms.uOpacity.value = stageEnabledRef.current ? intro.gridOpacity : 0
         if (stageEnabledRef.current) {
           ensureSystem()
           evanSystem.setBuild(intro.buildProgress)
@@ -370,7 +373,7 @@ export default function SpaceBackground({ warpEnabled = false, stageEnabled = fa
 
       // 그리드는 항상 마지막에 덧그린다 — 포스트FX 블룸이 격자를 번지게 하면
       // 도면이 아니라 안개처럼 보인다.
-      if (gridUniforms.uOpacity.value > 0.001) {
+      if (stageEnabledRef.current && gridUniforms.uOpacity.value > 0.001) {
         renderer.autoClear = false
         renderer.render(gridScene, gridCamera)
         renderer.autoClear = true
