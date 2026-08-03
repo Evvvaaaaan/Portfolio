@@ -41,4 +41,15 @@ describe('blueprint 셰이더', () => {
   it('gl_FragColor를 쓴다 (three 0.184 프래그먼트 출력 규약)', () => {
     expect(BLUEPRINT_FRAG).toMatch(/gl_FragColor\s*=/)
   })
+
+  it('스윕 프런트를 정의역 밖까지 리맵한다 (양 끝 팝 방지)', () => {
+    // front가 0~1만 훑으면 uBuild=0에서 하단, 프런트 포화 구간에서 상단이
+    // 어중간하게 남아 인트로 시작·중간에 팝이 보인다.
+    expect(BLUEPRINT_FRAG).toMatch(/mix\(\s*-0\.12\s*,\s*1\.12\s*,/)
+  })
+
+  it('역방향 smoothstep을 쓰지 않는다 (GLSL ES 미정의 동작)', () => {
+    // smoothstep(edge0, edge1, x)는 edge0 >= edge1이면 결과가 미정의다.
+    expect(BLUEPRINT_FRAG).not.toMatch(/smoothstep\(\s*0\.12\s*,\s*0\.0\s*,/)
+  })
 })
