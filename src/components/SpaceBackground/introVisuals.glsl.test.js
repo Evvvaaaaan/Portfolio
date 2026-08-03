@@ -45,4 +45,10 @@ describe('궤도 리빌 셰이더', () => {
   it('궤도는 카메라 변환을 탄다 (3D 공간의 선이므로)', () => {
     expect(ORBIT_VERT).toMatch(/projectionMatrix/)
   })
+
+  it('드로잉 완료 시 펜 끝 발광이 꺼진다 (링 이음새 잔상 방지)', () => {
+    // uDraw=1에서도 hot이 살아 있으면 vArc≈1 지점에 밝은 점이 영구히 남아
+    // Phase 1의 균일한 궤도 밝기가 깨진다.
+    expect(ORBIT_FRAG).toMatch(/smoothstep\(\s*0\.94\s*,\s*1\.0\s*,\s*uDraw\s*\)/)
+  })
 })

@@ -69,7 +69,10 @@ varying float vArc;
 void main() {
   // uDraw 앞쪽만 그려진 상태. 프런트 근처를 밝게 태워 펜 끝처럼 보이게 한다.
   float drawn = step(vArc, uDraw);
-  float hot = (1.0 - smoothstep(0.0, 0.06, uDraw - vArc)) * step(vArc, uDraw);
+  // 드로잉이 완료되면 펜 끝도 사라져야 한다 — 안 그러면 링의 시작/끝
+  // 이음새에 밝은 점이 영구히 남아 Phase 1의 균일한 궤도 밝기가 깨진다.
+  float tipAlive = 1.0 - smoothstep(0.94, 1.0, uDraw);
+  float hot = (1.0 - smoothstep(0.0, 0.06, uDraw - vArc)) * step(vArc, uDraw) * tipAlive;
 
   float a = drawn * uBaseOpacity * (1.0 + 2.2 * hot);
   gl_FragColor = vec4(uLineColor * (1.0 + 1.8 * hot), a);
