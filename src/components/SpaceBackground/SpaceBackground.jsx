@@ -56,9 +56,13 @@ export default function SpaceBackground({ warpEnabled = false, stageEnabled = fa
     let renderer
     try {
       renderer = new THREE.WebGLRenderer({ canvas, antialias: true })
-    } catch {
+    } catch (err) {
       // WebGL 사용 불가 — 배경 없이 DOM 콘텐츠만으로 동작한다 (스펙 5.4).
       // HardwareAccelNotice가 별도로 사용자에게 안내한다.
+      // 도착 시퀀스는 반드시 종결돼야 하는 계약(arrivalSequence.js) — 여기서
+      // 리턴해도 Hero가 영원히 기다리지 않도록 'skipped'로 마무리한다.
+      console.warn('[SpaceBackground] WebGL renderer 생성 실패:', err)
+      concludeArrival('skipped')
       return
     }
     renderer.setSize(window.innerWidth, window.innerHeight)

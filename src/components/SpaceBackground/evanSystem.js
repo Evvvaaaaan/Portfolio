@@ -118,6 +118,7 @@ export function createEvanSystem({ satelliteColors = [] } = {}) {
   }
 
   // --- 프로젝트 위성: projects 행성 주위를 피벗 그룹째 공전.
+  const projectsPlanetData = PLANETS.find((p) => p.id === 'projects')
   const projectsPlanet = group.getObjectByName('planet-projects')
   const pivot = new THREE.Group()
   pivot.name = 'satellites-pivot'
@@ -132,7 +133,8 @@ export function createEvanSystem({ satelliteColors = [] } = {}) {
     })
     const sat = new THREE.Mesh(geo, mat)
     const a = (i / satelliteColors.length) * Math.PI * 2
-    const r = 17 * 1.9
+    // projects 행성 반지름의 1.9배 — PLANETS에서 파생시켜 값 편집 시 desync 방지.
+    const r = projectsPlanetData.radius * 1.9
     sat.position.set(Math.cos(a) * r, Math.sin(a * 2) * 4, Math.sin(a) * r)
     pivot.add(sat)
     disposables.push(geo, mat)

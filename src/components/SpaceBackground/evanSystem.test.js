@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import { createEvanSystem } from './evanSystem.js'
 import { PLANETS, planetPosition } from './system.js'
 
@@ -42,9 +42,14 @@ describe('createEvanSystem', () => {
     sys.dispose()
   })
 
-  it('dispose 후 group이 비워진다 (GPU 리소스 누수 방지 계약)', () => {
+  it('dispose 후 group이 비워지고 geometry/material의 dispose가 실제로 호출된다 (GPU 리소스 누수 방지 계약)', () => {
     const sys = createEvanSystem({ satelliteColors: COLORS })
+    const sun = sys.group.getObjectByName('sun')
+    const geoSpy = vi.spyOn(sun.geometry, 'dispose')
+    const matSpy = vi.spyOn(sun.material, 'dispose')
     sys.dispose()
     expect(sys.group.children.length).toBe(0)
+    expect(geoSpy).toHaveBeenCalled()
+    expect(matSpy).toHaveBeenCalled()
   })
 })

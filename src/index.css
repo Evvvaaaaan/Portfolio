@@ -362,7 +362,9 @@ body.warp-exit main {
    보장하기 위한 것 — 배경에 텍스트가 그대로 노출되지 않게 한다. */
 @media (min-width: 769px) and (min-height: 701px) {
   .scroll-slide--dock .slide-content {
-    max-width: 720px;
+    /* 769~1100px 좁은 데스크톱에서 720px 고정폭이 뷰포트를 거의 다 채워
+       행성을 완전히 가리던 실패 사례 — 뷰포트 비율 상한을 같이 걸어둔다. */
+    max-width: min(720px, 52vw);
     margin-left: auto;
     margin-right: 4vw;
     background: rgba(7, 11, 20, 0.62);
@@ -372,7 +374,11 @@ body.warp-exit main {
     border-radius: 16px;
     padding: clamp(20px, 3vh, 40px) clamp(24px, 2.5vw, 44px);
     max-height: 88vh;
-    overflow: hidden;
+    /* 701px 최소 높이나 브라우저 확대/큰 폰트 설정에서 콘텐츠가 넘칠 수
+       있다 — hidden으로 조용히 잘리는 것보다 스크롤이 되는 편이 안전한
+       실패 모드. */
+    overflow-y: auto;
+    overscroll-behavior: contain;
   }
 
   /* 각 섹션 자체의 상하 패딩(120px)은 패널 padding과 중복돼 900px 안팎

@@ -214,7 +214,8 @@ function MainPage() {
         {sections.map((sec, idx) => {
           // About/Skills/Contact는 우측 도킹(행성이 화면 왼쪽에 걸리므로),
           // Hero/Projects/Footer는 카드 그리드 폭 등을 위해 중앙 유지.
-          const docked = idx === 1 || idx === 2 || idx === 4
+          // sections 배열 순서가 바뀌어도 도킹 대상이 어긋나지 않도록 id로 판정.
+          const docked = ['about', 'skills', 'contact'].includes(sec.id)
           return (
             <div
               key={sec.id}
@@ -230,7 +231,10 @@ function MainPage() {
                 alignItems: 'center',
                 justifyContent: 'center',
                 transformStyle: 'preserve-3d',
-                willChange: 'transform, opacity, filter',
+                // opacity/filter를 will-change에 넣으면 이 요소가 backdrop-filter의
+                // 루트가 되어, 도킹 패널의 blur가 캔버스가 아닌 빈 루트를 샘플링하게
+                // 된다 — transform만 남긴다 (filter는 스크롤 핸들러에서 항상 'none').
+                willChange: 'transform',
                 pointerEvents: 'none',
               }}
             >
