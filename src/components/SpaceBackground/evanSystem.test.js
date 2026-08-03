@@ -53,3 +53,89 @@ describe('createEvanSystem', () => {
     expect(matSpy).toHaveBeenCalled()
   })
 })
+
+describe('청사진 빌드 (Phase 2)', () => {
+  const COLORS = ['#4f9cf9', '#f59e0b', '#c084fc']
+
+  it('행성마다 청사진 쌍둥이 메시가 생긴다', () => {
+    const sys = createEvanSystem({ satelliteColors: COLORS })
+    for (const p of PLANETS) {
+      expect(sys.group.getObjectByName(`blueprint-${p.id}`)).toBeTruthy()
+    }
+    sys.dispose()
+  })
+
+  it('build=0이면 실체가 감춰지고 청사진이 보인다', () => {
+    const sys = createEvanSystem({ satelliteColors: COLORS })
+    sys.setBuild(0)
+    const solid = sys.group.getObjectByName('planet-about')
+    const bp = sys.group.getObjectByName('blueprint-about')
+    expect(solid.material.opacity).toBeLessThan(0.05)
+    expect(bp.material.visible).toBe(true)
+    sys.dispose()
+  })
+
+  it('build=1이면 실체가 완전하고 청사진이 빠지며 transparent가 복원된다', () => {
+    // 이게 "인트로가 끝나면 오늘과 픽셀 동일" 계약의 검증 지점이다.
+    const sys = createEvanSystem({ satelliteColors: COLORS })
+    sys.setBuild(1)
+    const solid = sys.group.getObjectByName('planet-about')
+    const bp = sys.group.getObjectByName('blueprint-about')
+    expect(solid.material.opacity).toBe(1)
+    expect(solid.material.transparent).toBe(false)
+    expect(bp.material.visible).toBe(false)
+    sys.dispose()
+  })
+
+  it('중간 build에서는 실체가 반투명 상태로 올라온다', () => {
+    const sys = createEvanSystem({ satelliteColors: COLORS })
+    sys.setBuild(0.8)
+    const solid = sys.group.getObjectByName('planet-about')
+    expect(solid.material.transparent).toBe(true)
+    expect(solid.material.opacity).toBeGreaterThan(0)
+    expect(solid.material.opacity).toBeLessThan(1)
+    sys.dispose()
+  })
+
+  it('행성마다 빌드 시점이 어긋난다 (동시 실체화 방지)', () => {
+    const sys = createEvanSystem({ satelliteColors: COLORS })
+    sys.setBuild(0.5)
+    const first = sys.group.getObjectByName(`blueprint-${PLANETS[0].id}`)
+    const last = sys.group.getObjectByName(`blueprint-${PLANETS[PLANETS.length - 1].id}`)
+    expect(first.material.uniforms.uBuild.value)
+      .toBeGreaterThan(last.material.uniforms.uBuild.value)
+    sys.dispose()
+  })
+
+  it('궤도 라인이 호 속성과 리빌 유니폼을 갖는다', () => {
+    const sys = createEvanSystem({ satelliteColors: COLORS })
+    const orbit = sys.group.getObjectByName(`orbit-${PLANETS[0].id}`)
+    const arc = orbit.geometry.getAttribute('aArc')
+    expect(arc).toBeTruthy()
+    expect(arc.count).toBe(orbit.geometry.getAttribute('position').count)
+    // 호 파라미터는 0에서 시작해 1에서 끝나야 리빌이 한 바퀴를 정확히 덮는다.
+    expect(arc.getX(0)).toBeCloseTo(0, 6)
+    expect(arc.getX(arc.count - 1)).toBeCloseTo(1, 6)
+    sys.dispose()
+  })
+
+  it('setOrbitDraw가 모든 궤도 유니폼에 반영된다', () => {
+    const sys = createEvanSystem({ satelliteColors: COLORS })
+    sys.setOrbitDraw(0.42)
+    for (const p of PLANETS) {
+      const orbit = sys.group.getObjectByName(`orbit-${p.id}`)
+      expect(orbit.material.uniforms.uDraw.value).toBeCloseTo(0.42, 6)
+    }
+    sys.dispose()
+  })
+
+  it('dispose가 청사진 머티리얼과 지오메트리도 해제한다', () => {
+    const sys = createEvanSystem({ satelliteColors: COLORS })
+    const bp = sys.group.getObjectByName('blueprint-about')
+    const geoSpy = vi.spyOn(bp.geometry, 'dispose')
+    const matSpy = vi.spyOn(bp.material, 'dispose')
+    sys.dispose()
+    expect(geoSpy).toHaveBeenCalled()
+    expect(matSpy).toHaveBeenCalled()
+  })
+})

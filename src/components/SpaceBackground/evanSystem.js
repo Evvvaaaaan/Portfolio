@@ -3,6 +3,10 @@
 // 가능하도록 렌더러 참조를 받지 않는다.
 import * as THREE from 'three'
 import { PLANETS, SUN_RADIUS, planetPosition } from './system.js'
+import { toBarycentricGeometry } from './barycentric.js'
+import { createBlueprintMaterial } from './blueprintMaterial.js'
+import { ORBIT_VERT, ORBIT_FRAG } from './introVisuals.glsl.js'
+import { staggeredBuild } from './introSequence.js'
 
 // 태양 글로우: 별 텍스처와 같은 캔버스 라디얼 그라디언트 방식.
 // (문서/테스트 환경에는 document가 있고, node vitest는 jsdom 환경.)
@@ -23,13 +27,20 @@ function createGlowTexture() {
   return tex
 }
 
-function circlePoints(radius, segments = 128) {
+// 궤도 링의 정점과, 각 정점이 한 바퀴 중 어디쯤인지(0~1)를 함께 만든다.
+// 리빌 셰이더가 이 aArc로 "어디까지 그려졌는지"를 판정한다.
+function circleGeometry(radius, segments = 128) {
   const pts = []
+  const arc = new Float32Array(segments + 1)
   for (let i = 0; i <= segments; i++) {
-    const a = (i / segments) * Math.PI * 2
+    const k = i / segments
+    const a = k * Math.PI * 2
     pts.push(new THREE.Vector3(Math.cos(a) * radius, 0, Math.sin(a) * radius))
+    arc[i] = k
   }
-  return pts
+  const geo = new THREE.BufferGeometry().setFromPoints(pts)
+  geo.setAttribute('aArc', new THREE.BufferAttribute(arc, 1))
+  return geo
 }
 
 export function createEvanSystem({ satelliteColors = [] } = {}) {
@@ -69,22 +80,33 @@ export function createEvanSystem({ satelliteColors = [] } = {}) {
   }
 
   // --- 궤도 라인: 어두운 청회색 — "검은 우주" 톤을 해치지 않는 밀도.
-  const orbitMat = new THREE.LineBasicMaterial({
-    color: 0x35507a,
-    transparent: true,
-    opacity: 0.35,
-  })
-  disposables.push(orbitMat)
+  // 인트로 리빌을 위해 궤도마다 유니폼을 갖는다 (공유 머티리얼이면 uDraw를
+  // 궤도별로 줄 수 없다). 색·불투명도는 Phase 1 값을 그대로 유지한다.
+  const orbitMaterials = []
   for (const p of PLANETS) {
-    const geo = new THREE.BufferGeometry().setFromPoints(circlePoints(p.orbitRadius))
-    const line = new THREE.Line(geo, orbitMat)
+    const geo = circleGeometry(p.orbitRadius)
+    const mat = new THREE.ShaderMaterial({
+      vertexShader: ORBIT_VERT,
+      fragmentShader: ORBIT_FRAG,
+      uniforms: {
+        uDraw: { value: 1 },
+        uLineColor: { value: new THREE.Color(0x35507a) },
+        uBaseOpacity: { value: 0.35 },
+      },
+      transparent: true,
+      depthWrite: false,
+    })
+    const line = new THREE.Line(geo, mat)
     line.name = `orbit-${p.id}`
     group.add(line)
-    disposables.push(geo)
+    orbitMaterials.push(mat)
+    disposables.push(geo, mat)
   }
 
   // --- 행성
   const planetMeshes = []
+  const solidMaterials = []
+  const blueprints = []
   for (const p of PLANETS) {
     const geo = new THREE.SphereGeometry(p.radius, 40, 40)
     const mat = new THREE.MeshStandardMaterial({
@@ -100,6 +122,17 @@ export function createEvanSystem({ satelliteColors = [] } = {}) {
     group.add(mesh)
     planetMeshes.push(mesh)
     disposables.push(geo, mat)
+    solidMaterials.push({ mat, baseOpacity: mat.opacity })
+
+    // 청사진 쌍둥이: 같은 지오메트리를 바리센트릭으로 펼쳐 겹쳐 그린다.
+    const bpGeo = toBarycentricGeometry(geo)
+    const bp = createBlueprintMaterial({ color: p.color, extent: p.radius })
+    const bpMesh = new THREE.Mesh(bpGeo, bp.material)
+    bpMesh.name = `blueprint-${p.id}`
+    bpMesh.position.copy(mesh.position)
+    group.add(bpMesh)
+    blueprints.push(bp)
+    disposables.push(bpGeo, bp.material)
 
     if (p.ring) {
       const ringGeo = new THREE.RingGeometry(p.radius * 1.5, p.radius * 2.1, 64)
@@ -114,6 +147,11 @@ export function createEvanSystem({ satelliteColors = [] } = {}) {
       ring.name = `ring-${p.id}`
       mesh.add(ring)
       disposables.push(ringGeo, ringMat)
+      // 링은 작아서 청사진 쌍둥이 없이 실체 페이드만 태운다. Phase 1의 링은
+      // 원래도 반투명(0.3)이므로 baseOpacity를 보존해 build=1에서도 그
+      // 반투명함을 그대로 유지한다 — 여기서 opacity를 1로 밀어버리면
+      // "오늘과 픽셀 동일" 계약이 링에서 깨진다.
+      solidMaterials.push({ mat: ringMat, baseOpacity: ringMat.opacity })
     }
   }
 
@@ -138,6 +176,8 @@ export function createEvanSystem({ satelliteColors = [] } = {}) {
     sat.position.set(Math.cos(a) * r, Math.sin(a * 2) * 4, Math.sin(a) * r)
     pivot.add(sat)
     disposables.push(geo, mat)
+    // 위성도 링과 마찬가지로 작아서 청사진 쌍둥이 없이 실체 페이드만 태운다.
+    solidMaterials.push({ mat, baseOpacity: mat.opacity })
   })
 
   return {
@@ -147,6 +187,27 @@ export function createEvanSystem({ satelliteColors = [] } = {}) {
       pivot.rotation.y = t * 0.35
       // 태양 글로우 미세 맥동 — 정지화면처럼 보이지 않게.
       if (glow) glow.scale.setScalar(SUN_RADIUS * (6 + Math.sin(t * 0.8) * 0.25))
+    },
+    setBuild(progress) {
+      const g = Math.min(Math.max(progress, 0), 1)
+      blueprints.forEach((bp, i) => bp.setBuild(staggeredBuild(g, i, blueprints.length)))
+      // 실체 표면은 청사진이 물러나는 구간(0.55~1)에서 올라온다.
+      // g===1을 별도로 처리하는 이유: (1 - 0.55) / 0.45는 부동소수점 오차로
+      // 0.9999999999999999가 되어 "build=1이면 완전히 불투명"이라는 계약이
+      // 깨진다.
+      const solid = g >= 1 ? 1 : Math.max((g - 0.55) / 0.45, 0)
+      for (const { mat, baseOpacity } of solidMaterials) {
+        mat.opacity = baseOpacity * solid
+        // 완전히 실체화되면 불투명 큐로 되돌린다 — 단, 링처럼 Phase 1에서도
+        // 원래 반투명(baseOpacity < 1)이던 머티리얼은 build=1에서도 계속
+        // 투명 큐에 남아야 "오늘과 픽셀 동일" 계약이 지켜진다.
+        mat.transparent = solid < 1 || baseOpacity < 1
+        mat.needsUpdate = true
+      }
+    },
+    setOrbitDraw(progress) {
+      const d = Math.min(Math.max(progress, 0), 1)
+      for (const m of orbitMaterials) m.uniforms.uDraw.value = d
     },
     dispose() {
       group.clear()
