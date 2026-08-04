@@ -20,7 +20,7 @@ const WarpDistortShader = {
     tDiffuse: { value: null },
     uIntensity: { value: 0 },
     uTime: { value: 0 },
-    uGrain: { value: 0.055 },
+    uGrain: { value: 0.03 },
   },
   vertexShader: /* glsl */ `
     varying vec2 vUv;
@@ -70,16 +70,19 @@ const WarpDistortShader = {
 
       vec3 color = mix(acc, split, min(1.0, uIntensity * 1.5));
 
-      // 비네트: 가장자리를 눌러 시선을 화면 중앙(항성계)에 붙든다.
+      // 비네트는 곱셈이라 linear 공간에서 걸어도 무방하다.
       float vig = 1.0 - smoothstep(0.42, 1.05, dist * 1.6);
       color *= mix(0.62, 1.0, vig);
 
-      // 필름 그레인: 매 프레임 다른 노이즈. 절차적 표면의 밴딩을 깨주고
-      // 렌더가 "찍힌 화면"처럼 보이게 한다 — 아주 옅게.
-      float g = hash12(vUv * vec2(1920.0, 1080.0) + fract(uTime) * 137.0);
-      color += (g - 0.5) * uGrain;
+      vec3 encoded = sRGBEncode(color);
 
-      gl_FragColor = vec4(sRGBEncode(color), 1.0);
+      // 그레인은 반드시 sRGB 인코딩 "뒤"에 얹는다. 인코딩 전 linear 공간에서
+      // 더하면 sRGB 곡선이 어두운 영역에서 극단적으로 가팔라, 같은 크기의
+      // 노이즈가 검은 하늘에서 수십 배로 증폭돼 지글거린다 (실측 확인).
+      float g = hash12(vUv * vec2(1920.0, 1080.0) + fract(uTime) * 137.0);
+      encoded += (g - 0.5) * uGrain;
+
+      gl_FragColor = vec4(encoded, 1.0);
     }
   `,
 }
