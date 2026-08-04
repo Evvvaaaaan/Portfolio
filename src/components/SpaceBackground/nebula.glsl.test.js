@@ -35,4 +35,12 @@ describe('성운 셰이더', () => {
       expect(parseFloat(a)).toBeLessThan(parseFloat(b))
     }
   })
+
+  it('성운 임계값이 노이즈 평균보다 충분히 위에 있다 (검은 우주가 주인공)', () => {
+    // 노이즈 합의 평균은 약 0.48. 임계를 그 근처에 두면 하늘 대부분이
+    // 성운으로 덮여 아트 디렉션 제약이 깨진다.
+    const m = NEBULA_FRAG.match(/smoothstep\(\s*([0-9.]+)\s*,/)
+    expect(m).toBeTruthy()
+    expect(parseFloat(m[1])).toBeGreaterThanOrEqual(0.6)
+  })
 })

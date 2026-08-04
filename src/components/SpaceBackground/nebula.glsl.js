@@ -35,9 +35,10 @@ void main() {
   float clouds = fbm(p, 5);
   float wisps = fbmRidged(d * 3.1 + vec3(0.0, uTime * 0.006, 0.0), 3);
 
-  // 임계값을 높게 잡아 하늘의 일부에만 성운이 끼게 한다 — 전면에 깔면
-  // 검은 우주가 사라진다.
-  float mass = smoothstep(0.52, 0.92, clouds * 0.8 + wisps * 0.32);
+  // 임계값은 노이즈 합(평균 ≈0.48, σ ≈0.14)에서 1σ 이상 위에 둔다 — 0.52는
+  // 겨우 0.27σ 위라 하늘의 40% 가까이가 임계를 넘었다. fbm은 공간적으로
+  // 연속이라 그 질량이 큰 덩어리로 뭉쳐 "검은 우주가 주인공" 제약을 깬다.
+  float mass = smoothstep(0.62, 0.95, clouds * 0.8 + wisps * 0.32);
 
   vec3 color = mix(uColorA, uColorB, clamp(wisps * 1.2, 0.0, 1.0));
 
