@@ -97,6 +97,11 @@ export function createEvanSystem({ satelliteColors = [] } = {}) {
 
   // --- 성운: 항성계 전체를 감싸는 큰 구의 안쪽. 가장 바깥 궤도(425)보다
   // 훨씬 멀리 둬야 카메라가 레일 끝까지 가도 안쪽에 머문다.
+  // 원점 고정이면 카메라가 레일을 타고 멀어질수록 구의 먼 쪽 면이
+  // (반지름 + |카메라 위치|)까지 밀려나 카메라의 far=2000 평면을 넘는다
+  // (footer 레일 station에서 |cam|=635 → 2235로 완전히 클립되어 하늘에 구멍이
+  // 뚫린다). NEBULA_VERT도 "방향만으로 정해지는 하늘"을 전제하므로, 매
+  // 프레임 update()에서 카메라 위치로 복사해 항상 카메라를 원점으로 감싼다.
   const nebulaGeo = new THREE.SphereGeometry(1600, 32, 24)
   const nebulaMat = new THREE.ShaderMaterial({
     vertexShader: NEBULA_VERT,
@@ -111,8 +116,13 @@ export function createEvanSystem({ satelliteColors = [] } = {}) {
     side: THREE.BackSide,
     transparent: true,
     depthWrite: false,
-    // 별필드보다 먼저 그려져야 별이 성운 위에 얹힌다.
-    depthTest: false,
+    // 카메라에 고정되므로 성운은 항상 씬에서 가장 먼 지오메트리다 — depth
+    // 비교를 켜야(depthTest: true) 행성·태양 뒤로 정확히 물러난다. 이전의
+    // false는 depthWrite:false와 겹쳐 투명 큐 정렬(그려지는 순서)에만
+    // 의존했는데, 성운이 투명 큐의 다른 무엇보다도 나중에(태양 글로우
+    // 스프라이트 등) 그려지면 이미 그려진 것 위에 알파 베일을 덮어씌우는
+    // 문제가 있었다(우연히 uIntensity=0.32라 육안으로는 안 보였을 뿐).
+    depthTest: true,
   })
   const nebula = new THREE.Mesh(nebulaGeo, nebulaMat)
   nebula.name = 'nebula'
@@ -229,14 +239,24 @@ export function createEvanSystem({ satelliteColors = [] } = {}) {
 
   return {
     group,
-    update(t) {
+    // t: 항상 흐르는 시계 — 행성 자전·위성 공전·태양 글로우 맥동 등 Phase
+    // 1/2의 메시 모션을 그대로 구동한다 (reduced-motion에서도 "형태는 그대로
+    // 보여야" 하므로 위치/자세 자체는 멈추지 않는다).
+    // shaderTime: uTime 유니폼(항성 난류, 성운 흐름, 행성 표면 셰이더)
+    // 전용. 기본값을 t로 둬 update(t) 한 인자 호출도 그대로 지원한다 —
+    // reduced-motion일 때 호출부(SpaceBackground.jsx)가 0을 넘겨 셰이더
+    // 시간만 얼린다.
+    // cameraPosition: 성운을 카메라에 고정하기 위한 참조. 매 프레임 새
+    // Vector3를 만들지 않고 카메라가 이미 갖고 있는 Vector3를 그대로 복사한다.
+    update(t, shaderTime = t, cameraPosition) {
       for (const m of planetMeshes) m.rotation.y = t * 0.08
       pivot.rotation.y = t * 0.35
       // 태양 글로우 미세 맥동 — 정지화면처럼 보이지 않게.
       if (glow) glow.scale.setScalar(SUN_RADIUS * (6 + Math.sin(t * 0.8) * 0.25))
-      for (const pf of planetFades) pf.setTime(t)
-      sunMat.uniforms.uTime.value = t
-      nebulaMat.uniforms.uTime.value = t
+      for (const pf of planetFades) pf.setTime(shaderTime)
+      sunMat.uniforms.uTime.value = shaderTime
+      nebulaMat.uniforms.uTime.value = shaderTime
+      if (cameraPosition) nebula.position.copy(cameraPosition)
     },
     setBuild(progress) {
       const g = Math.min(Math.max(progress, 0), 1)

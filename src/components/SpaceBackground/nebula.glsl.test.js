@@ -21,7 +21,10 @@ describe('성운 셰이더', () => {
 
   it('uIntensity가 최종 알파를 곱한다 (0이면 완전히 사라져야 한다)', () => {
     // "검은 우주가 주인공" 제약을 지키려면 밀도를 한 손잡이로 끌 수 있어야 한다.
-    expect(NEBULA_FRAG).toMatch(/uIntensity/)
+    // a 자체가 uIntensity의 곱이어야 하고, 최종 색과 알파 모두 그 a로
+    // 스케일돼야 한다 — 그래야 uIntensity=0에서 색·알파가 함께 0이 된다.
+    expect(NEBULA_FRAG).toMatch(/float\s+a\s*=\s*[\w.]+\s*\*\s*uIntensity\s*;/)
+    expect(NEBULA_FRAG).toMatch(/gl_FragColor\s*=\s*vec4\(\s*color\s*\*\s*a\s*,\s*a\s*\)\s*;/)
   })
 
   it('sRGB 출력 인코딩으로 끝난다', () => {

@@ -14,7 +14,13 @@ describe('GLSL_NOISE', () => {
   })
 
   it('fbm은 옥타브를 루프로 돌린다 (한 번만 샘플하면 디테일이 안 나온다)', () => {
-    expect(GLSL_NOISE).toMatch(/for\s*\(/)
+    // 파일 어딘가에 for가 있다는 것만으로는 fbm/fbmRidged 자체가 옥타브를
+    // 도는지 보장하지 못한다 — 각 함수 본문 안에 루프가 있는지 직접 확인한다.
+    for (const fn of ['fbm', 'fbmRidged']) {
+      const body = GLSL_NOISE.match(new RegExp(`float\\s+${fn}\\s*\\([^)]*\\)\\s*\\{([\\s\\S]*?)\\n\\}`))
+      expect(body).toBeTruthy()
+      expect(body[1]).toMatch(/for\s*\(/)
+    }
   })
 
   it('역방향 smoothstep을 쓰지 않는다 (GLSL ES 미정의 동작)', () => {

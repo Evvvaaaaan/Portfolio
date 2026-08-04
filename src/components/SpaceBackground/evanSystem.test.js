@@ -198,6 +198,22 @@ describe('렌더링 품질 (Phase 3)', () => {
     sys.dispose()
   })
 
+  it('reduced-motion: shaderTime=0을 넘기면 uTime 유니폼은 고정되고 메시는 계속 움직인다', () => {
+    // SpaceBackground.jsx가 reduced-motion에서 update(t, 0, camera.position)을
+    // 부른다 — 셰이더 시간(난류·성운 흐름)만 얼리고, t가 구동하는 자전 같은
+    // Phase 1/2 모션은 그대로 유지돼야 한다("형태는 그대로 보여야 한다").
+    const sys = createEvanSystem({ satelliteColors: COLORS })
+    const planet = sys.group.getObjectByName('planet-about')
+    sys.update(0, 0)
+    const s0 = planet.rotation.y
+    sys.update(5, 0)
+    expect(planet.rotation.y).not.toBe(s0)
+    expect(planet.material.uniforms.uTime.value).toBe(0)
+    expect(sys.group.getObjectByName('sun').material.uniforms.uTime.value).toBe(0)
+    expect(sys.group.getObjectByName('nebula').material.uniforms.uTime.value).toBe(0)
+    sys.dispose()
+  })
+
   it('build=1이면 행성이 완전 불투명이고 투명 큐에서 빠진다 (Phase 2 계약 유지)', () => {
     const sys = createEvanSystem({ satelliteColors: COLORS })
     sys.setBuild(1)

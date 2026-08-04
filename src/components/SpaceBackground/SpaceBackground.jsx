@@ -353,7 +353,11 @@ export default function SpaceBackground({ warpEnabled = false, stageEnabled = fa
         streaks.object3d.rotation.copy(camera.rotation)
         streaks.update(intensitySmooth)
 
-        evanSystem.update(t)
+        // reduced-motion: 셰이더 시간(난류·성운 흐름)만 0으로 고정한다 —
+        // 위치/자세를 구동하는 t는 그대로 흘려보내 "형태는 유지" 제약을
+        // 지킨다. 성운은 카메라 위치를 그대로 넘겨 매 프레임 카메라에
+        // 고정시킨다(far plane 클리핑·패럴랙스 오차 방지).
+        evanSystem.update(t, reducedMotion ? 0 : t, camera.position)
       } else {
         // --- 기존 워프/배경 모드 (변경 없음: 아래는 기존 코드 그대로)
         starsPoints.rotation.z = scrollPercentSmooth * 1.8
