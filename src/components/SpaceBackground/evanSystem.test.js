@@ -84,6 +84,19 @@ describe('청사진 빌드 (Phase 2)', () => {
     expect(solid.material.opacity).toBe(1)
     expect(solid.material.transparent).toBe(false)
     expect(bp.material.visible).toBe(false)
+
+    // ring-skills처럼 Phase 1에서 원래 반투명이던 머티리얼은 build=1에서도
+    // 그 반투명함(baseOpacity)과 transparent 큐를 유지해야 한다 — 여기를
+    // 놓치면 링이 build=1에서 불투명해지는 회귀가 전체 스위트를 통과한다.
+    const ring = sys.group.getObjectByName('ring-skills')
+    expect(ring.material.opacity).toBeCloseTo(0.3, 6)
+    expect(ring.material.transparent).toBe(true)
+
+    // 위성은 링과 달리 Phase 1에서도 완전 불투명이었다 — build=1에서 불투명
+    // 큐로 복귀해야 한다.
+    const sat = sys.group.getObjectByName('satellites-pivot').children[0]
+    expect(sat.material.opacity).toBe(1)
+    expect(sat.material.transparent).toBe(false)
     sys.dispose()
   })
 

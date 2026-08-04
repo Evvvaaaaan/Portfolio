@@ -261,6 +261,11 @@ export default function SpaceBackground({ warpEnabled = false, stageEnabled = fa
         if (intro.done) {
           introDone = true
           gridUniforms.uOpacity.value = 0
+          // 스테이지 밖(라우트 이동 등)에서 인트로가 끝나도 완성 상태는 반드시
+          // 확정한다 — 안 그러면 메인으로 돌아왔을 때 중간 빌드에 얼어붙는다.
+          // evanSystem은 스테이지가 한 번도 켜진 적 없으면 null일 수 있다.
+          evanSystem?.setBuild(1)
+          evanSystem?.setOrbitDraw(1)
           // 실체화가 끝난 순간 도착 워프로 넘긴다 — 점화의 여파가 그대로
           // 카메라 돌입으로 이어져 한 동작처럼 읽힌다.
           if (arrivalActive) {

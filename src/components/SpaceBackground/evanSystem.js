@@ -94,7 +94,11 @@ export function createEvanSystem({ satelliteColors = [] } = {}) {
         uBaseOpacity: { value: 0.35 },
       },
       transparent: true,
-      depthWrite: false,
+      // Phase 1의 LineBasicMaterial은 depthWrite 기본값(true)이었다 — 궤도
+      // 선이 그 뒤의 별·태양 글로우 스프라이트를 가려야 "오늘과 픽셀 동일"
+      // 계약이 성립한다. 인트로 중 미그려진 프래그먼트는 discard되므로 depth를
+      // 쓰지 않아 리빌 애니메이션에는 영향이 없다.
+      depthWrite: true,
     })
     const line = new THREE.Line(geo, mat)
     line.name = `orbit-${p.id}`
