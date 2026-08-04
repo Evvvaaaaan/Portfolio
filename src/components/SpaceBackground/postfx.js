@@ -19,6 +19,8 @@ const WarpDistortShader = {
   uniforms: {
     tDiffuse: { value: null },
     uIntensity: { value: 0 },
+    uTime: { value: 0 },
+    uGrain: { value: 0.055 },
   },
   vertexShader: /* glsl */ `
     varying vec2 vUv;
@@ -30,10 +32,18 @@ const WarpDistortShader = {
   fragmentShader: /* glsl */ `
     uniform sampler2D tDiffuse;
     uniform float uIntensity;
+    uniform float uTime;
+    uniform float uGrain;
     varying vec2 vUv;
 
     vec3 sRGBEncode(vec3 c) {
       return mix(pow(c, vec3(0.41666)) * 1.055 - vec3(0.055), c * 12.92, vec3(lessThanEqual(c, vec3(0.0031308))));
+    }
+
+    float hash12(vec2 p) {
+      vec3 p3 = fract(vec3(p.xyx) * 0.1031);
+      p3 += dot(p3, p3.yzx + 33.33);
+      return fract((p3.x + p3.y) * p3.z);
     }
 
     void main() {
@@ -59,6 +69,16 @@ const WarpDistortShader = {
       vec3 split = vec3(r, acc.g, b);
 
       vec3 color = mix(acc, split, min(1.0, uIntensity * 1.5));
+
+      // 비네트: 가장자리를 눌러 시선을 화면 중앙(항성계)에 붙든다.
+      float vig = 1.0 - smoothstep(0.42, 1.05, dist * 1.6);
+      color *= mix(0.62, 1.0, vig);
+
+      // 필름 그레인: 매 프레임 다른 노이즈. 절차적 표면의 밴딩을 깨주고
+      // 렌더가 "찍힌 화면"처럼 보이게 한다 — 아주 옅게.
+      float g = hash12(vUv * vec2(1920.0, 1080.0) + fract(uTime) * 137.0);
+      color += (g - 0.5) * uGrain;
+
       gl_FragColor = vec4(sRGBEncode(color), 1.0);
     }
   `,
@@ -82,8 +102,9 @@ export function createPostFX(renderer, scene, camera, width, height) {
   composer.setSize(width, height)
 
   return {
-    render(intensity) {
+    render(intensity, time = 0) {
       warpPass.uniforms.uIntensity.value = intensity
+      warpPass.uniforms.uTime.value = time
       composer.render()
     },
     setSize(w, h) {

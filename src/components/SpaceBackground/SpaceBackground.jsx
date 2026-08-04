@@ -371,7 +371,8 @@ export default function SpaceBackground({ warpEnabled = false, stageEnabled = fa
       }
 
       if (postfx) {
-        postfx.render(intensitySmooth)
+        // reduced-motion에서는 그레인 시간을 고정해 매 프레임 요동치지 않게 한다.
+        postfx.render(intensitySmooth, reducedMotion ? 0 : t)
       } else {
         renderer.render(scene, camera)
       }
