@@ -19,6 +19,8 @@ const WarpDistortShader = {
   uniforms: {
     tDiffuse: { value: null },
     uIntensity: { value: 0 },
+    uTime: { value: 0 },
+    uGrain: { value: 0.03 },
   },
   vertexShader: /* glsl */ `
     varying vec2 vUv;
@@ -30,10 +32,18 @@ const WarpDistortShader = {
   fragmentShader: /* glsl */ `
     uniform sampler2D tDiffuse;
     uniform float uIntensity;
+    uniform float uTime;
+    uniform float uGrain;
     varying vec2 vUv;
 
     vec3 sRGBEncode(vec3 c) {
       return mix(pow(c, vec3(0.41666)) * 1.055 - vec3(0.055), c * 12.92, vec3(lessThanEqual(c, vec3(0.0031308))));
+    }
+
+    float hash12(vec2 p) {
+      vec3 p3 = fract(vec3(p.xyx) * 0.1031);
+      p3 += dot(p3, p3.yzx + 33.33);
+      return fract((p3.x + p3.y) * p3.z);
     }
 
     void main() {
@@ -59,7 +69,20 @@ const WarpDistortShader = {
       vec3 split = vec3(r, acc.g, b);
 
       vec3 color = mix(acc, split, min(1.0, uIntensity * 1.5));
-      gl_FragColor = vec4(sRGBEncode(color), 1.0);
+
+      // 비네트는 곱셈이라 linear 공간에서 걸어도 무방하다.
+      float vig = 1.0 - smoothstep(0.42, 1.05, dist * 1.6);
+      color *= mix(0.62, 1.0, vig);
+
+      vec3 encoded = sRGBEncode(color);
+
+      // 그레인은 반드시 sRGB 인코딩 "뒤"에 얹는다. 인코딩 전 linear 공간에서
+      // 더하면 sRGB 곡선이 어두운 영역에서 극단적으로 가팔라, 같은 크기의
+      // 노이즈가 검은 하늘에서 수십 배로 증폭돼 지글거린다 (실측 확인).
+      float g = hash12(vUv * vec2(1920.0, 1080.0) + fract(uTime) * 137.0);
+      encoded += (g - 0.5) * uGrain;
+
+      gl_FragColor = vec4(encoded, 1.0);
     }
   `,
 }
@@ -82,8 +105,9 @@ export function createPostFX(renderer, scene, camera, width, height) {
   composer.setSize(width, height)
 
   return {
-    render(intensity) {
+    render(intensity, time = 0) {
       warpPass.uniforms.uIntensity.value = intensity
+      warpPass.uniforms.uTime.value = time
       composer.render()
     },
     setSize(w, h) {

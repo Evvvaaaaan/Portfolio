@@ -1,4 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
+import * as THREE from 'three'
 import { createEvanSystem } from './evanSystem.js'
 import { PLANETS, planetPosition } from './system.js'
 
@@ -150,5 +151,110 @@ describe('청사진 빌드 (Phase 2)', () => {
     sys.dispose()
     expect(geoSpy).toHaveBeenCalled()
     expect(matSpy).toHaveBeenCalled()
+  })
+})
+
+describe('렌더링 품질 (Phase 3)', () => {
+  const COLORS = ['#4f9cf9', '#f59e0b', '#c084fc']
+
+  it('행성이 커스텀 표면 셰이더를 쓴다', () => {
+    const sys = createEvanSystem({ satelliteColors: COLORS })
+    const p = sys.group.getObjectByName('planet-about')
+    expect(p.material).toBeInstanceOf(THREE.ShaderMaterial)
+    expect(p.material.uniforms.uBaseColor).toBeTruthy()
+    sys.dispose()
+  })
+
+  it('행성마다 시드가 달라 지형이 겹치지 않는다', () => {
+    const sys = createEvanSystem({ satelliteColors: COLORS })
+    const seeds = PLANETS.map((p) => sys.group.getObjectByName(`planet-${p.id}`).material.uniforms.uSeed.value)
+    expect(new Set(seeds).size).toBe(seeds.length)
+    sys.dispose()
+  })
+
+  it('항성이 커스텀 표면 셰이더를 쓰고 글로우는 유지된다', () => {
+    const sys = createEvanSystem({ satelliteColors: COLORS })
+    expect(sys.group.getObjectByName('sun').material).toBeInstanceOf(THREE.ShaderMaterial)
+    sys.dispose()
+  })
+
+  it('성운이 안쪽을 향한 큰 배경 구로 존재한다', () => {
+    const sys = createEvanSystem({ satelliteColors: COLORS })
+    const neb = sys.group.getObjectByName('nebula')
+    expect(neb).toBeTruthy()
+    expect(neb.material.side).toBe(THREE.BackSide)
+    // 가장 바깥 궤도보다 훨씬 멀어야 항성계를 감싼다.
+    const outer = Math.max(...PLANETS.map((p) => p.orbitRadius))
+    expect(neb.geometry.parameters.radius).toBeGreaterThan(outer * 2)
+    sys.dispose()
+  })
+
+  it('update가 행성·항성·성운의 시간 유니폼을 함께 민다', () => {
+    const sys = createEvanSystem({ satelliteColors: COLORS })
+    sys.update(4.25)
+    expect(sys.group.getObjectByName('planet-about').material.uniforms.uTime.value).toBeCloseTo(4.25, 6)
+    expect(sys.group.getObjectByName('sun').material.uniforms.uTime.value).toBeCloseTo(4.25, 6)
+    expect(sys.group.getObjectByName('nebula').material.uniforms.uTime.value).toBeCloseTo(4.25, 6)
+    sys.dispose()
+  })
+
+  it('reduced-motion: shaderTime=0을 넘기면 uTime 유니폼은 고정되고 메시는 계속 움직인다', () => {
+    // SpaceBackground.jsx가 reduced-motion에서 update(t, 0, camera.position)을
+    // 부른다 — 셰이더 시간(난류·성운 흐름)만 얼리고, t가 구동하는 자전 같은
+    // Phase 1/2 모션은 그대로 유지돼야 한다("형태는 그대로 보여야 한다").
+    const sys = createEvanSystem({ satelliteColors: COLORS })
+    const planet = sys.group.getObjectByName('planet-about')
+    sys.update(0, 0)
+    const s0 = planet.rotation.y
+    sys.update(5, 0)
+    expect(planet.rotation.y).not.toBe(s0)
+    expect(planet.material.uniforms.uTime.value).toBe(0)
+    expect(sys.group.getObjectByName('sun').material.uniforms.uTime.value).toBe(0)
+    expect(sys.group.getObjectByName('nebula').material.uniforms.uTime.value).toBe(0)
+    sys.dispose()
+  })
+
+  it('성운은 매 프레임 카메라 위치로 따라와 far plane 밖으로 잘리지 않는다', () => {
+    // 성운은 반지름 1600 구인데 카메라 far는 2000이다 — 월드 원점에 고정하면
+    // 레일 끝 정거장에서 구의 뒷면이 far 밖으로 나가 하늘에 구멍이 뚫린다.
+    // 카메라에 붙어 있어야 모든 방향에서 거리가 항상 1600으로 유지된다.
+    const sys = createEvanSystem({ satelliteColors: COLORS })
+    const neb = sys.group.getObjectByName('nebula')
+    sys.update(1, 1, new THREE.Vector3(0, 300, 560))
+    expect(neb.position.toArray()).toEqual([0, 300, 560])
+    sys.update(2, 2, new THREE.Vector3(-120, 40, -300))
+    expect(neb.position.toArray()).toEqual([-120, 40, -300])
+    sys.dispose()
+  })
+
+  it('build=1이면 행성이 완전 불투명이고 투명 큐에서 빠진다 (Phase 2 계약 유지)', () => {
+    const sys = createEvanSystem({ satelliteColors: COLORS })
+    sys.setBuild(1)
+    const m = sys.group.getObjectByName('planet-about').material
+    expect(m.uniforms.uOpacity.value).toBe(1)
+    expect(m.transparent).toBe(false)
+    sys.dispose()
+  })
+
+  it('build 중간에는 행성이 반투명으로 올라온다', () => {
+    const sys = createEvanSystem({ satelliteColors: COLORS })
+    sys.setBuild(0.8)
+    const m = sys.group.getObjectByName('planet-about').material
+    expect(m.transparent).toBe(true)
+    expect(m.uniforms.uOpacity.value).toBeGreaterThan(0)
+    expect(m.uniforms.uOpacity.value).toBeLessThan(1)
+    sys.dispose()
+  })
+
+  it('dispose가 성운과 항성 리소스도 해제한다', () => {
+    const sys = createEvanSystem({ satelliteColors: COLORS })
+    const neb = sys.group.getObjectByName('nebula')
+    const sun = sys.group.getObjectByName('sun')
+    const spies = [
+      vi.spyOn(neb.geometry, 'dispose'), vi.spyOn(neb.material, 'dispose'),
+      vi.spyOn(sun.material, 'dispose'),
+    ]
+    sys.dispose()
+    for (const s of spies) expect(s).toHaveBeenCalled()
   })
 })
