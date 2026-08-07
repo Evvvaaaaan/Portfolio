@@ -214,6 +214,19 @@ describe('렌더링 품질 (Phase 3)', () => {
     sys.dispose()
   })
 
+  it('성운은 매 프레임 카메라 위치로 따라와 far plane 밖으로 잘리지 않는다', () => {
+    // 성운은 반지름 1600 구인데 카메라 far는 2000이다 — 월드 원점에 고정하면
+    // 레일 끝 정거장에서 구의 뒷면이 far 밖으로 나가 하늘에 구멍이 뚫린다.
+    // 카메라에 붙어 있어야 모든 방향에서 거리가 항상 1600으로 유지된다.
+    const sys = createEvanSystem({ satelliteColors: COLORS })
+    const neb = sys.group.getObjectByName('nebula')
+    sys.update(1, 1, new THREE.Vector3(0, 300, 560))
+    expect(neb.position.toArray()).toEqual([0, 300, 560])
+    sys.update(2, 2, new THREE.Vector3(-120, 40, -300))
+    expect(neb.position.toArray()).toEqual([-120, 40, -300])
+    sys.dispose()
+  })
+
   it('build=1이면 행성이 완전 불투명이고 투명 큐에서 빠진다 (Phase 2 계약 유지)', () => {
     const sys = createEvanSystem({ satelliteColors: COLORS })
     sys.setBuild(1)
