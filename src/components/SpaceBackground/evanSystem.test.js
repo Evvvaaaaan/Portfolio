@@ -2,6 +2,7 @@ import { describe, it, expect, vi } from 'vitest'
 import * as THREE from 'three'
 import { createEvanSystem } from './evanSystem.js'
 import { PLANETS, planetPosition } from './system.js'
+import { computeGrade, hoursFromDate } from './timeOfDay.js'
 
 const COLORS = ['#4f9cf9', '#f59e0b', '#c084fc']
 
@@ -324,5 +325,30 @@ describe('렌더링 품질 (Phase 3)', () => {
     expect(sys.group.getObjectByName('nebula').material.uniforms.uIntensity.value)
       .toBeCloseTo(0.32, 6)
     sys.dispose()
+  })
+
+  it('시각이 다르면 씬에 실제로 다른 색이 꽂힌다 — 등급 체인 전체 검증', () => {
+    // computeGrade → setGrade → 유니폼까지의 합성을 한 번에 확인한다.
+    // e2e 스크린샷은 필름 그레인과 별 회전이 실시간에 물려 있어 두 로드가
+    // 항상 달라 보이므로, "시각 때문에 달라졌다"는 여기서만 증명된다.
+    const gradeAt = (h) => computeGrade(hoursFromDate(new Date(2026, 7, 8, h, 0, 0)))
+
+    const night = createEvanSystem({ satelliteColors: COLORS })
+    night.setGrade(gradeAt(0))
+    const nightSun = night.group.getObjectByName('sun').material.uniforms.uCoreColor.value.getHex()
+    const nightNebA = night.group.getObjectByName('nebula').material.uniforms.uColorA.value.getHex()
+    const nightRim = night.group.getObjectByName('planet-about').material.uniforms.uRimColor.value.getHex()
+    night.dispose()
+
+    const noon = createEvanSystem({ satelliteColors: COLORS })
+    noon.setGrade(gradeAt(12))
+    const noonSun = noon.group.getObjectByName('sun').material.uniforms.uCoreColor.value.getHex()
+    const noonNebA = noon.group.getObjectByName('nebula').material.uniforms.uColorA.value.getHex()
+    const noonRim = noon.group.getObjectByName('planet-about').material.uniforms.uRimColor.value.getHex()
+    noon.dispose()
+
+    expect(nightSun).not.toBe(noonSun)
+    expect(nightNebA).not.toBe(noonNebA)
+    expect(nightRim).not.toBe(noonRim)
   })
 })

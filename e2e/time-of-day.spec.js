@@ -1,7 +1,12 @@
 import { test, expect } from '@playwright/test'
 
-// 씬은 캔버스 하나라 DOM으로는 색을 읽을 수 없다 — 시계를 고정한 두 시각에서
-// 같은 정거장을 렌더해 픽셀이 실제로 다른지로 검증한다.
+// 등급 체인(computeGrade → setGrade → 유니폼) 자체의 정확성은
+// evanSystem.test.js의 단위 테스트가 이미 증명한다 — 이 스펙은 그걸 다시
+// 증명하지 않는다. setFixedTime은 Date만 고정할 뿐 rAF와 THREE.Clock의
+// 실시간 t는 그대로 흐르므로, 별 회전과 필름 그레인(postfx의 hash12 시드)이
+// 매 로드마다 픽셀을 바꾼다 — 그래서 night와 day 스크린샷이 다르다는 사실만으로
+// 등급이 원인이라고 단정할 수 없다. 여기서는 등급이 꽂힌 씬이 두 시각 모두
+// 정상적으로 마운트되고 렌더된다는 스모크 테스트로만 취급한다.
 async function shotAt(browser, isoTime) {
   const context = await browser.newContext()
   const page = await context.newPage()
