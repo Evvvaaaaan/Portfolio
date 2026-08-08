@@ -206,9 +206,41 @@
     z-index: 200;
     position: relative;
   }
+}
 
-  /* Icon-only: logo + Mode + Language + burger no longer fit on one row
-     with text labels at narrow widths (measured overflow past ~375px). */
-  .nav-icon-btn-label { display: none; }
+/* Icon-only: 오토파일럿 버튼(텍스트 라벨 포함 109px + 12px 갭 = 121px)이 더해지며
+   .nav-inner이 좁은 폭에서 넘친다 — 실측 overflow(오토파일럿 포함, 없을 때):
+   1024px 21px(0px), 900px 145px(24px), 769px 276px(155px), 1280px 0px(0px).
+   데스크톱 네비바가 보이는 최소폭(769px)까지 안 넘치게 하려면 이 폭(1100px)부터
+   라벨을 접어야 한다. display:none 대신 시각적으로만 숨기는 기법을 쓴다 —
+   버튼의 접근성 이름이 .nav-icon-btn-label의 텍스트에서 나오는데(title은
+   폴백일 뿐), display:none은 이름 계산에서 그 텍스트를 완전히 제외시켜
+   e2e가 getByRole(..., { name: 'Autopilot' })로 찾지 못하게 만들 위험이 있다. */
+@media (max-width: 1100px) {
+  .nav-icon-btn-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
   .nav-icon-btn { padding: 6px; }
+}
+
+/* 오토파일럿 토글: 재생 중이면 액센트로 켜진 상태를 보여준다. */
+.autopilot-btn--on {
+  color: #fff;
+  background: rgba(109, 181, 255, 0.16);
+  border-color: rgba(109, 181, 255, 0.45);
+}
+
+/* 스크린리더 전용 상태 공지 — 화면에는 자리를 차지하지 않는다. */
+.autopilot-status {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }

@@ -2,7 +2,10 @@ export const translations = {
   en: {
     nav: {
       about: 'About', skills: 'Skills', projects: 'Projects', contact: 'Contact', guestbook: 'Guestbook', hire: 'Hire Me',
+      autopilot: 'Autopilot', autopilotStop: 'Stop tour',
+      autopilotOn: 'Autopilot tour started', autopilotOff: 'Autopilot tour stopped',
     },
+    minimap: { label: 'System map', home: 'Home' },
     hero: {
       tag: 'Available for work',
       roles: ['Fullstack Engineer', 'Frontend Developer', 'Backend Developer', 'Problem Solver'],
@@ -100,7 +103,10 @@ export const translations = {
   ko: {
     nav: {
       about: '소개', skills: '스킬', projects: '프로젝트', contact: '연락', guestbook: '방명록', hire: '채용 문의',
+      autopilot: '오토파일럿', autopilotStop: '투어 중지',
+      autopilotOn: '오토파일럿 투어를 시작했습니다', autopilotOff: '오토파일럿 투어를 중지했습니다',
     },
+    minimap: { label: '항성계 지도', home: '홈' },
     hero: {
       tag: '채용 가능',
       roles: ['풀스택 엔지니어', '프론트엔드 개발자', '백엔드 개발자', '문제 해결사'],
@@ -198,7 +204,10 @@ export const translations = {
   ja: {
     nav: {
       about: '自己紹介', skills: 'スキル', projects: 'プロジェクト', contact: '連絡', guestbook: 'ゲストブック', hire: 'お問い合わせ',
+      autopilot: 'オートパイロット', autopilotStop: 'ツアー停止',
+      autopilotOn: 'オートパイロットツアーを開始しました', autopilotOff: 'オートパイロットツアーを停止しました',
     },
+    minimap: { label: '星系マップ', home: 'ホーム' },
     hero: {
       tag: '採用可能',
       roles: ['フルスタックエンジニア', 'フロントエンド開発者', 'バックエンド開発者', '問題解決者'],
@@ -296,7 +305,10 @@ export const translations = {
   zh: {
     nav: {
       about: '关于我', skills: '技能', projects: '项目', contact: '联系', guestbook: '留言板', hire: '联系我',
+      autopilot: '自动巡航', autopilotStop: '停止巡览',
+      autopilotOn: '自动巡航已开始', autopilotOff: '自动巡航已停止',
     },
+    minimap: { label: '星系地图', home: '首页' },
     hero: {
       tag: '正在求职',
       roles: ['全栈工程师', '前端开发者', '后端开发者', '问题解决者'],

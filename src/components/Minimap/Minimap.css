@@ -1,0 +1,101 @@
+/* 미니맵: 좌하단 고정 원형 패널. 네비바(z-index 100)보다 아래, 모드
+   오버레이(z-index 2100)보다 훨씬 아래에 둔다. */
+.minimap {
+  position: fixed;
+  left: 24px;
+  bottom: 24px;
+  width: 148px;
+  height: 148px;
+  z-index: 50;
+  border-radius: 50%;
+  background: rgba(7, 11, 20, 0.55);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(109, 181, 255, 0.16);
+  /* 패널 자체는 클릭을 먹지 않는다 — 원형 배경이 좌하단 148×148(좁은 화면에서는
+     118×118) 정사각 영역 전체를 차지해, 그 안으로 들어오는 슬라이드 콘텐츠가
+     클릭 불가능해지는 걸 막는다. 실제 버튼에서만 다시 pointer-events를 켠다. */
+  pointer-events: none;
+}
+
+.minimap-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.minimap-orbit {
+  fill: none;
+  stroke: rgba(109, 181, 255, 0.2);
+  stroke-width: 0.4;
+}
+
+.minimap-dot { opacity: 0.85; }
+.minimap-dot--on { opacity: 1; }
+
+/* 현재 카메라 위치. 흰 점 + 옅은 링 — 검은 우주 톤을 밝히지 않는 최소 표시. */
+.minimap-marker {
+  fill: #fff;
+  stroke: rgba(255, 255, 255, 0.45);
+  stroke-width: 1.4;
+}
+
+.minimap-buttons {
+  position: absolute;
+  inset: 0;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+/* left/top이 0~100 퍼센트로 들어온다 — 뷰박스가 0~100 정사각이라 SVG 좌표와
+   퍼센트가 1:1로 맞는다. */
+.minimap-buttons li {
+  position: absolute;
+  transform: translate(-50%, -50%);
+}
+
+.minimap-btn {
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border-radius: 50%;
+  border: 1px solid transparent;
+  background: transparent;
+  cursor: pointer;
+  transition: border-color 0.18s;
+  /* .minimap이 pointer-events: none이라, 실제로 클릭을 받아야 하는 버튼에서만
+     다시 켜준다. */
+  pointer-events: auto;
+}
+
+.minimap-btn:hover { border-color: rgba(255, 255, 255, 0.45); }
+.minimap-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.minimap-btn--on { border-color: rgba(255, 255, 255, 0.7); }
+
+.minimap-btn-label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+@media (max-width: 1100px) {
+  .minimap { width: 118px; height: 118px; left: 16px; bottom: 16px; }
+
+  /* 118px 패널에서 about(38.67, 44.72)과 home(50, 50)의 중심 간 거리:
+     dx = (50 - 38.67) / 100 * 118 ≈ 13.37px, dy = (50 - 44.72) / 100 * 118 ≈ 6.23px
+     거리 = sqrt(13.37² + 6.23²) ≈ 14.75px. 24px짜리 두 원(반지름 12px씩)은
+     중심이 14.75px 떨어져 있으면 서로 크게 파고든다 — 나중에 그려지는 about이
+     home 타겟의 상당 부분을 가린다. 지름을 그 거리보다 작게 잡아야 겹치지
+     않으므로 14px로 줄인다(여유를 위해 14.75px보다 살짝 작게). */
+  .minimap-btn { width: 14px; height: 14px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .minimap-btn { transition: none; }
+}
