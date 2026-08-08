@@ -18,7 +18,18 @@ export function useAutopilot(buttonRef) {
   }, [])
 
   const stop = useCallback(() => {
+    // 타이머가 하나라도 남아 있었다는 건 투어가 돌고 있었다는 뜻 — clearTimers로
+    // 지우기 전에 미리 확인해 둔다. 마운트 직후처럼 애초에 아무 것도 예약된
+    // 게 없을 때는 아래 pin을 건너뛴다: 안 그러면 스크롤이 하지도 않은 움직임을
+    // 제자리로 "점프"시키는 부작용이 생긴다.
+    const wasRunning = timersRef.current.length > 0
     clearTimers()
+    // 예약된 타이머만 지우면 이미 진행 중이던 Lenis 스크롤 애니메이션은
+    // 멈추지 않는다 — 다리 하나가 3초짜리라, Esc/Tab/클릭 등으로 멈춘 뒤에도
+    // 화면이 최대 3초 더 미끄러진다. 지금 위치로 즉시 고정해 애니메이션을 끊는다.
+    if (wasRunning) {
+      getLenis()?.scrollTo(window.scrollY, { immediate: true })
+    }
     setRunning(false)
   }, [clearTimers])
 

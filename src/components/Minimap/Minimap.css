@@ -12,6 +12,10 @@
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   border: 1px solid rgba(109, 181, 255, 0.16);
+  /* 패널 자체는 클릭을 먹지 않는다 — 원형 배경이 좌하단 148×148(좁은 화면에서는
+     118×118) 정사각 영역 전체를 차지해, 그 안으로 들어오는 슬라이드 콘텐츠가
+     클릭 불가능해지는 걸 막는다. 실제 버튼에서만 다시 pointer-events를 켠다. */
+  pointer-events: none;
 }
 
 .minimap-svg {
@@ -62,6 +66,9 @@
   background: transparent;
   cursor: pointer;
   transition: border-color 0.18s;
+  /* .minimap이 pointer-events: none이라, 실제로 클릭을 받아야 하는 버튼에서만
+     다시 켜준다. */
+  pointer-events: auto;
 }
 
 .minimap-btn:hover { border-color: rgba(255, 255, 255, 0.45); }
@@ -79,6 +86,14 @@
 
 @media (max-width: 1100px) {
   .minimap { width: 118px; height: 118px; left: 16px; bottom: 16px; }
+
+  /* 118px 패널에서 about(38.67, 44.72)과 home(50, 50)의 중심 간 거리:
+     dx = (50 - 38.67) / 100 * 118 ≈ 13.37px, dy = (50 - 44.72) / 100 * 118 ≈ 6.23px
+     거리 = sqrt(13.37² + 6.23²) ≈ 14.75px. 24px짜리 두 원(반지름 12px씩)은
+     중심이 14.75px 떨어져 있으면 서로 크게 파고든다 — 나중에 그려지는 about이
+     home 타겟의 상당 부분을 가린다. 지름을 그 거리보다 작게 잡아야 겹치지
+     않으므로 14px로 줄인다(여유를 위해 14.75px보다 살짝 작게). */
+  .minimap-btn { width: 14px; height: 14px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
