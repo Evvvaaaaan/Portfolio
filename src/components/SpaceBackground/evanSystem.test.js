@@ -352,38 +352,61 @@ describe('렌더링 품질 (Phase 3)', () => {
     expect(nightRim).not.toBe(noonRim)
   })
 
-  it('시간대 등급이 태양 글로우 스프라이트 색에도 반영된다 (Finding 1)', () => {
-    // setGrade가 디스크(uCoreColor/uEdgeColor)만 등급을 입히고 글로우
-    // 스프라이트를 그대로 두면, home 정거장처럼 태양이 화면을 크게 채우는
-    // 곳에서 "식은 별" 효과가 밝고 따뜻한 헤일로에 묻혀 죽는다. 이 테스트는
-    // 글로우 머티리얼의 색이 시각에 따라 실제로 바뀌는지 증명한다.
+  it('setGrade는 글로우 스프라이트가 없어도 예외 없이 끝나고, 존재하는 유니폼(태양 디스크)은 정상 반영된다 (Finding 1)', () => {
+    // 글로우 스프라이트 자체(SpriteMaterial.color)는 이 환경에서 직접 볼 수
+    // 없다 — createGlowTexture()는 document.createElement('canvas')와
+    // getContext('2d')(createRadialGradient 포함)를 요구하는데,
+    // vitest.config.js는 environment: 'node'라 document가 아예 없다. jsdom을
+    // 붙여도 마찬가지다: 네이티브 canvas 패키지 없이는 jsdom의
+    // getContext('2d')도 null을 반환해 결국 텍스처를 못 만든다. 즉 sun-glow는
+    // 이 vitest 환경에서 구조적으로 만들어질 수 없다 — 헤일로가 실제 화면에서
+    // 등급대로 물드는지는 컨트롤러가 찍은 렌더 스크린샷으로 별도 검증한다.
     //
-    // 주의: glow 스프라이트는 createGlowTexture()가 document를 요구하는데
-    // (evanSystem.js:16-31), vitest.config.js는 environment: 'node'라
-    // document가 undefined다 — glowTex가 null이 되어 스프라이트 자체가
-    // 생성되지 않는다(evanSystem.js:82-96 조건부 생성). 그래서 이 환경에서
-    // getObjectByName('sun-glow')는 항상 undefined일 수 있다. 그 경우
-    // 아래 toBeTruthy 단언이 그대로 실패하게 두어(스킵하지 않는다) 이
-    // 갭이 조용히 묻히지 않게 한다.
+    // 이 환경에서 실제로 지킬 수 있는 회귀는 다른 데 있다: setGrade 안의
+    // `if (glow) { glow.material.color... }` 가드가 나중에 빠지면 document
+    // 없는 모든 호출(=이 스위트 전체)에서 매번 예외가 난다. glow가 없어도
+    // setGrade가 끝까지 실행되고, 실제로 존재하는 다른 유니폼(태양 디스크)은
+    // 정상 반영되는지를 여기서 지킨다.
+    const sys = createEvanSystem({ satelliteColors: COLORS })
+    expect(sys.group.getObjectByName('sun-glow')).toBeUndefined()
+
+    const grade = computeGrade(hoursFromDate(new Date(2026, 7, 8, 0, 0, 0)))
+    expect(() => sys.setGrade(grade)).not.toThrow()
+
+    const sun = sys.group.getObjectByName('sun')
+    expect(sun.material.uniforms.uCoreColor.value.getHex()).toBe(grade.sunCore)
+    sys.dispose()
+  })
+
+  it('글로우 틴트 산식(흰색→sunEdge 0.5 혼합)이 시각마다 다르고, raw sunEdge를 그대로 쓰는 것보다 흰색에 훨씬 가깝다 (Finding 1 의도 고정)', () => {
+    // setGrade 안의 실제 코드: glow.material.color.set(0xffffff)
+    //   .lerp(new THREE.Color(grade.sunEdge), 0.5)
+    // 스프라이트 객체가 아니라 이 산식 자체를 순수 함수로 재현해 의도를
+    // 고정한다 — document 유무와 무관하게 어느 vitest 환경에서도 돌아간다.
+    const distToWhite = (c) => {
+      const dr = 1 - c.r
+      const dg = 1 - c.g
+      const db = 1 - c.b
+      return Math.sqrt(dr * dr + dg * dg + db * db)
+    }
+    const tintFor = (hex) => new THREE.Color(0xffffff).lerp(new THREE.Color(hex), 0.5)
     const gradeAt = (h) => computeGrade(hoursFromDate(new Date(2026, 7, 8, h, 0, 0)))
 
-    const night = createEvanSystem({ satelliteColors: COLORS })
-    night.setGrade(gradeAt(0))
-    const nightGlow = night.group.getObjectByName('sun-glow')
-    expect(
-      nightGlow,
-      "sun-glow 스프라이트가 없다 — vitest environment:'node'에는 document가 없어 createGlowTexture()가 null을 반환하므로 스프라이트가 생성되지 않는다.",
-    ).toBeTruthy()
-    const nightColor = nightGlow.material.color.getHex()
-    night.dispose()
+    const nightTint = tintFor(gradeAt(0).sunEdge)
+    const noonGrade = gradeAt(12)
+    const noonTint = tintFor(noonGrade.sunEdge)
 
-    const noon = createEvanSystem({ satelliteColors: COLORS })
-    noon.setGrade(gradeAt(12))
-    const noonGlow = noon.group.getObjectByName('sun-glow')
-    expect(noonGlow).toBeTruthy()
-    const noonColor = noonGlow.material.color.getHex()
-    noon.dispose()
+    // (a) 시각이 다르면 틴트도 실제로 다르다.
+    expect(nightTint.getHex()).not.toBe(noonTint.getHex())
 
-    expect(nightColor).not.toBe(noonColor)
+    // (b) 0.5 혼합은 raw sunEdge를 그대로 쓰는 것보다 흰색에 훨씬 가깝게
+    // 남는다 — 흰색까지의 거리 기준 정확히 절반이다. 나중에 누가
+    // "color.setHex(grade.sunEdge)"로 0.5 믹스를 지워버리면(멀티플라이가
+    // 헤일로를 크게 어둡게 만드는 문제로 되돌아간다) 이 비율이 1에
+    // 가까워져 아래 단언이 깨진다.
+    const noonRaw = new THREE.Color(noonGrade.sunEdge)
+    const ratio = distToWhite(noonTint) / distToWhite(noonRaw)
+    expect(ratio).toBeCloseTo(0.5, 2)
+    expect(ratio).toBeLessThan(0.7)
   })
 })
