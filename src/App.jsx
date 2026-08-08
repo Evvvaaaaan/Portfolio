@@ -7,6 +7,7 @@ import { computeDockStyle } from './components/dockLayout.js'
 import Navbar from './components/Navbar/Navbar'
 import SpaceBackground from './components/SpaceBackground/SpaceBackground'
 import HardwareAccelNotice from './components/HardwareAccelNotice/HardwareAccelNotice'
+import Minimap from './components/Minimap/Minimap'
 import Hero from './sections/Hero/Hero'
 import About from './sections/About/About'
 import Projects from './sections/Projects/Projects'
@@ -296,6 +297,7 @@ function AppContent() {
           <Route path="/projects/:slug" element={<ProjectPage />} />
           <Route path="/guestbook" element={<Guestbook />} />
         </Routes>
+        {isMainPage && isDesktop && <Minimap />}
         {isMainPage && <ModeLayer />}
         {showGlobalFooter && <Footer />}
         <HardwareAccelNotice />

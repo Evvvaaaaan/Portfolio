@@ -1,0 +1,86 @@
+/* 미니맵: 좌하단 고정 원형 패널. 네비바(z-index 100)보다 아래, 모드
+   오버레이(z-index 2100)보다 훨씬 아래에 둔다. */
+.minimap {
+  position: fixed;
+  left: 24px;
+  bottom: 24px;
+  width: 148px;
+  height: 148px;
+  z-index: 50;
+  border-radius: 50%;
+  background: rgba(7, 11, 20, 0.55);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(109, 181, 255, 0.16);
+}
+
+.minimap-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.minimap-orbit {
+  fill: none;
+  stroke: rgba(109, 181, 255, 0.2);
+  stroke-width: 0.4;
+}
+
+.minimap-dot { opacity: 0.85; }
+.minimap-dot--on { opacity: 1; }
+
+/* 현재 카메라 위치. 흰 점 + 옅은 링 — 검은 우주 톤을 밝히지 않는 최소 표시. */
+.minimap-marker {
+  fill: #fff;
+  stroke: rgba(255, 255, 255, 0.45);
+  stroke-width: 1.4;
+}
+
+.minimap-buttons {
+  position: absolute;
+  inset: 0;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+/* left/top이 0~100 퍼센트로 들어온다 — 뷰박스가 0~100 정사각이라 SVG 좌표와
+   퍼센트가 1:1로 맞는다. */
+.minimap-buttons li {
+  position: absolute;
+  transform: translate(-50%, -50%);
+}
+
+.minimap-btn {
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border-radius: 50%;
+  border: 1px solid transparent;
+  background: transparent;
+  cursor: pointer;
+  transition: border-color 0.18s;
+}
+
+.minimap-btn:hover { border-color: rgba(255, 255, 255, 0.45); }
+.minimap-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.minimap-btn--on { border-color: rgba(255, 255, 255, 0.7); }
+
+.minimap-btn-label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+@media (max-width: 1100px) {
+  .minimap { width: 118px; height: 118px; left: 16px; bottom: 16px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .minimap-btn { transition: none; }
+}
