@@ -212,3 +212,20 @@
   .nav-icon-btn-label { display: none; }
   .nav-icon-btn { padding: 6px; }
 }
+
+/* 오토파일럿 토글: 재생 중이면 액센트로 켜진 상태를 보여준다. */
+.autopilot-btn--on {
+  color: #fff;
+  background: rgba(109, 181, 255, 0.16);
+  border-color: rgba(109, 181, 255, 0.45);
+}
+
+/* 스크린리더 전용 상태 공지 — 화면에는 자리를 차지하지 않는다. */
+.autopilot-status {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}

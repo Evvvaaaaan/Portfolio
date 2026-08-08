@@ -2,6 +2,8 @@ export const translations = {
   en: {
     nav: {
       about: 'About', skills: 'Skills', projects: 'Projects', contact: 'Contact', guestbook: 'Guestbook', hire: 'Hire Me',
+      autopilot: 'Autopilot', autopilotStop: 'Stop tour',
+      autopilotOn: 'Autopilot tour started', autopilotOff: 'Autopilot tour stopped',
     },
     minimap: { label: 'System map', home: 'Home' },
     hero: {
@@ -101,6 +103,8 @@ export const translations = {
   ko: {
     nav: {
       about: '소개', skills: '스킬', projects: '프로젝트', contact: '연락', guestbook: '방명록', hire: '채용 문의',
+      autopilot: '오토파일럿', autopilotStop: '투어 중지',
+      autopilotOn: '오토파일럿 투어를 시작했습니다', autopilotOff: '오토파일럿 투어를 중지했습니다',
     },
     minimap: { label: '항성계 지도', home: '홈' },
     hero: {
@@ -200,6 +204,8 @@ export const translations = {
   ja: {
     nav: {
       about: '自己紹介', skills: 'スキル', projects: 'プロジェクト', contact: '連絡', guestbook: 'ゲストブック', hire: 'お問い合わせ',
+      autopilot: 'オートパイロット', autopilotStop: 'ツアー停止',
+      autopilotOn: 'オートパイロットツアーを開始しました', autopilotOff: 'オートパイロットツアーを停止しました',
     },
     minimap: { label: '星系マップ', home: 'ホーム' },
     hero: {
@@ -299,6 +305,8 @@ export const translations = {
   zh: {
     nav: {
       about: '关于我', skills: '技能', projects: '项目', contact: '联系', guestbook: '留言板', hire: '联系我',
+      autopilot: '自动巡航', autopilotStop: '停止巡览',
+      autopilotOn: '自动巡航已开始', autopilotOff: '自动巡航已停止',
     },
     minimap: { label: '星系地图', home: '首页' },
     hero: {

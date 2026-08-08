@@ -3,6 +3,8 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { useLang } from '../../context/LangContext'
 import ModeMenu from '../../modes/ModeSelector/ModeMenu.jsx'
 import LabTransition from '../LabTransition/LabTransition.jsx'
+import { useMediaQuery } from '../../hooks/useMediaQuery'
+import { useAutopilot } from './useAutopilot'
 import './Navbar.css'
 
 const LANGS = [
@@ -91,6 +93,48 @@ function LangSwitcher() {
   )
 }
 
+function AutopilotButton() {
+  const { t } = useLang()
+  const btnRef = useRef(null)
+  const { running, start, stop } = useAutopilot(btnRef)
+  const label = running ? t.nav.autopilotStop : t.nav.autopilot
+
+  // 라이브 영역은 "내용이 바뀔 때" 읽힌다. 첫 렌더부터 문구가 들어 있으면
+  // 아무도 아무것도 하지 않았는데 "투어를 중지했습니다"가 읽힐 수 있으므로
+  // 최초 렌더는 비워 두고, 실제 상태 전이에서만 문구를 채운다.
+  const firstRenderRef = useRef(true)
+  const [announced, setAnnounced] = useState('')
+  useEffect(() => {
+    if (firstRenderRef.current) {
+      firstRenderRef.current = false
+      return
+    }
+    setAnnounced(running ? t.nav.autopilotOn : t.nav.autopilotOff)
+  }, [running, t])
+
+  return (
+    <>
+      <button
+        ref={btnRef}
+        type="button"
+        className={`nav-icon-btn autopilot-btn ${running ? 'autopilot-btn--on' : ''}`}
+        aria-pressed={running}
+        title={label}
+        onClick={() => (running ? stop() : start())}
+      >
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="9" />
+          <polygon points="10 8 16 12 10 16" fill="currentColor" stroke="none" />
+        </svg>
+        <span className="nav-icon-btn-label">{label}</span>
+      </button>
+      {/* 투어 시작/중지는 화면이 스스로 움직이는 변화라 시각 외 사용자에게는
+          아무 신호가 없다 — 상태를 소리로도 알린다. */}
+      <p className="autopilot-status" role="status">{announced}</p>
+    </>
+  )
+}
+
 export default function Navbar() {
   const { t } = useLang()
   const [scrolled, setScrolled] = useState(false)
@@ -98,6 +142,7 @@ export default function Navbar() {
   const [labOrigin, setLabOrigin] = useState(null)
   const location = useLocation()
   const navigate = useNavigate()
+  const isDesktop = useMediaQuery('(min-width: 769px) and (min-height: 701px)')
 
   const isLabDetail = /^\/gallery\/.+/.test(location.pathname)
 
@@ -184,6 +229,7 @@ export default function Navbar() {
 
         {/* Right controls */}
         <div className="nav-controls">
+          {location.pathname === '/' && isDesktop && <AutopilotButton />}
           {location.pathname === '/' && <ModeMenu />}
           <LangSwitcher />
           <span className="nav-divider" aria-hidden="true" />

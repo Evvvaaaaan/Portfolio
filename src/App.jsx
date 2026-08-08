@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useEffect, useRef } from 'react'
 import './index.css'
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom'
 import { LangProvider, useLang } from './context/LangContext'
@@ -8,6 +8,7 @@ import Navbar from './components/Navbar/Navbar'
 import SpaceBackground from './components/SpaceBackground/SpaceBackground'
 import HardwareAccelNotice from './components/HardwareAccelNotice/HardwareAccelNotice'
 import Minimap from './components/Minimap/Minimap'
+import { useMediaQuery } from './hooks/useMediaQuery'
 import Hero from './sections/Hero/Hero'
 import About from './sections/About/About'
 import Projects from './sections/Projects/Projects'
@@ -70,21 +71,6 @@ function Footer({ slide = false }) {
       </div>
     </footer>
   )
-}
-
-function useMediaQuery(query) {
-  const [matches, setMatches] = useState(
-    () => typeof window !== 'undefined' && window.matchMedia(query).matches
-  )
-
-  useEffect(() => {
-    const media = window.matchMedia(query)
-    const listener = () => setMatches(media.matches)
-    media.addEventListener('change', listener)
-    return () => media.removeEventListener('change', listener)
-  }, [query])
-
-  return matches
 }
 
 function MainPage() {
