@@ -58,3 +58,21 @@ describe('Phase 4 내비게이션 문구', () => {
     expect(translations.en.minimap.label).toBe('System map')
   })
 })
+
+describe('Phase 6a 위성 문구', () => {
+  for (const locale of LOCALES) {
+    it(`${locale}에 위성 문구가 모두 있다`, () => {
+      const s = translations[locale].satellites
+      expect(typeof s.label).toBe('string')
+      expect(s.label.length).toBeGreaterThan(0)
+      expect(typeof s.open).toBe('string')
+      // {title} 자리표시자가 없으면 버튼 이름에 프로젝트명이 안 들어간다.
+      expect(s.open).toContain('{title}')
+    })
+  }
+
+  it('로케일마다 다른 문구를 쓴다 — 복붙 누락 방지', () => {
+    const labels = LOCALES.map((l) => translations[l].satellites.label)
+    expect(new Set(labels).size).toBe(LOCALES.length)
+  })
+})

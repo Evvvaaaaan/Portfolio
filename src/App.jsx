@@ -8,6 +8,7 @@ import Navbar from './components/Navbar/Navbar'
 import SpaceBackground from './components/SpaceBackground/SpaceBackground'
 import HardwareAccelNotice from './components/HardwareAccelNotice/HardwareAccelNotice'
 import Minimap from './components/Minimap/Minimap'
+import ProjectSatellites from './components/ProjectSatellites/ProjectSatellites'
 import { useMediaQuery } from './hooks/useMediaQuery'
 import Hero from './sections/Hero/Hero'
 import About from './sections/About/About'
@@ -284,6 +285,7 @@ function AppContent() {
           <Route path="/guestbook" element={<Guestbook />} />
         </Routes>
         {isMainPage && isDesktop && <Minimap />}
+        {isMainPage && isDesktop && <ProjectSatellites />}
         {isMainPage && <ModeLayer />}
         {showGlobalFooter && <Footer />}
         <HardwareAccelNotice />
