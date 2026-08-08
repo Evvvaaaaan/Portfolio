@@ -291,6 +291,17 @@ export function createEvanSystem({ satelliteColors = [] } = {}) {
     setGrade(grade) {
       sunMat.uniforms.uCoreColor.value.setHex(grade.sunCore)
       sunMat.uniforms.uEdgeColor.value.setHex(grade.sunEdge)
+      // 글로우 스프라이트: SpriteMaterial.color가 베이크된 캔버스 텍스처와
+      // 곱해지므로 텍스처를 다시 굽지 않고 색만 바꿔도 디스크와 함께
+      // 식는다. sunEdge를 그대로 곱하면(기본값이 흰색이라 지금까지는
+      // 텍스처 그대로 보였다) 채도 높은 주황이 흰색보다 어두워 헤일로
+      // 전체 밝기가 크게 죽는다 — 림 처리와 같은 방식으로, 흰색에서
+      // sunEdge 쪽으로 0.5만 섞어 색조만 옮기고 한낮(Phase 3) 밝기에
+      // 가깝게 유지한다. glow는 document 없는 노드(vitest) 환경에서는
+      // 아예 생성되지 않으므로 없으면 건너뛴다.
+      if (glow) {
+        glow.material.color.set(0xffffff).lerp(new THREE.Color(grade.sunEdge), 0.5)
+      }
       sunLight.color.setHex(grade.sunLight)
       ambient.color.setHex(grade.ambient)
       // 림은 등급 색으로 덮어쓰지 않는다 — 행성 고유색에서 출발해 등급 색

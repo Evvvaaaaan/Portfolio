@@ -351,4 +351,39 @@ describe('렌더링 품질 (Phase 3)', () => {
     expect(nightNebA).not.toBe(noonNebA)
     expect(nightRim).not.toBe(noonRim)
   })
+
+  it('시간대 등급이 태양 글로우 스프라이트 색에도 반영된다 (Finding 1)', () => {
+    // setGrade가 디스크(uCoreColor/uEdgeColor)만 등급을 입히고 글로우
+    // 스프라이트를 그대로 두면, home 정거장처럼 태양이 화면을 크게 채우는
+    // 곳에서 "식은 별" 효과가 밝고 따뜻한 헤일로에 묻혀 죽는다. 이 테스트는
+    // 글로우 머티리얼의 색이 시각에 따라 실제로 바뀌는지 증명한다.
+    //
+    // 주의: glow 스프라이트는 createGlowTexture()가 document를 요구하는데
+    // (evanSystem.js:16-31), vitest.config.js는 environment: 'node'라
+    // document가 undefined다 — glowTex가 null이 되어 스프라이트 자체가
+    // 생성되지 않는다(evanSystem.js:82-96 조건부 생성). 그래서 이 환경에서
+    // getObjectByName('sun-glow')는 항상 undefined일 수 있다. 그 경우
+    // 아래 toBeTruthy 단언이 그대로 실패하게 두어(스킵하지 않는다) 이
+    // 갭이 조용히 묻히지 않게 한다.
+    const gradeAt = (h) => computeGrade(hoursFromDate(new Date(2026, 7, 8, h, 0, 0)))
+
+    const night = createEvanSystem({ satelliteColors: COLORS })
+    night.setGrade(gradeAt(0))
+    const nightGlow = night.group.getObjectByName('sun-glow')
+    expect(
+      nightGlow,
+      "sun-glow 스프라이트가 없다 — vitest environment:'node'에는 document가 없어 createGlowTexture()가 null을 반환하므로 스프라이트가 생성되지 않는다.",
+    ).toBeTruthy()
+    const nightColor = nightGlow.material.color.getHex()
+    night.dispose()
+
+    const noon = createEvanSystem({ satelliteColors: COLORS })
+    noon.setGrade(gradeAt(12))
+    const noonGlow = noon.group.getObjectByName('sun-glow')
+    expect(noonGlow).toBeTruthy()
+    const noonColor = noonGlow.material.color.getHex()
+    noon.dispose()
+
+    expect(nightColor).not.toBe(noonColor)
+  })
 })
