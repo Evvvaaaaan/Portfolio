@@ -29,3 +29,32 @@ describe('translations.lab', () => {
     expect(new Set(arrived).size).toBe(LOCALES.length)
   })
 })
+
+describe('Phase 4 내비게이션 문구', () => {
+  const NAV_KEYS = ['autopilot', 'autopilotStop', 'autopilotOn', 'autopilotOff']
+  const MINIMAP_KEYS = ['label', 'home']
+
+  for (const locale of LOCALES) {
+    it(`${locale}에 오토파일럿·미니맵 문구가 모두 있다`, () => {
+      for (const key of NAV_KEYS) {
+        expect(typeof translations[locale].nav[key]).toBe('string')
+        expect(translations[locale].nav[key].length).toBeGreaterThan(0)
+      }
+      for (const key of MINIMAP_KEYS) {
+        expect(typeof translations[locale].minimap[key]).toBe('string')
+        expect(translations[locale].minimap[key].length).toBeGreaterThan(0)
+      }
+    })
+  }
+
+  it('로케일마다 다른 문구를 쓴다 — 복붙 누락 방지', () => {
+    const labels = LOCALES.map((l) => translations[l].nav.autopilot)
+    expect(new Set(labels).size).toBe(LOCALES.length)
+  })
+
+  it('영어 버튼 이름은 e2e가 접근성 이름으로 찾는 값과 정확히 같다', () => {
+    expect(translations.en.nav.autopilot).toBe('Autopilot')
+    expect(translations.en.nav.autopilotStop).toBe('Stop tour')
+    expect(translations.en.minimap.label).toBe('System map')
+  })
+})

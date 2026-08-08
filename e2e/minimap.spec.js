@@ -54,3 +54,23 @@ test('미니맵은 모바일 뷰포트에서는 렌더하지 않는다', async (
   await expect(page.locator('nav.minimap')).toHaveCount(0)
   await context.close()
 })
+
+test('reduced-motion에서도 미니맵 이동이 동작한다', async ({ browser }) => {
+  const context = await browser.newContext({ reducedMotion: 'reduce' })
+  const page = await context.newPage()
+  await page.goto('/')
+  await expect(page.locator('section.hero')).not.toHaveClass(
+    /hero--awaiting-arrival/,
+    { timeout: 5000 },
+  )
+  const vh = await page.evaluate(() => window.innerHeight)
+  await page
+    .getByRole('navigation', { name: 'System map' })
+    .getByRole('button', { name: 'Contact' })
+    .click()
+  // contact는 STATIONS에서 인덱스 4.
+  await page.waitForFunction((h) => Math.abs(window.scrollY - h * 4) < 8, vh, {
+    timeout: 8000,
+  })
+  await context.close()
+})

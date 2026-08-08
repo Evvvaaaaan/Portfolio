@@ -55,3 +55,19 @@ test('버튼을 다시 누르면 멈춘다 — 자기 클릭이 인터럽트로 
   await stopBtn.click()
   await expect(start).toHaveAttribute('aria-pressed', 'false')
 })
+
+test('reduced-motion이면 이동 없이 컷으로 정거장을 넘긴다', async ({ browser }) => {
+  const context = await browser.newContext({ reducedMotion: 'reduce' })
+  const page = await context.newPage()
+  await page.goto('/')
+  // reduced-motion에서는 도착 시퀀스가 즉시 'skipped'로 종결된다.
+  await expect(page.locator('section.hero')).not.toHaveClass(
+    /hero--awaiting-arrival/,
+    { timeout: 5000 },
+  )
+  const vh = await page.evaluate(() => window.innerHeight)
+  await page.getByRole('button', { name: 'Autopilot' }).click()
+  // 정차만 남아 스텝이 2초라, 3초 안에 두 번째 정거장(about)에 이미 도달한다.
+  await page.waitForFunction((h) => window.scrollY >= h * 0.95, vh, { timeout: 6000 })
+  await context.close()
+})
