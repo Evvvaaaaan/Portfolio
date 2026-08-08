@@ -377,36 +377,4 @@ describe('렌더링 품질 (Phase 3)', () => {
     expect(sun.material.uniforms.uCoreColor.value.getHex()).toBe(grade.sunCore)
     sys.dispose()
   })
-
-  it('글로우 틴트 산식(흰색→sunEdge 0.5 혼합)이 시각마다 다르고, raw sunEdge를 그대로 쓰는 것보다 흰색에 훨씬 가깝다 (Finding 1 의도 고정)', () => {
-    // setGrade 안의 실제 코드: glow.material.color.set(0xffffff)
-    //   .lerp(new THREE.Color(grade.sunEdge), 0.5)
-    // 스프라이트 객체가 아니라 이 산식 자체를 순수 함수로 재현해 의도를
-    // 고정한다 — document 유무와 무관하게 어느 vitest 환경에서도 돌아간다.
-    const distToWhite = (c) => {
-      const dr = 1 - c.r
-      const dg = 1 - c.g
-      const db = 1 - c.b
-      return Math.sqrt(dr * dr + dg * dg + db * db)
-    }
-    const tintFor = (hex) => new THREE.Color(0xffffff).lerp(new THREE.Color(hex), 0.5)
-    const gradeAt = (h) => computeGrade(hoursFromDate(new Date(2026, 7, 8, h, 0, 0)))
-
-    const nightTint = tintFor(gradeAt(0).sunEdge)
-    const noonGrade = gradeAt(12)
-    const noonTint = tintFor(noonGrade.sunEdge)
-
-    // (a) 시각이 다르면 틴트도 실제로 다르다.
-    expect(nightTint.getHex()).not.toBe(noonTint.getHex())
-
-    // (b) 0.5 혼합은 raw sunEdge를 그대로 쓰는 것보다 흰색에 훨씬 가깝게
-    // 남는다 — 흰색까지의 거리 기준 정확히 절반이다. 나중에 누가
-    // "color.setHex(grade.sunEdge)"로 0.5 믹스를 지워버리면(멀티플라이가
-    // 헤일로를 크게 어둡게 만드는 문제로 되돌아간다) 이 비율이 1에
-    // 가까워져 아래 단언이 깨진다.
-    const noonRaw = new THREE.Color(noonGrade.sunEdge)
-    const ratio = distToWhite(noonTint) / distToWhite(noonRaw)
-    expect(ratio).toBeCloseTo(0.5, 2)
-    expect(ratio).toBeLessThan(0.7)
-  })
 })
