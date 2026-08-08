@@ -285,6 +285,25 @@ export function createEvanSystem({ satelliteColors = [] } = {}) {
       const d = Math.min(Math.max(progress, 0), 1)
       for (const m of orbitMaterials) m.uniforms.uDraw.value = d
     },
+    // 시간대 라이팅: 방문 시각으로 계산한 등급을 씬 전체에 한 번에 꽂는다.
+    // 마운트 시 1회 호출을 전제로 하므로 프레임 예산을 신경 쓰지 않는다.
+    // 부르지 않으면 Phase 3 기본값 그대로 동작한다.
+    setGrade(grade) {
+      sunMat.uniforms.uCoreColor.value.setHex(grade.sunCore)
+      sunMat.uniforms.uEdgeColor.value.setHex(grade.sunEdge)
+      sunLight.color.setHex(grade.sunLight)
+      ambient.color.setHex(grade.ambient)
+      // 림은 등급 색으로 덮어쓰지 않는다 — 행성 고유색에서 출발해 등급 색
+      // 쪽으로 0.55만큼 섞는다(생성 시 0xbfe0ff를 섞던 그 자리). 덮어쓰면
+      // 네 행성의 림이 같아져 행성별 정체성이 사라진다.
+      const rim = new THREE.Color(grade.rim)
+      planetFades.forEach((pf, i) => {
+        pf.material.uniforms.uRimColor.value.setHex(PLANETS[i].color).lerp(rim, 0.55)
+      })
+      nebulaMat.uniforms.uColorA.value.setHex(grade.nebulaA)
+      nebulaMat.uniforms.uColorB.value.setHex(grade.nebulaB)
+      nebulaMat.uniforms.uIntensity.value = grade.nebulaIntensity
+    },
     dispose() {
       group.clear()
       for (const d of disposables) d.dispose()

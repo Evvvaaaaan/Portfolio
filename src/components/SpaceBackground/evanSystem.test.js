@@ -257,4 +257,72 @@ describe('렌더링 품질 (Phase 3)', () => {
     sys.dispose()
     for (const s of spies) expect(s).toHaveBeenCalled()
   })
+
+  it('setGrade가 항성·조명·행성 림·성운 색을 한 번에 바꾼다', () => {
+    const sys = createEvanSystem({ satelliteColors: COLORS })
+    const sun = sys.group.getObjectByName('sun')
+    const neb = sys.group.getObjectByName('nebula')
+    const planet = sys.group.getObjectByName('planet-about')
+
+    sys.setGrade({
+      sunCore: 0x112233,
+      sunEdge: 0x445566,
+      sunLight: 0x778899,
+      ambient: 0xaabbcc,
+      rim: 0xddeeff,
+      nebulaA: 0x102030,
+      nebulaB: 0x405060,
+      nebulaIntensity: 0.17,
+    })
+
+    expect(sun.material.uniforms.uCoreColor.value.getHex()).toBe(0x112233)
+    expect(sun.material.uniforms.uEdgeColor.value.getHex()).toBe(0x445566)
+    // 림은 덮어쓰기가 아니라 "행성 고유색 → 등급 rim" 0.55 혼합이다.
+    const expectedRim = new THREE.Color(PLANETS.find((p) => p.id === 'about').color)
+      .lerp(new THREE.Color(0xddeeff), 0.55)
+      .getHex()
+    expect(planet.material.uniforms.uRimColor.value.getHex()).toBe(expectedRim)
+    expect(neb.material.uniforms.uColorA.value.getHex()).toBe(0x102030)
+    expect(neb.material.uniforms.uColorB.value.getHex()).toBe(0x405060)
+    expect(neb.material.uniforms.uIntensity.value).toBeCloseTo(0.17, 6)
+
+    const light = sys.group.children.find((c) => c.isPointLight)
+    const amb = sys.group.children.find((c) => c.isAmbientLight)
+    expect(light.color.getHex()).toBe(0x778899)
+    expect(amb.color.getHex()).toBe(0xaabbcc)
+
+    sys.dispose()
+  })
+
+  it('setGrade는 모든 행성에 적용되지만 행성별 림 정체성은 남는다', () => {
+    const sys = createEvanSystem({ satelliteColors: COLORS })
+    const before = PLANETS.map(
+      (p) => sys.group.getObjectByName(`planet-${p.id}`).material.uniforms.uRimColor.value.getHex(),
+    )
+    sys.setGrade({
+      sunCore: 0x111111, sunEdge: 0x222222, sunLight: 0x333333,
+      ambient: 0x444444, rim: 0xff0000,
+      nebulaA: 0x555555, nebulaB: 0x666666, nebulaIntensity: 0.2,
+    })
+    const after = PLANETS.map(
+      (p) => sys.group.getObjectByName(`planet-${p.id}`).material.uniforms.uRimColor.value.getHex(),
+    )
+    // 네 행성 모두 실제로 바뀌었고 — 하나라도 안 바뀌면 루프가 빠진 것
+    for (let i = 0; i < before.length; i++) expect(after[i]).not.toBe(before[i])
+    // 그러면서도 서로 다른 색으로 남는다 — 전부 같아지면 등급이 고유색을
+    // 덮어쓴 것이고, Phase 3이 만든 행성별 정체성이 사라진다.
+    expect(new Set(after).size).toBe(PLANETS.length)
+    sys.dispose()
+  })
+
+  it('setGrade를 부르지 않아도 씬은 Phase 3 기본값으로 동작한다', () => {
+    // setGrade는 선택적 확장이다 — 호출하지 않는 경로(테스트·다른 라우트)가
+    // 그대로 살아 있어야 기존 계약이 깨지지 않는다.
+    const sys = createEvanSystem({ satelliteColors: COLORS })
+    expect(sys.group.getObjectByName('sun').material.uniforms.uCoreColor.value.getHex())
+      .toBe(0xfff1c9)
+    expect(sys.group.getObjectByName('nebula').material.uniforms.uIntensity.value)
+      .toBeCloseTo(0.32, 6)
+    sys.dispose()
+  })
 })
