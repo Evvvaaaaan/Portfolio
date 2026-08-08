@@ -14,7 +14,6 @@ import { WARP_BOOST_EVENT, computeBoostIntensity } from './warpBoost.js'
 import { createEvanSystem } from './evanSystem.js'
 import { computeRailPose } from './rail.js'
 import { computeGrade, hoursFromDate } from './timeOfDay.js'
-import { projects } from '../../data/projects.js'
 import { GRID_VERT, GRID_FRAG } from './introVisuals.glsl.js'
 import {
   computeIntroState, shouldPlayIntro, hasSeenIntro, markIntroSeen,
@@ -131,10 +130,9 @@ export default function SpaceBackground({ warpEnabled = false, stageEnabled = fa
     // Evan System: 스테이지가 켜질 때 1회 생성. SpaceBackground는 라우트가
     // 바뀌어도 언마운트되지 않으므로 메인 재방문 시 재사용된다.
     let evanSystem = null
-    const satelliteColors = projects.slice(0, 3).map((p) => p.accent)
     const ensureSystem = () => {
       if (!evanSystem) {
-        evanSystem = createEvanSystem({ satelliteColors })
+        evanSystem = createEvanSystem()
         scene.add(evanSystem.group)
         // 인트로가 없는 경로에서는 곧바로 완성 상태로 시작한다. 인트로가
         // 있으면 첫 tick이 곧 setBuild(0)으로 덮어쓴다.

@@ -10,6 +10,7 @@ import { staggeredBuild } from './introSequence.js'
 import { createPlanetMaterial } from './planetMaterial.js'
 import { SUN_VERT, SUN_FRAG } from './sunSurface.glsl.js'
 import { NEBULA_VERT, NEBULA_FRAG } from './nebula.glsl.js'
+import { SATELLITES } from './satellites.js'
 
 // 태양 글로우: 별 텍스처와 같은 캔버스 라디얼 그라디언트 방식.
 // (문서/테스트 환경에는 document가 있고, node vitest는 jsdom 환경.)
@@ -46,7 +47,7 @@ function circleGeometry(radius, segments = 128) {
   return geo
 }
 
-export function createEvanSystem({ satelliteColors = [] } = {}) {
+export function createEvanSystem() {
   const group = new THREE.Group()
   group.name = 'evan-system'
   const disposables = []
@@ -213,26 +214,26 @@ export function createEvanSystem({ satelliteColors = [] } = {}) {
   })
 
   // --- 프로젝트 위성: projects 행성 주위를 피벗 그룹째 공전.
-  const projectsPlanetData = PLANETS.find((p) => p.id === 'projects')
   const projectsPlanet = group.getObjectByName('planet-projects')
   const pivot = new THREE.Group()
   pivot.name = 'satellites-pivot'
   projectsPlanet.add(pivot)
-  satelliteColors.forEach((hex, i) => {
+  // 화면 오버레이가 위성마다 버튼을 얹으려면 slug와 메시를 짝지어 알아야 한다.
+  const satellites = []
+  SATELLITES.forEach((s) => {
     const geo = new THREE.SphereGeometry(3.5, 20, 20)
     const mat = new THREE.MeshStandardMaterial({
-      color: new THREE.Color(hex),
-      emissive: new THREE.Color(hex),
+      color: new THREE.Color(s.accent),
+      emissive: new THREE.Color(s.accent),
       emissiveIntensity: 0.4,
       roughness: 0.5,
     })
     const sat = new THREE.Mesh(geo, mat)
-    const a = (i / satelliteColors.length) * Math.PI * 2
-    // projects 행성 반지름의 1.9배 — PLANETS에서 파생시켜 값 편집 시 desync 방지.
-    const r = projectsPlanetData.radius * 1.9
-    sat.position.set(Math.cos(a) * r, Math.sin(a * 2) * 4, Math.sin(a) * r)
+    sat.name = `satellite-${s.slug}`
+    sat.position.set(...s.position)
     pivot.add(sat)
     disposables.push(geo, mat)
+    satellites.push({ slug: s.slug, title: s.title, object: sat })
     // 위성도 링과 마찬가지로 작아서 청사진 쌍둥이 없이 실체 페이드만 태운다.
     solidMaterials.push({ mat, baseOpacity: mat.opacity })
   })
@@ -315,6 +316,7 @@ export function createEvanSystem({ satelliteColors = [] } = {}) {
       nebulaMat.uniforms.uColorB.value.setHex(grade.nebulaB)
       nebulaMat.uniforms.uIntensity.value = grade.nebulaIntensity
     },
+    satellites,
     dispose() {
       group.clear()
       for (const d of disposables) d.dispose()
