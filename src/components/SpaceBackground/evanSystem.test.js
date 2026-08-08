@@ -2,6 +2,7 @@ import { describe, it, expect, vi } from 'vitest'
 import * as THREE from 'three'
 import { createEvanSystem } from './evanSystem.js'
 import { PLANETS, planetPosition } from './system.js'
+import { computeGrade, hoursFromDate } from './timeOfDay.js'
 
 const COLORS = ['#4f9cf9', '#f59e0b', '#c084fc']
 
@@ -256,5 +257,124 @@ describe('렌더링 품질 (Phase 3)', () => {
     ]
     sys.dispose()
     for (const s of spies) expect(s).toHaveBeenCalled()
+  })
+
+  it('setGrade가 항성·조명·행성 림·성운 색을 한 번에 바꾼다', () => {
+    const sys = createEvanSystem({ satelliteColors: COLORS })
+    const sun = sys.group.getObjectByName('sun')
+    const neb = sys.group.getObjectByName('nebula')
+    const planet = sys.group.getObjectByName('planet-about')
+
+    sys.setGrade({
+      sunCore: 0x112233,
+      sunEdge: 0x445566,
+      sunLight: 0x778899,
+      ambient: 0xaabbcc,
+      rim: 0xddeeff,
+      nebulaA: 0x102030,
+      nebulaB: 0x405060,
+      nebulaIntensity: 0.17,
+    })
+
+    expect(sun.material.uniforms.uCoreColor.value.getHex()).toBe(0x112233)
+    expect(sun.material.uniforms.uEdgeColor.value.getHex()).toBe(0x445566)
+    // 림은 덮어쓰기가 아니라 "행성 고유색 → 등급 rim" 0.55 혼합이다.
+    const expectedRim = new THREE.Color(PLANETS.find((p) => p.id === 'about').color)
+      .lerp(new THREE.Color(0xddeeff), 0.55)
+      .getHex()
+    expect(planet.material.uniforms.uRimColor.value.getHex()).toBe(expectedRim)
+    expect(neb.material.uniforms.uColorA.value.getHex()).toBe(0x102030)
+    expect(neb.material.uniforms.uColorB.value.getHex()).toBe(0x405060)
+    expect(neb.material.uniforms.uIntensity.value).toBeCloseTo(0.17, 6)
+
+    const light = sys.group.children.find((c) => c.isPointLight)
+    const amb = sys.group.children.find((c) => c.isAmbientLight)
+    expect(light.color.getHex()).toBe(0x778899)
+    expect(amb.color.getHex()).toBe(0xaabbcc)
+
+    sys.dispose()
+  })
+
+  it('setGrade는 모든 행성에 적용되지만 행성별 림 정체성은 남는다', () => {
+    const sys = createEvanSystem({ satelliteColors: COLORS })
+    const before = PLANETS.map(
+      (p) => sys.group.getObjectByName(`planet-${p.id}`).material.uniforms.uRimColor.value.getHex(),
+    )
+    sys.setGrade({
+      sunCore: 0x111111, sunEdge: 0x222222, sunLight: 0x333333,
+      ambient: 0x444444, rim: 0xff0000,
+      nebulaA: 0x555555, nebulaB: 0x666666, nebulaIntensity: 0.2,
+    })
+    const after = PLANETS.map(
+      (p) => sys.group.getObjectByName(`planet-${p.id}`).material.uniforms.uRimColor.value.getHex(),
+    )
+    // 네 행성 모두 실제로 바뀌었고 — 하나라도 안 바뀌면 루프가 빠진 것
+    for (let i = 0; i < before.length; i++) expect(after[i]).not.toBe(before[i])
+    // 그러면서도 서로 다른 색으로 남는다 — 전부 같아지면 등급이 고유색을
+    // 덮어쓴 것이고, Phase 3이 만든 행성별 정체성이 사라진다.
+    expect(new Set(after).size).toBe(PLANETS.length)
+    sys.dispose()
+  })
+
+  it('setGrade를 부르지 않아도 씬은 Phase 3 기본값으로 동작한다', () => {
+    // setGrade는 선택적 확장이다 — 호출하지 않는 경로(테스트·다른 라우트)가
+    // 그대로 살아 있어야 기존 계약이 깨지지 않는다.
+    const sys = createEvanSystem({ satelliteColors: COLORS })
+    expect(sys.group.getObjectByName('sun').material.uniforms.uCoreColor.value.getHex())
+      .toBe(0xfff1c9)
+    expect(sys.group.getObjectByName('nebula').material.uniforms.uIntensity.value)
+      .toBeCloseTo(0.32, 6)
+    sys.dispose()
+  })
+
+  it('시각이 다르면 씬에 실제로 다른 색이 꽂힌다 — 등급 체인 전체 검증', () => {
+    // computeGrade → setGrade → 유니폼까지의 합성을 한 번에 확인한다.
+    // e2e 스크린샷은 필름 그레인과 별 회전이 실시간에 물려 있어 두 로드가
+    // 항상 달라 보이므로, "시각 때문에 달라졌다"는 여기서만 증명된다.
+    const gradeAt = (h) => computeGrade(hoursFromDate(new Date(2026, 7, 8, h, 0, 0)))
+
+    const night = createEvanSystem({ satelliteColors: COLORS })
+    night.setGrade(gradeAt(0))
+    const nightSun = night.group.getObjectByName('sun').material.uniforms.uCoreColor.value.getHex()
+    const nightNebA = night.group.getObjectByName('nebula').material.uniforms.uColorA.value.getHex()
+    const nightRim = night.group.getObjectByName('planet-about').material.uniforms.uRimColor.value.getHex()
+    night.dispose()
+
+    const noon = createEvanSystem({ satelliteColors: COLORS })
+    noon.setGrade(gradeAt(12))
+    const noonSun = noon.group.getObjectByName('sun').material.uniforms.uCoreColor.value.getHex()
+    const noonNebA = noon.group.getObjectByName('nebula').material.uniforms.uColorA.value.getHex()
+    const noonRim = noon.group.getObjectByName('planet-about').material.uniforms.uRimColor.value.getHex()
+    noon.dispose()
+
+    expect(nightSun).not.toBe(noonSun)
+    expect(nightNebA).not.toBe(noonNebA)
+    expect(nightRim).not.toBe(noonRim)
+  })
+
+  it('setGrade는 글로우 스프라이트가 없어도 예외 없이 끝나고, 존재하는 유니폼(태양 디스크)은 정상 반영된다 (Finding 1)', () => {
+    // 글로우 스프라이트 자체(SpriteMaterial.color)는 이 환경에서 직접 볼 수
+    // 없다 — createGlowTexture()는 document.createElement('canvas')와
+    // getContext('2d')(createRadialGradient 포함)를 요구하는데,
+    // vitest.config.js는 environment: 'node'라 document가 아예 없다. jsdom을
+    // 붙여도 마찬가지다: 네이티브 canvas 패키지 없이는 jsdom의
+    // getContext('2d')도 null을 반환해 결국 텍스처를 못 만든다. 즉 sun-glow는
+    // 이 vitest 환경에서 구조적으로 만들어질 수 없다 — 헤일로가 실제 화면에서
+    // 등급대로 물드는지는 컨트롤러가 찍은 렌더 스크린샷으로 별도 검증한다.
+    //
+    // 이 환경에서 실제로 지킬 수 있는 회귀는 다른 데 있다: setGrade 안의
+    // `if (glow) { glow.material.color... }` 가드가 나중에 빠지면 document
+    // 없는 모든 호출(=이 스위트 전체)에서 매번 예외가 난다. glow가 없어도
+    // setGrade가 끝까지 실행되고, 실제로 존재하는 다른 유니폼(태양 디스크)은
+    // 정상 반영되는지를 여기서 지킨다.
+    const sys = createEvanSystem({ satelliteColors: COLORS })
+    expect(sys.group.getObjectByName('sun-glow')).toBeUndefined()
+
+    const grade = computeGrade(hoursFromDate(new Date(2026, 7, 8, 0, 0, 0)))
+    expect(() => sys.setGrade(grade)).not.toThrow()
+
+    const sun = sys.group.getObjectByName('sun')
+    expect(sun.material.uniforms.uCoreColor.value.getHex()).toBe(grade.sunCore)
+    sys.dispose()
   })
 })

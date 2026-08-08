@@ -285,6 +285,36 @@ export function createEvanSystem({ satelliteColors = [] } = {}) {
       const d = Math.min(Math.max(progress, 0), 1)
       for (const m of orbitMaterials) m.uniforms.uDraw.value = d
     },
+    // 시간대 라이팅: 방문 시각으로 계산한 등급을 씬 전체에 한 번에 꽂는다.
+    // 마운트 시 1회 호출을 전제로 하므로 프레임 예산을 신경 쓰지 않는다.
+    // 부르지 않으면 Phase 3 기본값 그대로 동작한다.
+    setGrade(grade) {
+      sunMat.uniforms.uCoreColor.value.setHex(grade.sunCore)
+      sunMat.uniforms.uEdgeColor.value.setHex(grade.sunEdge)
+      // 글로우 스프라이트: SpriteMaterial.color가 베이크된 캔버스 텍스처와
+      // 곱해지므로 텍스처를 다시 굽지 않고 색만 바꿔도 디스크와 함께
+      // 식는다. sunEdge를 그대로 곱하면(기본값이 흰색이라 지금까지는
+      // 텍스처 그대로 보였다) 채도 높은 주황이 흰색보다 어두워 헤일로
+      // 전체 밝기가 크게 죽는다 — 림 처리와 같은 방식으로, 흰색에서
+      // sunEdge 쪽으로 0.5만 섞어 색조만 옮기고 한낮(Phase 3) 밝기에
+      // 가깝게 유지한다. glow는 document 없는 노드(vitest) 환경에서는
+      // 아예 생성되지 않으므로 없으면 건너뛴다.
+      if (glow) {
+        glow.material.color.set(0xffffff).lerp(new THREE.Color(grade.sunEdge), 0.5)
+      }
+      sunLight.color.setHex(grade.sunLight)
+      ambient.color.setHex(grade.ambient)
+      // 림은 등급 색으로 덮어쓰지 않는다 — 행성 고유색에서 출발해 등급 색
+      // 쪽으로 0.55만큼 섞는다(생성 시 0xbfe0ff를 섞던 그 자리). 덮어쓰면
+      // 네 행성의 림이 같아져 행성별 정체성이 사라진다.
+      const rim = new THREE.Color(grade.rim)
+      planetFades.forEach((pf, i) => {
+        pf.material.uniforms.uRimColor.value.setHex(PLANETS[i].color).lerp(rim, 0.55)
+      })
+      nebulaMat.uniforms.uColorA.value.setHex(grade.nebulaA)
+      nebulaMat.uniforms.uColorB.value.setHex(grade.nebulaB)
+      nebulaMat.uniforms.uIntensity.value = grade.nebulaIntensity
+    },
     dispose() {
       group.clear()
       for (const d of disposables) d.dispose()

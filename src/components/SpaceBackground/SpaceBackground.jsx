@@ -13,6 +13,7 @@ import {
 import { WARP_BOOST_EVENT, computeBoostIntensity } from './warpBoost.js'
 import { createEvanSystem } from './evanSystem.js'
 import { computeRailPose } from './rail.js'
+import { computeGrade, hoursFromDate } from './timeOfDay.js'
 import { projects } from '../../data/projects.js'
 import { GRID_VERT, GRID_FRAG } from './introVisuals.glsl.js'
 import {
@@ -139,6 +140,10 @@ export default function SpaceBackground({ warpEnabled = false, stageEnabled = fa
         // 있으면 첫 tick이 곧 setBuild(0)으로 덮어쓴다.
         evanSystem.setBuild(1)
         evanSystem.setOrbitDraw(1)
+        // 시간대 라이팅: 방문 시각으로 씬의 색온도를 한 번 정한다. 매 프레임
+        // 다시 계산하지 않는 이유 — 사람이 한 자리에서 한 시간을 보내지
+        // 않으므로 변화가 보이지 않고, 프레임마다 유니폼을 쓰는 비용만 남는다.
+        evanSystem.setGrade(computeGrade(hoursFromDate(new Date())))
       }
       evanSystem.group.visible = true
     }
