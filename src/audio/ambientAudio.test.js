@@ -12,11 +12,19 @@ function fakeContext() {
     linearRampToValueAtTime: vi.fn(),
     cancelScheduledValues: vi.fn(),
   })
-  const node = (extra = {}) => ({
-    connect: vi.fn(),
-    disconnect: vi.fn(),
-    ...extra,
-  })
+  // connect/disconnect가 "호출됐다"만 기록하는 빈 vi.fn()이면 무엇을 무엇에
+  // 연결했는지, 지금도 연결돼 있는지는 알 수 없다. connectedTo에 실제 대상을
+  // 기록해야 "사이클 두 벌이 동시에 destination에 붙어있다" 같은 그래프
+  // 위상 버그를 테스트에서 직접 잡아낼 수 있다.
+  const node = (extra = {}) => {
+    const n = {
+      connectedTo: new Set(),
+      connect: vi.fn((target) => n.connectedTo.add(target)),
+      disconnect: vi.fn(() => n.connectedTo.clear()),
+      ...extra,
+    }
+    return n
+  }
   return {
     currentTime: 0,
     destination: node(),
@@ -29,6 +37,7 @@ function fakeContext() {
         detune: param(0),
         start: vi.fn(),
         stop: vi.fn(),
+        onended: null,
       })
       created.oscillators.push(o)
       return o
@@ -119,5 +128,75 @@ describe('createAmbientAudio', () => {
     a.dispose()
     for (const g of ctx.created.gains) expect(g.disconnect).toHaveBeenCalled()
     expect(a.running).toBe(false)
+  })
+
+  it('토글을 반복해도 이전 사이클의 마스터가 destination에 남지 않는다 — 남으면 노드가 누적된다', () => {
+    const ctx = fakeContext()
+    const a = createAmbientAudio(ctx)
+
+    a.start()
+    const firstMaster = ctx.created.gains[0]
+    expect(firstMaster.connectedTo.has(ctx.destination)).toBe(true)
+
+    a.stop()
+    // 페이드가 끝나기 전에는 아직 그래프에 남아있어야 한다 — stop()이 곧바로
+    // disconnect하면 페이드 자체가 들리지 않는다.
+    expect(firstMaster.disconnect).not.toHaveBeenCalled()
+
+    // 실제로는 osc.stop(t)이 오디오 클럭에서 'ended'를 낸다. 여기서는 stop()이
+    // 등록해 둔 그 콜백을 직접 불러 "페이드가 끝났다"를 흉내낸다.
+    expect(ctx.created.oscillators[0].onended).toBeTypeOf('function')
+    ctx.created.oscillators[0].onended()
+
+    expect(firstMaster.disconnect).toHaveBeenCalledTimes(1)
+    expect(firstMaster.connectedTo.has(ctx.destination)).toBe(false)
+
+    const gainsBeforeSecondStart = ctx.created.gains.length
+    a.start()
+    const secondMaster = ctx.created.gains[gainsBeforeSecondStart]
+
+    // 어느 순간이든 destination에는 마스터가 최대 하나만 붙어 있어야 한다.
+    const mastersConnectedToDestination = ctx.created.gains.filter((g) =>
+      g.connectedTo.has(ctx.destination),
+    )
+    expect(mastersConnectedToDestination).toEqual([secondMaster])
+  })
+
+  it('stop() 이후 dispose()해도 던지지 않고, 남아있던 onended가 나중에 불려도 다시 끊지 않는다', () => {
+    const ctx = fakeContext()
+    const a = createAmbientAudio(ctx)
+    a.start()
+    a.stop()
+    const pendingOnended = ctx.created.oscillators[0].onended
+    expect(pendingOnended).toBeTypeOf('function')
+
+    expect(() => a.dispose()).not.toThrow()
+    const master = ctx.created.gains[0]
+    expect(master.disconnect).toHaveBeenCalledTimes(1)
+
+    // 실제 브라우저라면 dispose()가 onended를 null로 지워서 이 콜백이 다시
+    // 불릴 일이 없다. 그래도 어딘가 남아있던 참조가 불리는 경우까지 안전해야
+    // 한다 — 두 번째 disconnect가 일어나면 안 된다.
+    expect(() => pendingOnended()).not.toThrow()
+    expect(master.disconnect).toHaveBeenCalledTimes(1)
+  })
+
+  it('그래프 위상: 마스터는 destination에, 각 성부 체인은 마스터에 닿는다', () => {
+    const ctx = fakeContext()
+    const a = createAmbientAudio(ctx)
+    a.start()
+
+    const master = ctx.created.gains[0]
+    expect(master.connectedTo.has(ctx.destination)).toBe(true)
+
+    // 성부마다 정확히 하나의 voiceGain이 master로 이어진다.
+    const connectedToMaster = ctx.created.gains.filter((g) => g.connectedTo.has(master))
+    expect(connectedToMaster.length).toBe(AMBIENT_VOICES.length)
+
+    // 필터가 있는 성부는 osc → filter → voiceGain 순서로 이어지므로, 필터는
+    // 반드시 어딘가(voiceGain)에 연결돼 있어야 한다.
+    for (const f of ctx.created.filters) {
+      expect(f.connectedTo.size).toBeGreaterThan(0)
+    }
   })
 })
