@@ -5,6 +5,7 @@ import ModeMenu from '../../modes/ModeSelector/ModeMenu.jsx'
 import LabTransition from '../LabTransition/LabTransition.jsx'
 import { useMediaQuery } from '../../hooks/useMediaQuery'
 import { useAutopilot } from './useAutopilot'
+import SoundToggle from './SoundToggle.jsx'
 import './Navbar.css'
 
 const LANGS = [
@@ -230,6 +231,7 @@ export default function Navbar() {
         {/* Right controls */}
         <div className="nav-controls">
           {location.pathname === '/' && isDesktop && <AutopilotButton />}
+          {location.pathname === '/' && isDesktop && <SoundToggle />}
           {location.pathname === '/' && <ModeMenu />}
           <LangSwitcher />
           <span className="nav-divider" aria-hidden="true" />
