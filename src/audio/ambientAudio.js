@@ -126,7 +126,17 @@ export function createAmbientAudio(ctx) {
 
     const now = ctx.currentTime
     cycle.master.gain.cancelScheduledValues(now)
-    cycle.master.gain.setValueAtTime(cycle.master.gain.value, now)
+    // 페이드아웃의 시작점을 현재 게인으로 고정한다. .value를 MASTER_GAIN으로
+    // 한 번 clamp하는 이유: 컨텍스트가 suspended인 동안에는 오디오 스레드가
+    // 한 렌더 quantum도 돌지 않는데, 그 상태에서 AudioParam.value가 예약된
+    // 값(0)을 주는지 GainNode 생성 기본값(1)을 주는지는 구현마다 다르다.
+    // 1이 읽히면 1 → 0 램프가 걸려, 컨텍스트가 나중에 깨어나는 순간 의도한
+    // 레벨의 열 몇 배로 터진다. 우리가 마스터에 올리는 값은 어떤 경우에도
+    // MASTER_GAIN을 넘지 않으므로, clamp는 정상 경로에서는 아무것도 바꾸지
+    // 않고 이 한 가지 실패만 막는다. (헤드리스 브라우저로는 suspended 컨텍스트를
+    // 만들 수 없어 실측으로 판별할 수 없다 — 그래서 판별 대신 무해화한다.)
+    const from = Math.min(cycle.master.gain.value, MASTER_GAIN)
+    cycle.master.gain.setValueAtTime(from, now)
     cycle.master.gain.linearRampToValueAtTime(0, now + FADE_OUT_S)
     // 페이드가 끝난 뒤에 멈춰야 뚝 끊기지 않는다.
     for (const o of cycle.oscillators) o.stop(now + FADE_OUT_S)

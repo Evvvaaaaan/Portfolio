@@ -235,4 +235,24 @@ describe('createAmbientAudio', () => {
       expect(f.connectedTo.size).toBeGreaterThan(0)
     }
   })
+  it('페이드아웃 시작점은 MASTER_GAIN으로 clamp된다 — suspended 컨텍스트가 게인을 1로 읽어도 터지지 않는다', () => {
+    // 컨텍스트가 suspended면 오디오 스레드가 한 렌더 quantum도 돌지 않는다.
+    // 그 상태에서 AudioParam.value가 예약값(0)을 주는지 GainNode 생성
+    // 기본값(1)을 주는지는 구현마다 다르고, 헤드리스 브라우저로는 suspended
+    // 컨텍스트를 만들 수 없어 실측으로 판별할 수도 없다. 1이 읽히면 1 → 0
+    // 램프가 걸려 컨텍스트가 깨어나는 순간 의도한 레벨의 열 몇 배로 터진다.
+    // 여기서는 그 잘못된 읽기를 직접 흉내내고, 램프가 MASTER_GAIN에서
+    // 시작하는지 확인한다 — clamp를 지우면 이 테스트가 깨진다.
+    const ctx = fakeContext()
+    const a = createAmbientAudio(ctx)
+    a.start()
+    const master = ctx.created.gains[0]
+    master.gain.setValueAtTime.mockClear()
+    // 렌더된 적 없는 GainNode가 돌려줄 수 있는 최악의 값.
+    master.gain.value = 1
+    a.stop()
+    const [startValue] = master.gain.setValueAtTime.mock.calls.at(-1)
+    expect(startValue).toBe(MASTER_GAIN)
+    expect(startValue).toBeLessThan(1)
+  })
 })
