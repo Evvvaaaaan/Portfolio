@@ -5,6 +5,7 @@ export const translations = {
       autopilot: 'Autopilot', autopilotStop: 'Stop tour',
       autopilotOn: 'Autopilot tour started', autopilotOff: 'Autopilot tour stopped',
     },
+    satellites: { label: 'Project satellites', open: 'Open project {title}' },
     minimap: { label: 'System map', home: 'Home' },
     hero: {
       tag: 'Available for work',
@@ -106,6 +107,7 @@ export const translations = {
       autopilot: '오토파일럿', autopilotStop: '투어 중지',
       autopilotOn: '오토파일럿 투어를 시작했습니다', autopilotOff: '오토파일럿 투어를 중지했습니다',
     },
+    satellites: { label: '프로젝트 위성', open: '{title} 프로젝트 열기' },
     minimap: { label: '항성계 지도', home: '홈' },
     hero: {
       tag: '채용 가능',
@@ -207,6 +209,7 @@ export const translations = {
       autopilot: 'オートパイロット', autopilotStop: 'ツアー停止',
       autopilotOn: 'オートパイロットツアーを開始しました', autopilotOff: 'オートパイロットツアーを停止しました',
     },
+    satellites: { label: 'プロジェクト衛星', open: '{title} プロジェクトを開く' },
     minimap: { label: '星系マップ', home: 'ホーム' },
     hero: {
       tag: '採用可能',
@@ -308,6 +311,7 @@ export const translations = {
       autopilot: '自动巡航', autopilotStop: '停止巡览',
       autopilotOn: '自动巡航已开始', autopilotOff: '自动巡航已停止',
     },
+    satellites: { label: '项目卫星', open: '打开项目 {title}' },
     minimap: { label: '星系地图', home: '首页' },
     hero: {
       tag: '正在求职',

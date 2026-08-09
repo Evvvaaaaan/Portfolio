@@ -1,0 +1,86 @@
+/* 위성 버튼 오버레이: 캔버스 위에 떠 있지만 컨테이너는 포인터를 먹지 않는다
+   — 버튼만 먹어야 뒤의 도킹 패널 링크가 계속 눌린다. 네비바(z 100)보다
+   아래, 미니맵(z 50)과 같은 층에 둔다. */
+.project-satellites {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  pointer-events: none;
+}
+
+.satellite-btn {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  cursor: pointer;
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 위성 자체는 3D로 이미 그려져 있다 — 오버레이는 "누를 수 있다"는 것만
+   알리는 얇은 링이어야 한다. 채우면 위성을 가린다. */
+.satellite-btn-ring {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.32);
+  transition: border-color 0.18s, transform 0.18s;
+}
+
+.satellite-btn:hover .satellite-btn-ring,
+.satellite-btn:focus-visible .satellite-btn-ring {
+  border-color: rgba(255, 255, 255, 0.85);
+  transform: scale(1.12);
+}
+
+.satellite-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 4px;
+}
+
+/* 이름표: 평소엔 숨고 호버·포커스에서 링 아래에 뜬다. */
+.satellite-btn-name {
+  position: absolute;
+  top: calc(100% - 2px);
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  color: var(--text-h);
+  text-shadow: var(--legibility-shadow);
+  opacity: 0;
+  transition: opacity 0.18s;
+  pointer-events: none;
+}
+
+.satellite-btn:hover .satellite-btn-name,
+.satellite-btn:focus-visible .satellite-btn-name {
+  opacity: 1;
+}
+
+/* 접근성 이름 전용 — 화면에는 자리를 차지하지 않는다. */
+.satellite-btn-label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .satellite-btn-ring,
+  .satellite-btn-name {
+    transition: none;
+  }
+}

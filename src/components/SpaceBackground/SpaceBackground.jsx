@@ -14,11 +14,17 @@ import { WARP_BOOST_EVENT, computeBoostIntensity } from './warpBoost.js'
 import { createEvanSystem } from './evanSystem.js'
 import { computeRailPose } from './rail.js'
 import { computeGrade, hoursFromDate } from './timeOfDay.js'
-import { projects } from '../../data/projects.js'
 import { GRID_VERT, GRID_FRAG } from './introVisuals.glsl.js'
 import {
   computeIntroState, shouldPlayIntro, hasSeenIntro, markIntroSeen,
 } from './introSequence.js'
+import { projectToScreen, occludedBySphere } from './screenProject.js'
+import { publishSatellites } from './satelliteOverlay.js'
+import { PLANETS } from './system.js'
+
+// projects 행성 반지름 — occludedBySphere 판정용. 행성 메시엔 스케일이
+// 적용되지 않으므로 이 리터럴 값이 곧 월드 반지름이다.
+const PROJECTS_PLANET_RADIUS = PLANETS.find((p) => p.id === 'projects').radius
 
 function createStarTexture() {
   const canvas = document.createElement('canvas')
@@ -131,10 +137,9 @@ export default function SpaceBackground({ warpEnabled = false, stageEnabled = fa
     // Evan System: 스테이지가 켜질 때 1회 생성. SpaceBackground는 라우트가
     // 바뀌어도 언마운트되지 않으므로 메인 재방문 시 재사용된다.
     let evanSystem = null
-    const satelliteColors = projects.slice(0, 3).map((p) => p.accent)
     const ensureSystem = () => {
       if (!evanSystem) {
-        evanSystem = createEvanSystem({ satelliteColors })
+        evanSystem = createEvanSystem()
         scene.add(evanSystem.group)
         // 인트로가 없는 경로에서는 곧바로 완성 상태로 시작한다. 인트로가
         // 있으면 첫 tick이 곧 setBuild(0)으로 덮어쓴다.
@@ -174,6 +179,15 @@ export default function SpaceBackground({ warpEnabled = false, stageEnabled = fa
     // 스테이지 모드 스크롤 진행도 스무딩. 첫 프레임 점프 방지를 위해 실제
     // scrollY로 초기화한다 (스크롤 복원 리로드 대응).
     let progressSmooth = window.scrollY / window.innerHeight
+    // 위성 오버레이용 뷰프로젝션 행렬. 매 프레임 새로 만들면 렌더 루프 안에서
+    // 할당이 쌓이므로 하나를 재사용한다.
+    const satViewProjection = new THREE.Matrix4()
+    const satWorld = new THREE.Vector3()
+    // projects 행성의 월드 위치 스크래치 — 위성마다 다시 구하지 않고 프레임마다 한 번만 계산한다.
+    const planetWorld = new THREE.Vector3()
+    // 직전에 publish한 게 빈 목록이었는지 — 정거장을 벗어난 뒤 빈 목록을
+    // 매 프레임 다시 쏘지 않기 위한 가드.
+    let satPublishedEmpty = true
 
     // 메인 페이지의 데스크톱 슬라이드덱(섹션마다 정확히 100vh)에서만 섹션 전환
     // 구간 가속을 쓴다. warpEnabled는 App.jsx에서 "메인 페이지 && 데스크톱"일
@@ -331,7 +345,13 @@ export default function SpaceBackground({ warpEnabled = false, stageEnabled = fa
 
       const stageOn = stageEnabledRef.current
       if (stageOn) ensureSystem()
-      else if (evanSystem) evanSystem.group.visible = false
+      else if (evanSystem) {
+        evanSystem.group.visible = false
+        if (!satPublishedEmpty) {
+          publishSatellites([])
+          satPublishedEmpty = true
+        }
+      }
 
       if (stageOn && evanSystem) {
         // --- 스테이지 모드: 스크롤 진행도 → 레일 포즈.
@@ -363,6 +383,30 @@ export default function SpaceBackground({ warpEnabled = false, stageEnabled = fa
         // 지킨다. 성운은 카메라 위치를 그대로 넘겨 매 프레임 카메라에
         // 고정시킨다(far plane 클리핑·패럴랙스 오차 방지).
         evanSystem.update(t, reducedMotion ? 0 : t, camera.position)
+
+        // --- 프로젝트 위성 오버레이: projects 정거장(인덱스 3) 근처에서만
+        // 화면 좌표를 흘려보낸다. 멀리 있을 때도 계산하면 매 프레임 헛일이고,
+        // 화면 구석에 눌리지 않는 버튼이 떠 있게 된다.
+        const nearProjects = Math.abs(progressSmooth - 3) < 0.6
+        if (nearProjects) {
+          camera.updateMatrixWorld()
+          satViewProjection.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse)
+          evanSystem.projectsPlanet.getWorldPosition(planetWorld)
+          publishSatellites(
+            evanSystem.satellites.map((s) => {
+              s.object.getWorldPosition(satWorld)
+              const p = projectToScreen(satWorld, satViewProjection, window.innerWidth, window.innerHeight)
+              // 프러스텀 안이어도 위성이 행성 뒤에 있으면(공전 중 ~3s/15s) 실제로는
+              // 안 보인다 — 구 가림 판정을 더해야 유령 버튼이 뜨지 않는다.
+              const occluded = occludedBySphere(camera.position, satWorld, planetWorld, PROJECTS_PLANET_RADIUS)
+              return { slug: s.slug, title: s.title, x: p.x, y: p.y, visible: p.visible && !occluded }
+            }),
+          )
+          satPublishedEmpty = false
+        } else if (!satPublishedEmpty) {
+          publishSatellites([])
+          satPublishedEmpty = true
+        }
       } else {
         // --- 기존 워프/배경 모드 (변경 없음: 아래는 기존 코드 그대로)
         starsPoints.rotation.z = scrollPercentSmooth * 1.8
