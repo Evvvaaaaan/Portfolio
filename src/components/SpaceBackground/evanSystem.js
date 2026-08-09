@@ -289,6 +289,10 @@ export function createEvanSystem() {
     // 시간대 라이팅: 방문 시각으로 계산한 등급을 씬 전체에 한 번에 꽂는다.
     // 마운트 시 1회 호출을 전제로 하므로 프레임 예산을 신경 쓰지 않는다.
     // 부르지 않으면 Phase 3 기본값 그대로 동작한다.
+    // 위성 오버레이가 구 가림 판정(occludedBySphere)에 쓸 행성 메시 참조.
+    // 반지름은 PLANETS(system.js)에서 직접 읽는다 — 이 메시엔 스케일이
+    // 적용되지 않으므로 리터럴 반지름이 곧 월드 반지름이다.
+    projectsPlanet,
     setGrade(grade) {
       sunMat.uniforms.uCoreColor.value.setHex(grade.sunCore)
       sunMat.uniforms.uEdgeColor.value.setHex(grade.sunEdge)

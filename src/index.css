@@ -385,7 +385,8 @@ body.warp-exit main {
      뷰포트에서 콘텐츠 상하가 잘린다 — 도킹 컨텍스트에서는 0으로 대체. */
   .scroll-slide--dock .about,
   .scroll-slide--dock .skills,
-  .scroll-slide--dock .contact {
+  .scroll-slide--dock .contact,
+  .scroll-slide--dock .projects {
     padding: 0;
   }
 
@@ -586,5 +587,34 @@ body.warp-exit main {
   }
   .scroll-slide--dock .form-submit {
     padding: 10px;
+  }
+
+  /* Projects 도킹 배치: 캐러셀은 원래 뷰포트 전체 폭(1440px)을 기준으로
+     중앙 정렬(calc(50vw - 280px))했다 — 도킹 패널(최대 720px, 안쪽 콘텐츠
+     폭은 padding을 뺀 약 648px @1440 기준) 안에서는 50vw가 여전히 뷰포트
+     기준이라 트랙이 패널 밖 좌표로 밀려나 위성 버튼과 겹치던 원인이었다.
+     50%로 바꿔 패널 자신의 폭을 기준으로 중앙 정렬한다. */
+  .scroll-slide--dock .gallery-track {
+    padding: 48px calc(50% - 210px) 0;
+  }
+  /* 카드 폭도 뷰포트 기준(560px)이라 648px 패널 콘텐츠 폭을 거의 다
+     채워 옆 카드가 전혀 안 보였다 — 420px(패널 콘텐츠 폭의 약 65%)로
+     줄이면 가운데 카드는 그대로 읽히고 양옆 카드가 slice로 살짝 보인다. */
+  .scroll-slide--dock .gallery-slide {
+    width: 420px;
+  }
+  /* --bg(불투명 #0a0a0f)로 만든 페이드 마스크는 반투명 유리 패널 위에서
+     불투명한 슬래브로 보인다 — 도킹 컨텍스트에서는 감춘다. */
+  .scroll-slide--dock .gallery-fade {
+    display: none;
+  }
+  /* 화살표는 원래 뷰포트 가장자리 기준(24px)으로 떨어져 있었다 — 패널
+     자체가 648px로 좁아졌으므로 같은 비율(24px × 648/1440 ≈ 11px)로
+     당겨 트랙 옆 여백 안에 들어오게 한다. */
+  .scroll-slide--dock .gallery-arrow-prev {
+    left: 12px;
+  }
+  .scroll-slide--dock .gallery-arrow-next {
+    right: 12px;
   }
 }

@@ -1,6 +1,6 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import './index.css'
-import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, useLocation, useNavigate } from 'react-router-dom'
 import { LangProvider, useLang } from './context/LangContext'
 import { useLenis, getLenis } from './hooks/useLenis'
 import { computeDockStyle } from './components/dockLayout.js'
@@ -9,6 +9,7 @@ import SpaceBackground from './components/SpaceBackground/SpaceBackground'
 import HardwareAccelNotice from './components/HardwareAccelNotice/HardwareAccelNotice'
 import Minimap from './components/Minimap/Minimap'
 import ProjectSatellites from './components/ProjectSatellites/ProjectSatellites'
+import LabTransition from './components/LabTransition/LabTransition.jsx'
 import { useMediaQuery } from './hooks/useMediaQuery'
 import Hero from './sections/Hero/Hero'
 import About from './sections/About/About'
@@ -200,10 +201,14 @@ function MainPage() {
         }}
       >
         {sections.map((sec, idx) => {
-          // About/Skills/Contact는 우측 도킹(행성이 화면 왼쪽에 걸리므로),
-          // Hero/Projects/Footer는 카드 그리드 폭 등을 위해 중앙 유지.
+          // About/Skills/Contact/Projects는 우측 도킹(행성이 화면 왼쪽에
+          // 걸리므로 — rail.js의 TARGET_SHIFT가 이 네 정거장 모두에 적용된다).
+          // Projects도 같은 카메라 프레이밍을 쓰면서 예전엔 전체 폭 패널을
+          // 유지해 위성 버튼이 갤러리 카드에 완전히 덮였다 — 다른 도킹
+          // 정거장과 동일하게 취급해야 버튼이 실제로 눌린다.
+          // Hero/Footer는 카메라가 정면을 보므로 중앙 유지.
           // sections 배열 순서가 바뀌어도 도킹 대상이 어긋나지 않도록 id로 판정.
-          const docked = ['about', 'skills', 'contact'].includes(sec.id)
+          const docked = ['about', 'skills', 'contact', 'projects'].includes(sec.id)
           return (
             <div
               key={sec.id}
@@ -240,7 +245,16 @@ function MainPage() {
 function AppContent() {
   const isDesktop = useMediaQuery('(min-width: 769px) and (min-height: 701px)')
   const location = useLocation()
+  const navigate = useNavigate()
   useLenis()
+
+  // 위성 클릭 → 전환 상태를 여기(AppContent)에 둔다. ProjectSatellites는
+  // isMainPage에 따라 통째로 마운트/언마운트되는데, LabTransition을 그 안에
+  // 두면 onNavigate가 라우트를 바꾸는 커밋에서 isMainPage가 함께 false로
+  // 바뀌어 전환 오버레이(화이트 플래시 포함)가 재생 중에 통째로 뜯겨나간다.
+  // Navbar처럼 라우트와 무관하게 항상 마운트된 컴포넌트가 소유해야 450ms
+  // 해제 애니메이션이 끝까지 재생된다.
+  const [pendingProjectSlug, setPendingProjectSlug] = useState(null)
 
   useEffect(() => {
     const lockScroll = location.pathname === '/gallery' || location.pathname === '/guestbook'
@@ -285,10 +299,24 @@ function AppContent() {
           <Route path="/guestbook" element={<Guestbook />} />
         </Routes>
         {isMainPage && isDesktop && <Minimap />}
-        {isMainPage && isDesktop && <ProjectSatellites />}
+        {isMainPage && isDesktop && (
+          <ProjectSatellites
+            pendingSlug={pendingProjectSlug}
+            onSelect={setPendingProjectSlug}
+          />
+        )}
         {isMainPage && <ModeLayer />}
         {showGlobalFooter && <Footer />}
         <HardwareAccelNotice />
+        {pendingProjectSlug && (
+          // origin은 LabTransition이 시각적으로 쓰지 않는다 — Navbar와의
+          // 계약 유지를 위해 시그니처에만 남아 있어 null로 넘겨도 안전하다.
+          <LabTransition
+            origin={null}
+            onNavigate={() => navigate(`/projects/${pendingProjectSlug}`)}
+            onDone={() => setPendingProjectSlug(null)}
+          />
+        )}
       </ModeProvider>
     </LangProvider>
   )

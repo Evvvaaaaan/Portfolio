@@ -18,8 +18,13 @@ import { GRID_VERT, GRID_FRAG } from './introVisuals.glsl.js'
 import {
   computeIntroState, shouldPlayIntro, hasSeenIntro, markIntroSeen,
 } from './introSequence.js'
-import { projectToScreen } from './screenProject.js'
+import { projectToScreen, occludedBySphere } from './screenProject.js'
 import { publishSatellites } from './satelliteOverlay.js'
+import { PLANETS } from './system.js'
+
+// projects 행성 반지름 — occludedBySphere 판정용. 행성 메시엔 스케일이
+// 적용되지 않으므로 이 리터럴 값이 곧 월드 반지름이다.
+const PROJECTS_PLANET_RADIUS = PLANETS.find((p) => p.id === 'projects').radius
 
 function createStarTexture() {
   const canvas = document.createElement('canvas')
@@ -178,6 +183,8 @@ export default function SpaceBackground({ warpEnabled = false, stageEnabled = fa
     // 할당이 쌓이므로 하나를 재사용한다.
     const satViewProjection = new THREE.Matrix4()
     const satWorld = new THREE.Vector3()
+    // projects 행성의 월드 위치 스크래치 — 위성마다 다시 구하지 않고 프레임마다 한 번만 계산한다.
+    const planetWorld = new THREE.Vector3()
     // 직전에 publish한 게 빈 목록이었는지 — 정거장을 벗어난 뒤 빈 목록을
     // 매 프레임 다시 쏘지 않기 위한 가드.
     let satPublishedEmpty = true
@@ -384,11 +391,15 @@ export default function SpaceBackground({ warpEnabled = false, stageEnabled = fa
         if (nearProjects) {
           camera.updateMatrixWorld()
           satViewProjection.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse)
+          evanSystem.projectsPlanet.getWorldPosition(planetWorld)
           publishSatellites(
             evanSystem.satellites.map((s) => {
               s.object.getWorldPosition(satWorld)
               const p = projectToScreen(satWorld, satViewProjection, window.innerWidth, window.innerHeight)
-              return { slug: s.slug, title: s.title, x: p.x, y: p.y, visible: p.visible }
+              // 프러스텀 안이어도 위성이 행성 뒤에 있으면(공전 중 ~3s/15s) 실제로는
+              // 안 보인다 — 구 가림 판정을 더해야 유령 버튼이 뜨지 않는다.
+              const occluded = occludedBySphere(camera.position, satWorld, planetWorld, PROJECTS_PLANET_RADIUS)
+              return { slug: s.slug, title: s.title, x: p.x, y: p.y, visible: p.visible && !occluded }
             }),
           )
           satPublishedEmpty = false

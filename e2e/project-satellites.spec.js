@@ -48,10 +48,30 @@ test('위성을 누르면 그 프로젝트 상세 페이지로 이동한다', as
   // Playwright의 기본 "안정될 때까지 대기"는 영원히 끝나지 않는다. force로
   // 안정성 대기만 건너뛴다; 보이는지·이름이 맞는지·클릭 후 이동하는지는
   // 그대로 검증한다.
-  await page
+  const satelliteBtn = page
     .locator('.project-satellites')
     .getByRole('button', { name: new RegExp(FIRST.title) })
-    .click({ force: true })
+  await expect(satelliteBtn).toBeVisible({ timeout: 10000 })
+
+  // force:true는 "안정될 때까지 대기"만 건너뛸 뿐 히트테스트까지 생략하지는
+  // 않아야 한다 — 버튼 중심이 실제로 다른 요소(예: 도킹 패널의 갤러리 카드)에
+  // 가려지지 않고 .project-satellites 안에서 그대로 히트되는지 직접
+  // 확인한다. 패널이 위성 버튼을 완전히 덮던 회귀(Finding 1)가 다시
+  // 생기면 이 assertion이 실패해야 한다.
+  const box = await satelliteBtn.boundingBox()
+  expect(box).not.toBeNull()
+  const cx = box.x + box.width / 2
+  const cy = box.y + box.height / 2
+  const hit = await page.evaluate(
+    ([x, y]) => {
+      const el = document.elementFromPoint(x, y)
+      return el?.closest('.project-satellites') ? 'clear' : 'blocked'
+    },
+    [cx, cy],
+  )
+  expect(hit).toBe('clear')
+
+  await satelliteBtn.click({ force: true })
   await page.waitForURL(`**/projects/${FIRST.slug}`, { timeout: 15000 })
 })
 

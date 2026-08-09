@@ -28,3 +28,20 @@ export function projectToScreen(worldPos, viewProjection, width, height) {
   const inside = x >= 0 && x <= width && y >= 0 && y <= height
   return { x, y, visible: !behind && inside }
 }
+
+// 위성이 projects 행성 뒤에 있으면 3D에서는 가려지는데 버튼만 떠 있게 된다.
+// 카메라→점 선분이 구를 관통하는지 보는 해석적 판정 — 레이캐스트보다 훨씬 싸다.
+export function occludedBySphere(cameraPos, point, sphereCenter, sphereRadius) {
+  const dx = point.x - cameraPos.x
+  const dy = point.y - cameraPos.y
+  const dz = point.z - cameraPos.z
+  const len = Math.hypot(dx, dy, dz) || 1
+  const mx = sphereCenter.x - cameraPos.x
+  const my = sphereCenter.y - cameraPos.y
+  const mz = sphereCenter.z - cameraPos.z
+  const tca = (mx * dx + my * dy + mz * dz) / len
+  // 구가 등 뒤이거나(tca<=0) 위성보다 더 멀면(tca>=len) 가릴 수 없다.
+  if (tca <= 0 || tca >= len) return false
+  const d2 = mx * mx + my * my + mz * mz - tca * tca
+  return d2 < sphereRadius * sphereRadius
+}

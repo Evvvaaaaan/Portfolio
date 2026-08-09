@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import * as THREE from 'three'
-import { projectToScreen } from './screenProject.js'
+import { projectToScreen, occludedBySphere } from './screenProject.js'
 
 // 원점을 바라보며 z=+10에 선 카메라의 뷰프로젝션 행렬.
 function viewProjectionAt(z = 10) {
@@ -55,5 +55,40 @@ describe('projectToScreen', () => {
     const v = new THREE.Vector3(1, 2, 3)
     projectToScreen(v, viewProjectionAt(), 800, 600)
     expect([v.x, v.y, v.z]).toEqual([1, 2, 3])
+  })
+})
+
+describe('occludedBySphere', () => {
+  const cam = { x: 0, y: 0, z: 0 }
+
+  it('구 바로 뒤(공전상 반대편)에 있으면 가려진다', () => {
+    // 카메라-구중심-위성이 일직선이고, 구가 그 사이를 정확히 관통한다.
+    const point = { x: 0, y: 0, z: -20 }
+    const sphereCenter = { x: 0, y: 0, z: -10 }
+    expect(occludedBySphere(cam, point, sphereCenter, 5)).toBe(true)
+  })
+
+  it('구보다 카메라에 더 가까이(정면에) 있으면 가려지지 않는다', () => {
+    const point = { x: 0, y: 0, z: -5 }
+    const sphereCenter = { x: 0, y: 0, z: -10 }
+    expect(occludedBySphere(cam, point, sphereCenter, 3)).toBe(false)
+  })
+
+  it('구가 시선에서 옆으로 비켜나 있으면 가려지지 않는다', () => {
+    const point = { x: 0, y: 0, z: -20 }
+    const sphereCenter = { x: 10, y: 0, z: -10 }
+    expect(occludedBySphere(cam, point, sphereCenter, 3)).toBe(false)
+  })
+
+  it('구가 카메라 등 뒤에 있으면 가려지지 않는다 (tca<=0 가드)', () => {
+    const point = { x: 0, y: 0, z: -20 }
+    const sphereCenter = { x: 0, y: 0, z: 10 }
+    expect(occludedBySphere(cam, point, sphereCenter, 5)).toBe(false)
+  })
+
+  it('구가 위성보다 더 멀리 있으면 가려지지 않는다 (tca>=len 가드)', () => {
+    const point = { x: 1, y: 0, z: -5 }
+    const sphereCenter = { x: 2, y: 0, z: -10 }
+    expect(occludedBySphere(cam, point, sphereCenter, 1)).toBe(false)
   })
 })
