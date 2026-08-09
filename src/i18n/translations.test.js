@@ -76,3 +76,25 @@ describe('Phase 6a 위성 문구', () => {
     expect(new Set(labels).size).toBe(LOCALES.length)
   })
 })
+
+describe('Phase 6b 사운드 문구', () => {
+  const KEYS = ['on', 'off', 'hint']
+  for (const locale of LOCALES) {
+    it(`${locale}에 사운드 문구가 모두 있다`, () => {
+      for (const key of KEYS) {
+        expect(typeof translations[locale].sound[key]).toBe('string')
+        expect(translations[locale].sound[key].length).toBeGreaterThan(0)
+      }
+    })
+  }
+
+  it('로케일마다 다른 문구를 쓴다 — 복붙 누락 방지', () => {
+    const on = LOCALES.map((l) => translations[l].sound.on)
+    expect(new Set(on).size).toBe(LOCALES.length)
+  })
+
+  it('영어 문구는 e2e가 접근성 이름으로 찾는 값과 정확히 같다', () => {
+    expect(translations.en.sound.on).toBe('Sound on')
+    expect(translations.en.sound.off).toBe('Sound off')
+  })
+})

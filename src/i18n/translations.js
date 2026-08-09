@@ -5,6 +5,7 @@ export const translations = {
       autopilot: 'Autopilot', autopilotStop: 'Stop tour',
       autopilotOn: 'Autopilot tour started', autopilotOff: 'Autopilot tour stopped',
     },
+    sound: { on: 'Sound on', off: 'Sound off', hint: 'This system has a sound' },
     satellites: { label: 'Project satellites', open: 'Open project {title}' },
     minimap: { label: 'System map', home: 'Home' },
     hero: {
@@ -107,6 +108,7 @@ export const translations = {
       autopilot: '오토파일럿', autopilotStop: '투어 중지',
       autopilotOn: '오토파일럿 투어를 시작했습니다', autopilotOff: '오토파일럿 투어를 중지했습니다',
     },
+    sound: { on: '소리 켜기', off: '소리 끄기', hint: '이 항성계에는 소리가 있습니다' },
     satellites: { label: '프로젝트 위성', open: '{title} 프로젝트 열기' },
     minimap: { label: '항성계 지도', home: '홈' },
     hero: {
@@ -209,6 +211,7 @@ export const translations = {
       autopilot: 'オートパイロット', autopilotStop: 'ツアー停止',
       autopilotOn: 'オートパイロットツアーを開始しました', autopilotOff: 'オートパイロットツアーを停止しました',
     },
+    sound: { on: 'サウンドを再生', off: 'サウンドを停止', hint: 'この星系には音があります' },
     satellites: { label: 'プロジェクト衛星', open: '{title} プロジェクトを開く' },
     minimap: { label: '星系マップ', home: 'ホーム' },
     hero: {
@@ -311,6 +314,7 @@ export const translations = {
       autopilot: '自动巡航', autopilotStop: '停止巡览',
       autopilotOn: '自动巡航已开始', autopilotOff: '自动巡航已停止',
     },
+    sound: { on: '开启声音', off: '关闭声音', hint: '这个星系有声音' },
     satellites: { label: '项目卫星', open: '打开项目 {title}' },
     minimap: { label: '星系地图', home: '首页' },
     hero: {
