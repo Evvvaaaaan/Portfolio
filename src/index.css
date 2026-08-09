@@ -390,6 +390,20 @@ body.warp-exit main {
     padding: 0;
   }
 
+  /* .projects는 일반 페이지용 `margin: 48px 40px`(.about/.skills/.projects
+     공통 규칙)를 그대로 들고 들어온다. 도킹 패널 안에서는 패널 자신의
+     padding이 이미 여백을 주므로 그 40px는 이중 들여쓰기가 되고, .projects의
+     실제 박스가 --dock-content-w보다 80px 좁아진다. 거기에 Projects.css의
+     `overflow: hidden`이 겹쳐 가장 좁은 데스크톱 구간에서 캐러셀 카드의
+     오른쪽이 잘렸다 (실측: 769px에서 섹션 박스 270px vs 카드 280px → 10px
+     잘림, 780px에서 4px, 790px부터 0px).
+     좌우 여백만 걷어내 섹션 박스를 --dock-content-w와 일치시킨다 — 상하
+     여백은 세로 리듬이라 그대로 둔다. .about/.skills도 같은 40px를 갖지만
+     내용이 유동 폭 텍스트라 잘리지 않으므로 이 브랜치에서는 손대지 않는다. */
+  .scroll-slide--dock .projects {
+    margin-inline: 0;
+  }
+
   /* .contact는 일반 페이지에서 우주 배경 위에 뜬 유리 패널로 디자인돼 있다
      (배경·테두리·그림자·부유 애니메이션). 도킹 상태에서는 그 바깥의 유리
      도킹 패널이 이미 같은 역할을 하므로 상자가 두 겹이 되고, margin
