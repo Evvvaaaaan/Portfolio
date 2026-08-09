@@ -144,6 +144,21 @@ export default function Navbar() {
   const location = useLocation()
   const navigate = useNavigate()
   const isDesktop = useMediaQuery('(min-width: 769px) and (min-height: 701px)')
+  // 769~1023px는 이미 네비바 폭이 가장 빠듯한 구간이다 — 사운드 버튼을 아이콘
+  // 전용으로 만들어도 .nav-controls의 gap·padding을 나눠 쓰는 네 번째 컨트롤이
+  // 끼어들면 오토파일럿·모드·언어 세 개가 먼저 차지하던 자리를 잠식한다.
+  // 실측(.nav-inner scrollWidth - clientWidth, 사운드 버튼 유무 비교):
+  //   769px  without 118  with 159 (+41) — 118은 사운드와 무관한 기존 오버플로
+  //   900px  without   0  with  28 (+28) — 900px는 원래 0이었는데 이 브랜치가 깨뜨림
+  //  1024px  without   0  with   0  (0)  — 이 폭부터는 안전
+  //  1280px  without   0  with   0  (0)
+  //  1440px  without   0  with   0  (0)
+  //  1920px  without   0  with   0  (0)
+  // 900px처럼 원래 깨끗했던 폭까지 침범하므로, 이 좁은 구간(1024px 미만)에서는
+  // 사운드는 선택적 앰비언스 컨트롤이니 아예 렌더하지 않는다. CSS로만 숨기면
+  // 버튼이 DOM과 탭 순서에는 남아 좁은 창의 스크린리더 사용자가 보이지도
+  // 않는 컨트롤에 도달하게 되므로, 렌더링 자체를 게이트한다.
+  const isSoundWidth = useMediaQuery('(min-width: 1024px)')
 
   const isLabDetail = /^\/gallery\/.+/.test(location.pathname)
 
@@ -231,7 +246,7 @@ export default function Navbar() {
         {/* Right controls */}
         <div className="nav-controls">
           {location.pathname === '/' && isDesktop && <AutopilotButton />}
-          {location.pathname === '/' && isDesktop && <SoundToggle />}
+          {location.pathname === '/' && isDesktop && isSoundWidth && <SoundToggle />}
           {location.pathname === '/' && <ModeMenu />}
           <LangSwitcher />
           <span className="nav-divider" aria-hidden="true" />

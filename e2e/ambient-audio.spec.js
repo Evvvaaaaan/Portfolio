@@ -58,3 +58,15 @@ test('토글은 데스크톱 메인에만 있다', async ({ page }) => {
   await page.goto('/guestbook')
   await expect(page.getByRole('button', { name: 'Sound on' })).toHaveCount(0)
 })
+
+test('1024px 미만 폭에서는 사운드 토글을 렌더하지 않는다', async ({ page }) => {
+  // 769~1023px는 네비바 폭이 가장 빠듯한 구간이라, 네 번째 컨트롤을 아이콘
+  // 전용으로 줄여도 기존 세 컨트롤의 여백을 잠식해 오버플로가 난다(실측:
+  // 900px에서 사운드 버튼 유무에 따라 오버플로 0px → 28px). CSS로만 숨기면
+  // 버튼이 DOM/탭 순서에 남아 이 폭의 스크린리더 사용자가 보이지 않는
+  // 컨트롤에 닿게 되므로, 렌더링 자체를 막는다.
+  await page.setViewportSize({ width: 900, height: 900 })
+  await page.goto('/')
+  await expect(page.getByRole('button', { name: 'Autopilot' })).toBeVisible({ timeout: 15000 })
+  await expect(page.getByRole('button', { name: 'Sound on' })).toHaveCount(0)
+})
