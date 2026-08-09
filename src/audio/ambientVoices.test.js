@@ -78,4 +78,20 @@ describe('AMBIENT_VOICES', () => {
   it('적어도 한 성부는 LFO로 흔들린다 — 완전히 고정된 드론은 기계음으로 들린다', () => {
     expect(AMBIENT_VOICES.some((v) => v.lfo)).toBe(true)
   })
+
+  it('target이 filterFreq인 LFO는 반드시 필터가 있는 성부에만 붙는다', () => {
+    // ambientAudio.js의 배선: target === 'filterFreq' && filter가 있으면
+    // filter.frequency로, 그렇지 않으면 voiceGain.gain으로 depth를 흘려보낸다.
+    // filter가 없는 성부에 filterFreq LFO를 붙이면 depth(예: 160)가 통째로
+    // gain(예: 0.26) 쪽으로 들어가 ±160으로 흔들리는 게인이 되어 마스터 게인과
+    // 무관하게 무조건 클리핑된다 — 소리 없이 조용히 깨진다. 오늘 레시피에는
+    // 그런 항목이 없지만(filterFreq를 쓰는 유일한 성부인 body는 필터가 있다),
+    // 엔진을 고치는 대신 레시피가 애초에 이 조합을 표현하지 못하게 데이터
+    // 단에서 막는다.
+    for (const v of AMBIENT_VOICES) {
+      if (v.lfo?.target === 'filterFreq') {
+        expect(v.filter).not.toBeNull()
+      }
+    }
+  })
 })

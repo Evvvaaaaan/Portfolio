@@ -29,6 +29,7 @@ function fakeContext() {
     currentTime: 0,
     destination: node(),
     state: 'running',
+    resume: vi.fn(() => Promise.resolve()),
     created,
     createOscillator: vi.fn(() => {
       const o = node({
@@ -94,6 +95,41 @@ describe('createAmbientAudio', () => {
     expect(a.running).toBe(true)
     a.stop()
     expect(a.running).toBe(false)
+  })
+
+  it('컨텍스트가 이미 running이면 start()가 resume()을 부르지 않는다', () => {
+    const ctx = fakeContext()
+    const a = createAmbientAudio(ctx)
+    a.start()
+    expect(ctx.resume).not.toHaveBeenCalled()
+  })
+
+  it('컨텍스트가 suspended면 start()가 resume()을 부른다 — 헤드리스 브라우저는 이 상태를 스스로 만들 수 없어 가짜 컨텍스트로 흉내낸다', () => {
+    const ctx = fakeContext()
+    ctx.state = 'suspended'
+    const a = createAmbientAudio(ctx)
+    a.start()
+    expect(ctx.resume).toHaveBeenCalledTimes(1)
+  })
+
+  it('컨텍스트가 interrupted(iPadOS Safari)여도 start()가 resume()을 부른다', () => {
+    const ctx = fakeContext()
+    ctx.state = 'interrupted'
+    const a = createAmbientAudio(ctx)
+    a.start()
+    expect(ctx.resume).toHaveBeenCalledTimes(1)
+  })
+
+  it('resume()이 실패해도 start()는 던지지 않는다 — 실패한 프로미스를 처리하지 않은 채로 두지 않는다', async () => {
+    const ctx = fakeContext()
+    ctx.state = 'suspended'
+    ctx.resume = vi.fn(() => Promise.reject(new Error('already closed')))
+    const a = createAmbientAudio(ctx)
+    expect(() => a.start()).not.toThrow()
+    // resume()이 반환한 프로미스가 실제로 정리되는지(처리되지 않은 거부로
+    // 남지 않는지) 확인하려면 이벤트 루프를 한 바퀴 돌려야 한다.
+    await Promise.resolve()
+    await Promise.resolve()
   })
 
   it('start()를 두 번 불러도 그래프를 두 벌 만들지 않는다 — 두 배로 시끄러워진다', () => {

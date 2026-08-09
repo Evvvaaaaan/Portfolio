@@ -24,6 +24,24 @@ export function createAmbientAudio(ctx) {
     if (running) return
     running = true
 
+    // 사용자 제스처 안에서 만든 컨텍스트는 보통 처음부터 running으로
+    // 시작하지만, 그 뒤로도 계속 running이라는 보장은 없다 — macOS는 오디오
+    // 장치 전환이나 절전 복귀로 컨텍스트를 suspended로 떨어뜨릴 수 있고,
+    // iPadOS Safari는 interrupted 상태를 쓴다. 문제는 "생성한 순간"이 아니라
+    // "그 이후 아무 때나" 생길 수 있으므로, 컨텍스트를 만들 때 한 번이 아니라
+    // start()를 부를 때마다(즉 토글을 켤 때마다) 상태를 확인해야 한다.
+    // suspended인 채로 그래프를 만들면 오디오 스레드가 한 번도 렌더링을
+    // 안 해 currentTime이 멈춰 있는 상태가 된다 — 이때 stop()이 불리면
+    // master.gain의 "현재값"을 스케줄된 값이 아니라 GainNode 생성 기본값인
+    // 1로 잘못 읽어, 나중에 컨텍스트가 resume됐을 때 목표 게인(MASTER_GAIN)의
+    // 열 몇 배에 달하는 순간적인 큰 소리로 터질 수 있다. resume()은 프로미스를
+    // 반환하므로 실패(예: 이미 닫힌 컨텍스트)해도 처리되지 않은 거부가 새지
+    // 않게 삼킨다 — 실패해도 그래프는 예정대로 만들어지고, 다음 재생 시도에서
+    // 다시 확인한다.
+    if (ctx.state !== 'running') {
+      ctx.resume().catch(() => {})
+    }
+
     const now = ctx.currentTime
     const cycleNodes = []
     const cycleOscillators = []
