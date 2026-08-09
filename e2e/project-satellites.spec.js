@@ -75,6 +75,41 @@ test('위성을 누르면 그 프로젝트 상세 페이지로 이동한다', as
   await page.waitForURL(`**/projects/${FIRST.slug}`, { timeout: 15000 })
 })
 
+test('전환 대기 중에 다른 곳으로 직접 이동하면, 지연 발화하던 위성 전환이 그 이동을 덮어쓰지 않는다', async ({ page }) => {
+  test.slow()
+  await goToProjects(page)
+  const satelliteBtn = page
+    .locator('.project-satellites')
+    .getByRole('button', { name: new RegExp(FIRST.title) })
+  await expect(satelliteBtn).toBeVisible({ timeout: 10000 })
+  await satelliteBtn.click({ force: true })
+
+  // LabTransition의 onNavigate는 navAt(≈900ms: BOOST_CHARGE_MS + BOOST_PEAK_MS/2)에
+  // 발화한다 — 그 전에 네비바로 직접 다른 라우트(/guestbook)로 이동한다.
+  //
+  // dispatchEvent('click')가 필요한 이유: 오버레이(.labtransition-overlay)가
+  // released되기 전(≈1000ms)까지는 pointer-events:auto로 전체 화면을 덮는다.
+  // 일반 .click()은 물론 .click({force:true})도(Playwright의 사전 액션 가능성
+  // 검사만 건너뛸 뿐, 실제 이벤트는 여전히 화면 좌표 기준 브라우저 히트테스트를
+  // 거쳐 최상단 요소=오버레이로 전달된다) 이 창 안에서는 링크에 닿지 못하고
+  // 조용히 씹힌다 — 그 자체는 유효한 보호막이지만, 포커스된 링크에서 Enter를
+  // 누르는 등 좌표 히트테스트를 거치지 않는 활성화 경로는 여전히 열려 있다.
+  // dispatchEvent는 좌표가 아니라 노드를 직접 대상으로 이벤트를 발생시켜 그런
+  // 경로를 흉내 내고, 이 테스트가 실제로 잡으려는 App.jsx의 상태 경쟁만
+  // 순수하게 검증한다.
+  await page.waitForTimeout(300)
+  await page.locator('.nav-links a[href="/guestbook"]').dispatchEvent('click')
+  await page.waitForURL('**/guestbook', { timeout: 5000 })
+
+  // 전환의 전체 재생 시간(BOOST_CHARGE_MS 800 + BOOST_PEAK_MS 200 +
+  // BOOST_RELEASE_MS 700 + TEXT_HOLD_MS 900 + TEXT_OUT_MS 400 = 3000ms)이
+  // navAt 이후로도 한참 지나도록 기다린다. 대기 중이던 전환이 취소되지 않았다면
+  // 이 시점에 지연 발화한 onNavigate가 /projects/<slug>로 되돌려 사용자가 직접
+  // 고른 /guestbook을 덮어쓴다 — 그 회귀를 잡는 assertion이다.
+  await page.waitForTimeout(3000)
+  expect(page.url()).toContain('/guestbook')
+})
+
 test('오버레이 컨테이너는 뒤의 콘텐츠 클릭을 막지 않는다', async ({ page }) => {
   test.slow()
   await goToProjects(page)

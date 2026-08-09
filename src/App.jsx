@@ -256,6 +256,33 @@ function AppContent() {
   // 해제 애니메이션이 끝까지 재생된다.
   const [pendingProjectSlug, setPendingProjectSlug] = useState(null)
 
+  // 전환이 진행 중일 때 라우트가 바뀌면, 그게 "이 전환 자신이 만든 이동"인지
+  // "사용자가 다른 곳으로 끼어든 이동"인지 구분해야 한다. 위성을 클릭한 시점의
+  // pathname은 항상 '/'(ProjectSatellites는 메인 페이지에서만 뜬다)이고,
+  // LabTransition은 그로부터 ~900ms 뒤 자기 목적지(`/projects/${pendingProjectSlug}`)
+  // 로만 navigate한다 — 그래서 '/'(아직 전환의 onNavigate가 발화하기 전)와
+  // 그 목적지 자체는 "예상된" pathname이다. 그 둘이 아닌 다른 경로로
+  // 바뀌었다면(예: 대기 중에 네비바의 Guestbook을 클릭) 사용자가 직접 다른
+  // 곳으로 이동한 것이므로, 지연 발화를 기다리던 전환을 즉시 취소한다.
+  // pendingProjectSlug를 지워 LabTransition을 언마운트하면 그 컴포넌트의
+  // useEffect 클린업이 예약해 둔 타이머(예정된 navigate 포함)를 함께
+  // 정리하므로, 나중에 그 타이머가 발화해 사용자의 이동을 덮어쓰는 일이 없다.
+  //
+  // useEffect가 아니라 렌더 바디에서 직접 처리한다 — "prop이 바뀔 때 state를
+  // 조정"하는 상황은 React가 공식적으로 권장하는 렌더 중 setState 패턴이고
+  // (이펙트를 쓰면 커밋이 한 번 더 생기고, eslint의
+  // react-hooks/set-state-in-effect도 이펙트 안 setState를 지적한다),
+  // prevPathname과 비교해 실제로 pathname이 바뀐 렌더에서만 한 번 실행되므로
+  // 무한 루프가 없다.
+  const [prevPathname, setPrevPathname] = useState(location.pathname)
+  if (location.pathname !== prevPathname) {
+    setPrevPathname(location.pathname)
+    const target = `/projects/${pendingProjectSlug}`
+    if (pendingProjectSlug && location.pathname !== '/' && location.pathname !== target) {
+      setPendingProjectSlug(null)
+    }
+  }
+
   useEffect(() => {
     const lockScroll = location.pathname === '/gallery' || location.pathname === '/guestbook'
     if (lockScroll) {
