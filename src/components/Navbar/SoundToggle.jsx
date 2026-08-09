@@ -21,9 +21,29 @@ export default function SoundToggle() {
     }
   })
   const audioRef = useRef(null)
+  // createAmbientAudio(ctx)는 컨텍스트를 인자로만 받을 뿐 소유하지 않는다 —
+  // Task 2 계약상 엔진은 넘겨받은 컨텍스트를 닫지 않는다(테스트에서 가짜
+  // 컨텍스트를 주입할 수 있어야 하니, close()까지 엔진이 쥐고 있으면 곤란하다).
+  // 그래서 컨텍스트를 실제로 만든 쪽인 이 컴포넌트가 닫을 책임을 진다.
+  const ctxRef = useRef(null)
 
-  // 탭을 떠날 때 오디오 그래프가 남아 있으면 브라우저가 계속 붙들고 있다.
-  useEffect(() => () => audioRef.current?.dispose(), [])
+  // 탭을 떠날 때(또는 1024px 미만으로 좁아져 언마운트될 때) 오디오 그래프가
+  // 남아 있으면 브라우저가 계속 붙들고 있다. dispose()만으로는 노드 연결과
+  // 오실레이터만 끊길 뿐 AudioContext 자체는 살아남는다 — 좁혔다 넓혔다를
+  // 반복하면(매번 언마운트→재마운트, audioRef는 null로 초기화) 닫히지 않은
+  // 컨텍스트가 계속 쌓이고, 브라우저의 동시 AudioContext 개수 제한에 걸리면
+  // 새 컨텍스트 생성 자체가 던진다. 그래서 여기서 close()까지 해서 확실히
+  // 정리하고, 다음 재마운트는 항상 빈 ref에서 새로 시작하게 한다.
+  useEffect(() => {
+    return () => {
+      audioRef.current?.dispose()
+      audioRef.current = null
+      // 이미 닫힌 컨텍스트에 close()를 다시 부르면 reject한다 — 언마운트
+      // 콜백에서 처리되지 않은 프로미스 거부가 새어나가지 않도록 삼킨다.
+      ctxRef.current?.close().catch(() => {})
+      ctxRef.current = null
+    }
+  }, [])
 
   const toggle = () => {
     // 컨텍스트는 반드시 이 클릭(사용자 제스처) 안에서 만든다 — 밖에서 만들면
@@ -31,7 +51,9 @@ export default function SoundToggle() {
     if (!audioRef.current) {
       const Ctx = window.AudioContext || window.webkitAudioContext
       if (!Ctx) return
-      audioRef.current = createAmbientAudio(new Ctx())
+      const ctx = new Ctx()
+      ctxRef.current = ctx
+      audioRef.current = createAmbientAudio(ctx)
     }
     if (on) {
       audioRef.current.stop()

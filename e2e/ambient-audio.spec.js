@@ -3,15 +3,21 @@ import { test, expect } from '@playwright/test'
 // AudioContext를 실제로 만들지 않고 계측한다 — 헤드리스 크로미움은 오디오
 // 출력이 없어 "소리가 났는지"를 직접 확인할 수 없다. 대신 컨텍스트가 언제
 // 몇 개 만들어졌는지를 기록해 "자동 재생하지 않는다"와 "클릭에 반응한다"를
-// 각각 증명한다.
+// 각각 증명한다. close()도 함께 세어 "언마운트되면 컨텍스트를 실제로 닫는다"
+// (좁혔다 넓혔다를 반복해도 컨텍스트가 쌓이지 않는다)를 증명한다.
 async function instrument(page) {
   await page.addInitScript(() => {
     window.__audioCreated = 0
+    window.__audioClosed = 0
     const Real = window.AudioContext || window.webkitAudioContext
     window.AudioContext = class extends Real {
       constructor(...args) {
         super(...args)
         window.__audioCreated += 1
+      }
+      close(...args) {
+        window.__audioClosed += 1
+        return super.close(...args)
       }
     }
   })
@@ -69,4 +75,37 @@ test('1024px 미만 폭에서는 사운드 토글을 렌더하지 않는다', as
   await page.goto('/')
   await expect(page.getByRole('button', { name: 'Autopilot' })).toBeVisible({ timeout: 15000 })
   await expect(page.getByRole('button', { name: 'Sound on' })).toHaveCount(0)
+})
+
+test('좁혀서 언마운트되면 컨텍스트를 닫고, 다시 넓혀도 컨텍스트가 쌓이지 않는다', async ({ page }) => {
+  await instrument(page)
+  await page.setViewportSize({ width: 1280, height: 900 })
+  await page.goto('/')
+  await page.getByRole('button', { name: 'Sound on' }).click()
+  await expect(page.getByRole('button', { name: 'Sound off' })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  )
+  expect(await page.evaluate(() => window.__audioCreated)).toBe(1)
+
+  // 1024px 밑으로 좁히면 SoundToggle이 언마운트된다. dispose()만으로는
+  // AudioContext 자체가 안 닫혀 살아남는다 — close()까지 불려야 한다.
+  await page.setViewportSize({ width: 900, height: 900 })
+  await expect(page.getByRole('button', { name: 'Sound on' })).toHaveCount(0)
+  await expect.poll(() => page.evaluate(() => window.__audioClosed)).toBe(1)
+
+  // 다시 넓히면 재마운트된다 — audioRef는 빈 ref로 새로 시작하므로 다시
+  // 켜면 두 번째 컨텍스트가 생긴다. 그러나 "살아있는"(생성 - 닫힘) 컨텍스트
+  // 수는 여전히 1이어야 한다 — 좁혔다 넓혔다를 반복해도 컨텍스트가 쌓이지
+  // 않고 매 언마운트마다 정확히 회수됨을 증명한다.
+  await page.setViewportSize({ width: 1280, height: 900 })
+  await page.getByRole('button', { name: 'Sound on' }).click()
+  await expect(page.getByRole('button', { name: 'Sound off' })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  )
+  const [created, closed] = await page.evaluate(() => [window.__audioCreated, window.__audioClosed])
+  expect(created).toBe(2)
+  expect(closed).toBe(1)
+  expect(created - closed).toBe(1)
 })
