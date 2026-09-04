@@ -22,6 +22,7 @@ import ExperimentPage from './pages/ExperimentPage/ExperimentPage'
 import CodePage from './pages/CodePage/CodePage'
 import ProjectPage from './pages/ProjectPage/ProjectPage'
 import Guestbook from './pages/Guestbook/Guestbook'
+import ProbeSequence from './pages/ProbeSequence/ProbeSequence'
 import { ModeProvider } from './modes/ModeContext.jsx'
 import ModeLayer from './modes/ModeLayer.jsx'
 
@@ -307,7 +308,11 @@ function AppContent() {
   const isExperimentDemo = /^\/gallery\/[^/]+$/.test(location.pathname)
   // 방명록도 실험 데모처럼 고정 풀뷰포트 캔버스라 푸터를 겹치지 않게 숨긴다
   const isGuestbook = location.pathname === '/guestbook'
-  const showGlobalFooter = (!isMainPage || !isDesktop) && !isLabPage && !isExperimentDemo && !isGuestbook
+  // 탐사선 시퀀스도 고정 풀뷰포트 캔버스 위로 카피가 흐르는 구조라, 흐름 끝의
+  // 푸터가 캔버스를 덮는다. 페이지 자체가 CTA로 끝난다.
+  const isProbe = location.pathname === '/probe'
+  const showGlobalFooter =
+    (!isMainPage || !isDesktop) && !isLabPage && !isExperimentDemo && !isGuestbook && !isProbe
 
   return (
     <LangProvider>
@@ -324,6 +329,7 @@ function AppContent() {
           <Route path="/gallery/:id/code" element={<CodePage />} />
           <Route path="/projects/:slug" element={<ProjectPage />} />
           <Route path="/guestbook" element={<Guestbook />} />
+          <Route path="/probe" element={<ProbeSequence />} />
         </Routes>
         {isMainPage && isDesktop && <Minimap />}
         {isMainPage && isDesktop && (

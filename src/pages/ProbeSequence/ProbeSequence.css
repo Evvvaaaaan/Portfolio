@@ -1,0 +1,301 @@
+/* 탐사선 시퀀스 — 고정 캔버스 위로 카피가 흐르는 스크롤 서사 페이지.
+   색·타이포는 전부 사이트 전역 토큰을 쓰고, 이 페이지 고유의 값은
+   골드(MLI·골든 레코드) 하나뿐이다. */
+
+.probe {
+  --probe-gold: #e8c063;
+  position: relative;
+}
+
+.probe-canvas {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  display: block;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.probe-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* ── 부품 라벨 — 3D 좌표를 따라 붙는다 ───────────────────────────── */
+.probe-labels {
+  position: fixed;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.probe-label {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  width: max-content;
+  max-width: 230px;
+  padding-left: 11px;
+  border-left: 1px solid rgba(232, 192, 99, 0.5);
+  opacity: 0;
+  text-shadow: var(--legibility-shadow);
+  will-change: transform, opacity;
+}
+
+.probe-label__name {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.14em;
+  color: var(--probe-gold);
+}
+
+.probe-label__spec {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+}
+
+.probe-label__maps {
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--text-h);
+}
+
+/* ── 스크롤 트랙과 페이즈 카피 ───────────────────────────────────── */
+.probe-scroll {
+  position: relative;
+  z-index: 2;
+}
+
+.probe-phase {
+  position: relative;
+}
+
+.probe-copies {
+  position: fixed;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+}
+
+.probe-copy {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 14px;
+  padding: 0 clamp(24px, 7vw, 128px) 13vh;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  will-change: opacity;
+}
+
+.probe-copy[data-align='start'] {
+  align-items: flex-start;
+  text-align: left;
+}
+
+.probe-copy[data-align='end'] {
+  align-items: flex-end;
+  text-align: right;
+}
+
+.probe-copy[data-align='center'] {
+  align-items: center;
+  text-align: center;
+}
+
+.probe-copy__kicker {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--text);
+  text-shadow: var(--legibility-shadow);
+}
+
+.probe-copy__kicker b {
+  color: var(--probe-gold);
+  font-weight: 500;
+  margin-right: 4px;
+}
+
+.probe-copy__head {
+  font-size: clamp(30px, 5.2vw, 74px);
+  font-weight: 700;
+  line-height: 1.04;
+  letter-spacing: -0.02em;
+  color: var(--text-h);
+  max-width: 15ch;
+  text-wrap: balance;
+  text-shadow: var(--legibility-shadow);
+}
+
+.probe-copy__sub {
+  max-width: 40ch;
+  font-size: clamp(13px, 1.35vw, 16px);
+  line-height: 1.65;
+  color: var(--text);
+  text-shadow: var(--legibility-shadow);
+}
+
+/* 좁은 화면에서 3D 라벨을 대신하는 부품 목록 */
+.probe-partlist {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  margin-top: 6px;
+  padding: 0;
+  list-style: none;
+  text-align: left;
+}
+
+.probe-partlist li {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding-left: 9px;
+  border-left: 1px solid rgba(232, 192, 99, 0.5);
+  text-shadow: var(--legibility-shadow);
+}
+
+.probe-partlist b {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.14em;
+  font-weight: 400;
+  color: var(--probe-gold);
+}
+
+.probe-partlist span {
+  font-size: 11.5px;
+  line-height: 1.35;
+  color: var(--text-h);
+}
+
+.probe-cta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 12px;
+  pointer-events: auto;
+}
+
+.probe-cta a {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 12px 22px;
+  border: 1px solid var(--border-hover);
+  border-radius: 2px;
+  color: var(--text-h);
+  transition: background var(--duration) var(--ease), border-color var(--duration) var(--ease);
+}
+
+.probe-cta a:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: var(--accent);
+}
+
+.probe-cta a:focus-visible {
+  outline: 2px solid var(--probe-gold);
+  outline-offset: 3px;
+}
+
+/* ── 부팅 오버레이 ───────────────────────────────────────────────── */
+.probe-boot {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: grid;
+  place-items: center;
+  background: var(--bg);
+  transition: opacity 0.6s var(--ease), visibility 0.6s var(--ease);
+}
+
+.probe-boot--out {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.probe-boot svg {
+  position: absolute;
+  width: min(62vmin, 520px);
+  height: auto;
+}
+
+/* r=112 원의 둘레 = 2πr ≈ 703.72 */
+.probe-boot__arc {
+  stroke-dasharray: 703.72;
+  stroke-dashoffset: 703.72;
+  animation: probe-arc 0.7s var(--ease-out) forwards;
+}
+
+@keyframes probe-arc {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+.probe-boot__text {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 7px;
+  font-family: var(--font-mono);
+}
+
+.probe-boot__text span {
+  font-size: 10px;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.probe-boot__text b {
+  font-size: 12px;
+  letter-spacing: 0.2em;
+  font-weight: 500;
+  color: var(--probe-gold);
+}
+
+@media (max-width: 768px) {
+  .probe-copy {
+    padding: 0 22px 16vh;
+  }
+  .probe-copy__head {
+    max-width: 13ch;
+  }
+  .probe-label {
+    max-width: 170px;
+  }
+  .probe-label__maps {
+    font-size: 11px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .probe-boot__arc {
+    animation: none;
+    stroke-dashoffset: 0;
+  }
+  .probe-boot,
+  .probe-cta a {
+    transition: none;
+  }
+}
