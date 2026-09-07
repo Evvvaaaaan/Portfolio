@@ -29,6 +29,10 @@ import ModeLayer from './modes/ModeLayer.jsx'
 
 const isShowcase = new URLSearchParams(window.location.search).get('showcase') === 'loading'
 
+// 스크롤이 멎었다고 판단하기까지의 유예. 100ms는 트랙패드에서 손가락을 잠깐
+// 멈추는 정도의 틈에도 스냅이 발화해, 아직 제스처 중인 화면을 끌어당겼다.
+const SNAP_SETTLE_MS = 140
+
 function Footer({ slide = false }) {
   const { t } = useLang()
   return (
@@ -112,7 +116,14 @@ function MainPage() {
       slides.forEach((slide, idx) => {
         if (!slide) return
         const dock = computeDockStyle(progress, idx, reducedMotion)
-        slide.style.display = dock.visible ? 'flex' : 'none'
+        // display 토글이 아니라 visibility를 쓴다. display:none은 슬라이드
+        // 서브트리를 레이아웃에서 통째로 빼기 때문에, 섹션이 처음 드러나는
+        // 프레임에 레이아웃+페인트 비용이 한꺼번에 들어와 스크롤이 눈에 띄게
+        // 끊겼다 (프로덕션 실측: 첫 통과에서 350ms·291ms 프레임, 같은 구간
+        // 두 번째 통과부터는 0건 — 첫 노출 비용이라는 뜻). visibility는
+        // 레이아웃을 유지하므로 그 비용이 마운트 시점으로 옮겨가고, 이후
+        // 전환은 페인트만 남는다. 숨은 슬라이드는 그려지지도, 클릭되지도 않는다.
+        slide.style.visibility = dock.visible ? 'visible' : 'hidden'
         if (dock.visible) {
           slide.style.transform = `translateY(${dock.translateY}px)`
           slide.style.opacity = dock.opacity
@@ -131,16 +142,22 @@ function MainPage() {
         const currentProgress = window.scrollY / window.innerHeight
         const targetIdx = Math.round(currentProgress)
         const targetTop = targetIdx * window.innerHeight
+        const distance = Math.abs(window.scrollY - targetTop)
 
-        if (Math.abs(window.scrollY - targetTop) > 1) {
+        if (distance > 1) {
           const lenis = getLenis()
           if (lenis) {
-            lenis.scrollTo(targetTop, { duration: 0.4 })
+            // 정착 시간을 남은 거리에 비례시킨다. 고정 0.4s는 몇 px짜리
+            // 보정에는 늘어지고, 반 화면짜리 이동에는 홱 당겨졌다 — 같은
+            // 시간에 서로 다른 속도를 내니 스냅이 튀는 것처럼 느껴진다.
+            // 거리에 비례하면 어느 지점에서 멈추든 속도가 비슷하게 유지된다.
+            const ratio = Math.min(distance / window.innerHeight, 0.5)
+            lenis.scrollTo(targetTop, { duration: 0.45 + ratio * 0.9 })
           } else {
             window.scrollTo({ top: targetTop, behavior: 'smooth' })
           }
         }
-      }, 100)
+      }, SNAP_SETTLE_MS)
     }
 
     window.addEventListener('scroll', handleScroll, { passive: true })

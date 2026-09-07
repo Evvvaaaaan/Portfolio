@@ -71,11 +71,45 @@ describe('인트로 타임라인', () => {
   it('전 구간에서 값이 유한하고 0~1 범위를 벗어나지 않는다', () => {
     for (let t = 0; t <= INTRO_TOTAL_MS; t += 37) {
       const s = computeIntroState(t)
-      for (const v of [s.gridOpacity, s.drawProgress, s.buildProgress]) {
+      for (const v of [s.gridOpacity, s.drawProgress, s.buildProgress, s.launch]) {
         expect(Number.isFinite(v)).toBe(true)
         expect(v).toBeGreaterThanOrEqual(0)
         expect(v).toBeLessThanOrEqual(1)
       }
+    }
+  })
+})
+
+// 도착 시퀀스는 intensity=1에서 시작한다 — 인트로가 그 값까지 미리 끌어올려
+// 놓지 않으면 넘겨받는 프레임에서 0 → 1로 튄다.
+describe('점화 → 돌입 연결 (launch)', () => {
+  it('점화 전에는 워프 세기를 올리지 않는다', () => {
+    expect(computeIntroState(0).launch).toBe(0)
+    expect(computeIntroState(INTRO_GRID_MS).launch).toBe(0)
+    expect(computeIntroState(INTRO_GRID_MS + INTRO_DRAW_MS - 1).launch).toBe(0)
+  })
+
+  it('점화 구간에서 단조 증가한다', () => {
+    const igniteStart = INTRO_GRID_MS + INTRO_DRAW_MS
+    let prev = -1
+    for (let t = igniteStart; t < INTRO_TOTAL_MS; t += 10) {
+      const v = computeIntroState(t).launch
+      expect(v).toBeGreaterThanOrEqual(prev)
+      prev = v
+    }
+  })
+
+  it('인트로가 끝나는 값이 도착 시퀀스의 시작 세기(1)와 이어진다', () => {
+    // 마지막 프레임 직전은 1에 근접하고, 종료 상태는 정확히 1이다.
+    expect(computeIntroState(INTRO_TOTAL_MS - 1).launch).toBeGreaterThan(0.98)
+    expect(computeIntroState(INTRO_TOTAL_MS).launch).toBe(1)
+  })
+
+  it('한 프레임(16.7ms) 사이 변화량이 도약이 아니다', () => {
+    const igniteStart = INTRO_GRID_MS + INTRO_DRAW_MS
+    for (let t = igniteStart; t < INTRO_TOTAL_MS; t += 16.7) {
+      const jump = computeIntroState(t + 16.7).launch - computeIntroState(t).launch
+      expect(jump).toBeLessThan(0.2)
     }
   })
 })

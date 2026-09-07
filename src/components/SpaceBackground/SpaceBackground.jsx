@@ -14,6 +14,7 @@ import { WARP_BOOST_EVENT, computeBoostIntensity } from './warpBoost.js'
 import { createEvanSystem } from './evanSystem.js'
 import { computeRailPose } from './rail.js'
 import { computeGrade, hoursFromDate } from './timeOfDay.js'
+import { dampFactor, REFERENCE_FRAME_MS } from './damping.js'
 import { GRID_VERT, GRID_FRAG } from './introVisuals.glsl.js'
 import {
   computeIntroState, shouldPlayIntro, hasSeenIntro, markIntroSeen,
@@ -25,6 +26,13 @@ import { PLANETS } from './system.js'
 // projects 행성 반지름 — occludedBySphere 판정용. 행성 메시엔 스케일이
 // 적용되지 않으므로 이 리터럴 값이 곧 월드 반지름이다.
 const PROJECTS_PLANET_RADIUS = PLANETS.find((p) => p.id === 'projects').radius
+
+// 한 프레임이 이만큼보다 길어도 타임라인·감쇠에는 이 값까지만 흘려보낸다.
+// 첫 로딩의 셰이더 컴파일이나 탭 복귀는 수백 ms짜리 프레임을 만드는데
+// (실측: 프로덕션 첫 로딩 608ms, 개발 서버 1584ms), 그 시간을 그대로
+// 반영하면 인트로·도착 시퀀스가 그만큼 통째로 건너뛰어 장면이 끊긴 것처럼
+// 보인다. 타임라인이 살짝 늦어지는 편이 구간을 잘라먹는 것보다 낫다.
+const MAX_STEP_MS = 50
 
 function createStarTexture() {
   const canvas = document.createElement('canvas')
@@ -207,9 +215,14 @@ export default function SpaceBackground({ warpEnabled = false, stageEnabled = fa
       viewportHeight: window.innerHeight,
       seen: hasSeenIntro(),
     })
-    let introStartT = null
+    // 인트로/도착 타임라인은 벽시계가 아니라 "잘라 낸 프레임 간격의 누적"으로
+    // 흐른다 (MAX_STEP_MS 참고). 스톨이 나면 시퀀스가 건너뛰는 대신 기다린다.
+    let introStarted = false
+    let introElapsedMs = 0
     let introSeenMarked = false
     let introDone = !introActive
+    // 점화 구간이 워프 세기를 미리 끌어올린 값. 인트로가 도는 동안에만 쓰인다.
+    let introLaunch = 0
     // 세션 마크는 여기서 바로 남기지 않는다 — React StrictMode 개발 모드는
     // 마운트 직후 곧바로 정리하고 재마운트하는데, 버려지는 첫 인스턴스도 동기
     // tick 1회는 실행한다. 여기서 바로 markIntroSeen()을 부르면 버려지는
@@ -227,10 +240,9 @@ export default function SpaceBackground({ warpEnabled = false, stageEnabled = fa
       scrollY: window.scrollY,
       viewportHeight: window.innerHeight,
     })
-    let arrivalStartT = null
+    let arrivalElapsedMs = 0
     if (arrivalActive && !introActive) {
       beginArrival()
-      arrivalStartT = 0
     } else if (!arrivalActive) {
       concludeArrival('skipped')
     }
@@ -246,28 +258,44 @@ export default function SpaceBackground({ warpEnabled = false, stageEnabled = fa
     // Lab 진입 부스트: 이벤트 수신 시점부터 타임라인을 재생한다.
     // 진행 중인 도착 시퀀스가 있으면 즉시 종결한다 (우선순위: 부스트 >
     // 도착 시퀀스 > 스크롤 워프).
-    let boostStartT = null
+    let boostActive = false
+    let boostElapsedMs = 0
     const onWarpBoost = () => {
-      boostStartT = clock.getElapsedTime()
+      boostActive = true
+      boostElapsedMs = 0
       if (arrivalActive) {
         arrivalActive = false
         concludeArrival('done')
       }
     }
     window.addEventListener(WARP_BOOST_EVENT, onWarpBoost)
+    let prevT = null
     const tick = () => {
       id = requestAnimationFrame(tick)
       const t = clock.getElapsedTime()
 
+      // 진행에 쓸 프레임 간격. 첫 프레임은 기준값으로 시작하고, 스톨은 잘라
+      // 낸다 — 타임라인이 건너뛰지 않고, 감쇠도 계단식으로 튀지 않는다.
+      const rawDtMs = prevT === null ? REFERENCE_FRAME_MS : (t - prevT) * 1000
+      prevT = t
+      const dtMs = Math.min(rawDtMs, MAX_STEP_MS)
+
       // --- 인트로 구동 (첫 방문에만 진입)
       if (!introDone) {
-        if (introStartT === null) {
-          introStartT = t
-        } else if (!introSeenMarked) {
-          introSeenMarked = true
-          markIntroSeen()
+        if (!introStarted) {
+          // 첫 프레임은 타임라인을 0에서 붙잡는다 — 이 프레임에 항성계 생성과
+          // 셰이더 컴파일이 함께 일어나므로, 그 비용을 인트로에 청구하면
+          // 도입부가 이미 진행된 채로 나타난다.
+          introStarted = true
+        } else {
+          if (!introSeenMarked) {
+            introSeenMarked = true
+            markIntroSeen()
+          }
+          introElapsedMs += dtMs
         }
-        const intro = computeIntroState((t - introStartT) * 1000)
+        const intro = computeIntroState(introElapsedMs)
+        introLaunch = intro.launch
         // 그리드는 스테이지(메인 데스크톱)에서만 의미가 있다. 인트로 도중
         // 라우트를 옮기면 SpaceBackground는 살아 있으므로, 게이트가 없으면
         // 다른 페이지 위에 격자가 그대로 남는다.
@@ -285,17 +313,18 @@ export default function SpaceBackground({ warpEnabled = false, stageEnabled = fa
           // evanSystem은 스테이지가 한 번도 켜진 적 없으면 null일 수 있다.
           evanSystem?.setBuild(1)
           evanSystem?.setOrbitDraw(1)
-          // 실체화가 끝난 순간 도착 워프로 넘긴다 — 점화의 여파가 그대로
-          // 카메라 돌입으로 이어져 한 동작처럼 읽힌다.
+          // 실체화가 끝난 순간 도착 워프로 넘긴다 — 점화 구간이 워프 세기를
+          // 이미 1까지 올려 두었으므로(intro.launch), 여기서 세기가 튀지 않고
+          // 그대로 이어진다.
           if (arrivalActive) {
             beginArrival()
-            arrivalStartT = t
+            arrivalElapsedMs = 0
           }
         }
       }
 
       // Smooth out scroll progress
-      scrollPercentSmooth += (scrollPercent - scrollPercentSmooth) * 0.05
+      scrollPercentSmooth += (scrollPercent - scrollPercentSmooth) * dampFactor(0.05, dtMs)
 
       // 도착 시퀀스 중에는 스크롤이 아니라 타임라인이 intensity를 직접
       // 구동한다 (스무딩 없이 — 감속 곡선 자체가 이미 ease-out).
@@ -304,18 +333,25 @@ export default function SpaceBackground({ warpEnabled = false, stageEnabled = fa
         arrivalActive = false
         concludeArrival('done')
       }
-      if (boostStartT !== null) {
+      if (boostActive) {
         // 부스트는 warpEnabled와 무관하게 끝까지 재생 — 라우트가 /gallery로
-        // 바뀌어도 해제 곡선이 이어져 도착 후 자연 감속한다.
-        const boost = computeBoostIntensity((t - boostStartT) * 1000)
+        // 바뀌어도 해제 곡선이 이어져 도착 후 자연 감속한다. 갤러리 청크를
+        // 불러오는 프레임이 길게 걸려도 타임라인을 건너뛰지 않도록 인트로·도착과
+        // 같은 누적 방식을 쓴다.
+        boostElapsedMs += dtMs
+        const boost = computeBoostIntensity(boostElapsedMs)
         intensitySmooth = boost.intensity
-        if (boost.phase === 'done') boostStartT = null
+        if (boost.phase === 'done') boostActive = false
       } else if (!introDone) {
-        // 인트로가 아직 진행 중이면 워프 세기를 0으로 눌러 둔다 — 인트로 동안
-        // 별이 흐르면 설계도 은유가 깨진다.
-        intensitySmooth = 0
+        // 인트로 동안 별이 흐르면 설계도 은유가 깨지므로 워프 세기는 0이다.
+        // 단 마지막 점화 구간만은 예외로, 이어질 도착 워프의 시작 세기(1)까지
+        // 미리 끌어올린다 — 넘겨받는 프레임에서 0 → 1로 튀지 않게 하는 연결.
+        // 도착이 재생되지 않는 경로(reduced-motion 등)에서는 올릴 곳이 없으므로
+        // 0을 유지한다.
+        intensitySmooth = arrivalActive ? introLaunch : 0
       } else if (arrivalActive) {
-        const arrival = computeArrivalIntensity((t - (arrivalStartT ?? 0)) * 1000)
+        arrivalElapsedMs += dtMs
+        const arrival = computeArrivalIntensity(arrivalElapsedMs)
         intensitySmooth = arrival.intensity
         if (arrival.done) {
           arrivalActive = false
@@ -334,12 +370,12 @@ export default function SpaceBackground({ warpEnabled = false, stageEnabled = fa
           intensitySmooth = 0
         } else {
           const smoothingRate = targetIntensity > intensitySmooth ? 0.18 : 0.025
-          intensitySmooth += (targetIntensity - intensitySmooth) * smoothingRate
+          intensitySmooth += (targetIntensity - intensitySmooth) * dampFactor(smoothingRate, dtMs)
         }
       }
 
       // 부스트 중에는 라우트와 무관하게 intensity가 카메라를 구동해야 한다.
-      const zoomDriver = (warpEnabledRef.current || boostStartT !== null)
+      const zoomDriver = (warpEnabledRef.current || boostActive)
         ? intensitySmooth
         : scrollPercentSmooth
 
@@ -359,7 +395,7 @@ export default function SpaceBackground({ warpEnabled = false, stageEnabled = fa
         const progress = window.scrollY / window.innerHeight
         // 도착 시퀀스와 무관하게 레일이 카메라를 소유한다 — 시퀀스의
         // 워프감은 스트릭+포스트FX(intensity)가 담당한다.
-        progressSmooth += (progress - progressSmooth) * (reducedMotion ? 1 : 0.08)
+        progressSmooth += (progress - progressSmooth) * (reducedMotion ? 1 : dampFactor(0.08, dtMs))
         const pose = computeRailPose(progressSmooth, reducedMotion)
         camera.position.set(pose.position[0], pose.position[1], pose.position[2])
         camera.lookAt(pose.target[0], pose.target[1], pose.target[2])

@@ -16,12 +16,14 @@ const BUILD_AT_DRAW_END = 0.55
 const clamp01 = (v) => Math.min(Math.max(v, 0), 1)
 // ease-out cubic: 그리기 시작은 빠르고 끝은 부드럽게 멎는다.
 const easeOut = (t) => 1 - Math.pow(1 - t, 3)
+// ease-in quad: 점화 → 돌입 가속. 초반은 거의 움직이지 않다가 끝에서 붙는다.
+const easeIn = (t) => t * t
 
 export function computeIntroState(elapsedMs) {
   const t = Math.max(elapsedMs, 0)
 
   if (t >= INTRO_TOTAL_MS) {
-    return { phase: 'done', gridOpacity: 0, drawProgress: 1, buildProgress: 1, done: true }
+    return { phase: 'done', gridOpacity: 0, drawProgress: 1, buildProgress: 1, launch: 1, done: true }
   }
 
   if (t < INTRO_GRID_MS) {
@@ -30,6 +32,7 @@ export function computeIntroState(elapsedMs) {
       gridOpacity: clamp01(t / INTRO_GRID_MS),
       drawProgress: 0,
       buildProgress: 0,
+      launch: 0,
       done: false,
     }
   }
@@ -42,6 +45,7 @@ export function computeIntroState(elapsedMs) {
       gridOpacity: 1,
       drawProgress: easeOut(k),
       buildProgress: k * BUILD_AT_DRAW_END,
+      launch: 0,
       done: false,
     }
   }
@@ -54,6 +58,12 @@ export function computeIntroState(elapsedMs) {
     gridOpacity: 1 - k,
     drawProgress: 1,
     buildProgress: BUILD_AT_DRAW_END + (1 - BUILD_AT_DRAW_END) * k,
+    // 워프 세기를 점화 구간에서 미리 밀어 올린다. 인트로가 끝나는 프레임에
+    // 도착 시퀀스가 intensity=1(최고 속도)로 시작하므로, 이 값이 없으면 한
+    // 프레임 만에 0 → 1로 튄다 — 카메라 FOV가 60°에서 105°로, 스트릭이
+    // 0에서 최대로 동시에 점프해 "여기서 장면이 갈렸다"로 읽혔다.
+    // 끝값이 정확히 1이라 도착 타임라인의 시작값과 이어진다.
+    launch: easeIn(k),
     done: false,
   }
 }
