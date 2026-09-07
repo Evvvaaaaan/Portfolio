@@ -94,7 +94,7 @@ function LangSwitcher() {
   )
 }
 
-function AutopilotButton() {
+function AutopilotButton({ onStart }) {
   const { t } = useLang()
   const btnRef = useRef(null)
   const { running, start, stop } = useAutopilot(btnRef)
@@ -121,7 +121,14 @@ function AutopilotButton() {
         className={`nav-icon-btn autopilot-btn ${running ? 'autopilot-btn--on' : ''}`}
         aria-pressed={running}
         title={label}
-        onClick={() => (running ? stop() : start())}
+        onClick={() => {
+          if (running) {
+            stop()
+          } else {
+            start()
+            onStart?.()
+          }
+        }}
       >
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
           <circle cx="12" cy="12" r="9" />
@@ -143,21 +150,13 @@ export default function Navbar() {
   const [labOrigin, setLabOrigin] = useState(null)
   const location = useLocation()
   const navigate = useNavigate()
+  // 오토파일럿 투어는 섹션마다 정확히 100vh인 데스크톱 슬라이드덱을 전제로
+  // 정거장 좌표를 계산한다 — 일반 스크롤인 좁은 화면에서는 엉뚱한 위치로
+  // 튀므로 버튼 자체를 렌더하지 않는다.
   const isDesktop = useMediaQuery('(min-width: 769px) and (min-height: 701px)')
-  // 769~1023px는 이미 네비바 폭이 가장 빠듯한 구간이다 — 사운드 버튼을 아이콘
-  // 전용으로 만들어도 .nav-controls의 gap·padding을 나눠 쓰는 네 번째 컨트롤이
-  // 끼어들면 오토파일럿·모드·언어 세 개가 먼저 차지하던 자리를 잠식한다.
-  // 실측(.nav-inner scrollWidth - clientWidth, 사운드 버튼 유무 비교):
-  //   769px  without 118  with 159 (+41) — 118은 사운드와 무관한 기존 오버플로
-  //   900px  without   0  with  28 (+28) — 900px는 원래 0이었는데 이 브랜치가 깨뜨림
-  //  1024px  without   0  with   0  (0)  — 이 폭부터는 안전
-  //  1280px  without   0  with   0  (0)
-  //  1440px  without   0  with   0  (0)
-  //  1920px  without   0  with   0  (0)
-  // 900px처럼 원래 깨끗했던 폭까지 침범하므로, 이 좁은 구간(1024px 미만)에서는
-  // 사운드는 선택적 앰비언스 컨트롤이니 아예 렌더하지 않는다. CSS로만 숨기면
-  // 버튼이 DOM과 탭 순서에는 남아 좁은 창의 스크린리더 사용자가 보이지도
-  // 않는 컨트롤에 도달하게 되므로, 렌더링 자체를 게이트한다.
+  // 사운드는 선택적 앰비언스라 좁은 화면에서는 계속 생략한다. 원래 이유였던
+  // "상단 바 폭 부족"은 컨트롤이 메뉴로 내려오며 사라졌지만, 좁은 화면일수록
+  // 스피커 없이 보는 경우가 많다는 판단은 그대로 유지한다.
   const isSoundWidth = useMediaQuery('(min-width: 1024px)')
 
   const isLabDetail = /^\/gallery\/.+/.test(location.pathname)
@@ -204,7 +203,7 @@ export default function Navbar() {
 
   return (
     <>
-    <header className={`navbar ${scrolled ? 'scrolled' : ''}`}>
+    <header className={`navbar ${scrolled ? 'scrolled' : ''}${menuOpen ? ' navbar--menu-open' : ''}`}>
       <div className="nav-inner container">
         <a className="nav-logo" href="#home" onClick={(e) => handleNav(e, '#home')}>
           <span className="logo-bracket">&lt;</span>
@@ -212,44 +211,8 @@ export default function Navbar() {
           <span className="logo-bracket"> /&gt;</span>
         </a>
 
-        {/* Desktop nav */}
-        <nav className="nav-links" aria-label="Main navigation">
-          {navItems.map((item) => (
-            <a
-              key={item.href}
-              href={item.href}
-              className="nav-link"
-              onClick={(e) => handleNav(e, item.href)}
-            >
-              {item.label}
-            </a>
-          ))}
-          <a
-            href="/gallery"
-            className={`nav-link ${location.pathname === '/gallery' ? 'nav-link--active' : ''}`}
-            onClick={handleLabClick}
-          >
-            Lab
-          </a>
-          <a
-            href="/guestbook"
-            className={`nav-link ${location.pathname === '/guestbook' ? 'nav-link--active' : ''}`}
-            onClick={handleGuestbookClick}
-          >
-            {t.nav.guestbook}
-          </a>
-          <a href="#contact" className="nav-cta" onClick={(e) => handleNav(e, '#contact')}>
-            {t.nav.hire}
-          </a>
-        </nav>
-
-        {/* Right controls */}
+        {/* 상단 바에는 로고와 버거만 둔다 — 링크도 컨트롤도 전부 메뉴 안이다. */}
         <div className="nav-controls">
-          {location.pathname === '/' && isDesktop && <AutopilotButton />}
-          {location.pathname === '/' && isDesktop && isSoundWidth && <SoundToggle />}
-          {location.pathname === '/' && <ModeMenu />}
-          <LangSwitcher />
-          <span className="nav-divider" aria-hidden="true" />
           <button
             className={`nav-burger ${menuOpen ? 'open' : ''}`}
             onClick={() => setMenuOpen((v) => !v)}
@@ -261,14 +224,18 @@ export default function Navbar() {
         </div>
       </div>
     </header>
-    {/* Mobile menu overlay - rendered outside .navbar: backdrop-filter on
-        .navbar.scrolled would otherwise make it a fixed-position containing
-        block, trapping this position:fixed overlay inside the navbar's own
-        (much shorter) box instead of the viewport. */}
-    {menuOpen && (
+    {/* 메뉴 오버레이 - .navbar 밖에 렌더한다: .navbar.scrolled의 backdrop-filter가
+        고정 위치의 컨테이닝 블록을 만들어, 이 position:fixed 오버레이를 뷰포트가
+        아니라 (훨씬 낮은) 네비바 박스 안에 가둬 버리기 때문이다. */}
+    {/* 닫혀 있어도 언마운트하지 않고 hidden으로만 감춘다. 이 안의 컨트롤은
+        누른 뒤에도 계속 살아 있어야 하기 때문이다 — 오토파일럿은 언마운트되면
+        useAutopilot의 정리가 예약된 투어 타이머를 전부 지워 투어가 시작하자마자
+        죽고, 사운드는 AudioContext가 닫혀 음악이 끊긴다. hidden은 화면에서
+        지우는 동시에 탭 순서와 접근성 트리에서도 빼 준다. */}
       <nav
         className="nav-mobile"
-        aria-label="Mobile navigation"
+        aria-label="Site menu"
+        hidden={!menuOpen}
       >
         {navItems.map((item) => (
           <a
@@ -293,8 +260,20 @@ export default function Navbar() {
         <a href="#contact" className="nav-cta" onClick={(e) => handleNav(e, '#contact')}>
           {t.nav.hire}
         </a>
+
+        {/* 사이트 컨트롤: 상단 바에서 내려온 자리. 오토파일럿과 모드는 화면 전체를
+            바꾸는 동작이라 누르는 즉시 메뉴를 닫는다 — 오버레이가 덮은 채로
+            투어가 돌면 아무것도 보이지 않는다. 언어와 소리는 그 자리에서 결과가
+            보이므로 메뉴를 열어 둔다. */}
+        <div className="nav-menu-controls">
+          {location.pathname === '/' && isDesktop && (
+            <AutopilotButton onStart={() => setMenuOpen(false)} />
+          )}
+          {location.pathname === '/' && isDesktop && isSoundWidth && <SoundToggle />}
+          {location.pathname === '/' && <ModeMenu onPick={() => setMenuOpen(false)} />}
+          <LangSwitcher />
+        </div>
       </nav>
-    )}
     {labOrigin && (
       <LabTransition
         origin={labOrigin}

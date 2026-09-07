@@ -3,10 +3,13 @@ import { useMode } from '../ModeContext.jsx'
 import { modes } from '../registry.js'
 import './ModeMenu.css'
 
-export default function ModeMenu() {
+// onPick: 모드를 고른 뒤 호출된다. 이 메뉴는 사이트 메뉴 오버레이 안에 있고,
+// 모드는 화면 전체를 바꾸는 동작이라 고르는 즉시 오버레이를 닫아야 결과가 보인다.
+export default function ModeMenu({ onPick }) {
   const { modeId, setModeId, exitMode } = useMode()
   const [open, setOpen] = useState(false)
   const rootRef = useRef(null)
+  const activeMode = modes.find((m) => m.id === modeId)
 
   useEffect(() => {
     if (!open) return
@@ -21,6 +24,7 @@ export default function ModeMenu() {
     setOpen(false)
     if (id === null) exitMode()
     else setModeId(id)
+    onPick?.()
   }
 
   return (
@@ -28,6 +32,7 @@ export default function ModeMenu() {
       <button
         type="button"
         className={`nav-icon-btn mode-menu-btn ${modeId ? 'mode-menu-btn--active' : ''}`}
+        style={activeMode ? { '--mode-color': activeMode.color } : undefined}
         aria-haspopup="menu"
         aria-expanded={open}
         title="Mode"

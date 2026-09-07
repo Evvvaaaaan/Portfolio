@@ -1,7 +1,9 @@
 import { test, expect } from '@playwright/test'
+import { openSiteMenu } from './openSiteMenu.js'
 
 test('speedrun: timer runs and scrolling to bottom clears all splits', async ({ page }) => {
   await page.goto('/')
+  await openSiteMenu(page)
   await page.getByRole('button', { name: 'Mode' }).click()
   await page.getByRole('menuitem', { name: /Speedrun/ }).click()
 

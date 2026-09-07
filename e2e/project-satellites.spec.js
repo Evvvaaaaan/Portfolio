@@ -98,7 +98,11 @@ test('전환 대기 중에 다른 곳으로 직접 이동하면, 지연 발화�
   // 경로를 흉내 내고, 이 테스트가 실제로 잡으려는 App.jsx의 상태 경쟁만
   // 순수하게 검증한다.
   await page.waitForTimeout(300)
-  await page.locator('.nav-links a[href="/guestbook"]').dispatchEvent('click')
+  // Guestbook 링크는 버거 메뉴 오버레이가 열려야 DOM에 존재한다 (데스크톱
+  // 네비바에서 제거됨) — 트리거도 같은 이유(오버레이가 좌표 히트테스트를 막음)로
+  // dispatchEvent로 연다.
+  await page.locator('.nav-burger').dispatchEvent('click')
+  await page.locator('.nav-mobile a[href="/guestbook"]').dispatchEvent('click')
   await page.waitForURL('**/guestbook', { timeout: 5000 })
 
   // 전환의 전체 재생 시간(BOOST_CHARGE_MS 800 + BOOST_PEAK_MS 200 +

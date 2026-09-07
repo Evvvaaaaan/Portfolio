@@ -18,7 +18,12 @@ test('Lab 클릭 시 워프 전환을 거쳐 갤러리에 도착한다', async (
     timeout: 15000,
   })
 
-  await page.getByRole('link', { name: 'Lab' }).first().click()
+  // Lab 링크는 버거 메뉴 오버레이에만 남아 있고(데스크톱 네비바에서 제거됨),
+  // 그 오버레이는 768px 초과에서 CSS로 감춰져 좌표 클릭이 닿지 않는다. 검증
+  // 대상은 링크의 위치가 아니라 클릭 이후의 워프 전환이므로 이벤트를 직접 쏜다
+  // — page.goto로 바꾸면 문서를 새로 로드해 전환 자체가 재생되지 않는다.
+  await page.locator('.nav-burger').dispatchEvent('click')
+  await page.locator('.nav-mobile a[href="/gallery"]').dispatchEvent('click')
 
   // 피크(~900ms)에 네비게이션이 일어난다.
   await expect(page).toHaveURL(/\/gallery/, { timeout: 10000 })

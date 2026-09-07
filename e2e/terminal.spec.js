@@ -1,7 +1,9 @@
 import { test, expect } from '@playwright/test'
+import { openSiteMenu } from './openSiteMenu.js'
 
 test('terminal mode: enter, run help, exit', async ({ page }) => {
   await page.goto('/')
+  await openSiteMenu(page)
   await page.getByRole('button', { name: 'Mode' }).click()
   await page.getByRole('menuitem', { name: /Terminal/ }).click()
 
@@ -18,6 +20,7 @@ test('terminal mode: enter, run help, exit', async ({ page }) => {
 
 test('terminal mode: ESC exits', async ({ page }) => {
   await page.goto('/')
+  await openSiteMenu(page)
   await page.getByRole('button', { name: 'Mode' }).click()
   await page.getByRole('menuitem', { name: /Terminal/ }).click()
   await expect(page.locator('.terminal-overlay')).toBeVisible()

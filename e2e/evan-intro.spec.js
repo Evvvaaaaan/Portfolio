@@ -73,7 +73,13 @@ test('인트로 도중 라우트를 떠나도 돌아오면 완성 상태다', as
   // 문서를 새로 로드해 SpaceBackground를 처음부터 다시 마운트시키므로, 버그가
   // 재현되는 "라우트가 바뀌어도 언마운트되지 않는" 경로를 전혀 타지 않는다.
   // 네비 링크 클릭 + 브라우저 뒤로가기로 실제 재현 경로를 그대로 따른다.
-  await page.locator('a[href="/guestbook"]').first().click()
+  // 데스크톱 네비바에는 더 이상 Guestbook 링크가 없다 — 앱 안에서 그곳으로 가는
+  // 유일한 경로는 버거 메뉴 오버레이인데, 그 오버레이는 768px 초과에서 CSS로
+  // 감춰져 있어 좌표 클릭이 닿지 않는다. 여기서 확인하려는 것은 "클릭이 보이는
+  // 위치에 있는가"가 아니라 SPA 라우팅을 거쳤을 때의 마운트 유지이므로, 노드에
+  // 이벤트를 직접 발화시킨다.
+  await page.locator('.nav-burger').dispatchEvent('click')
+  await page.locator('.nav-mobile a[href="/guestbook"]').dispatchEvent('click')
   await page.waitForURL('**/guestbook')
   await page.waitForTimeout(3000)
   await page.goBack()

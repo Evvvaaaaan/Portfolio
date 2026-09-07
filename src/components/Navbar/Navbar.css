@@ -38,15 +38,6 @@
 .nav-logo:hover { color: #fff; }
 .logo-bracket { color: var(--accent); font-weight: 300; }
 
-/* Desktop nav */
-.nav-links {
-  display: flex;
-  align-items: center;
-  gap: 36px;
-  flex: 1;
-  justify-content: flex-end;
-}
-
 .nav-link {
   font-size: 14px;
   font-weight: 500;
@@ -115,13 +106,6 @@
 .nav-icon-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .nav-icon-btn-label { line-height: 1; }
 
-.nav-divider {
-  width: 1px;
-  height: 20px;
-  background: var(--border);
-  flex-shrink: 0;
-}
-
 /* Language menu (mirrors .mode-menu-panel in ModeMenu.css) */
 .lang-menu { position: relative; }
 
@@ -155,9 +139,11 @@
 .lang-menu-item:hover { background: rgba(255, 255, 255, 0.06); }
 .lang-menu-item--on { background: rgba(255, 255, 255, 0.1); color: #fff; }
 
-/* Mobile burger */
+/* 버거: 이제 폭과 무관하게 항상 노출된다 — 상단 바에 로고만 남기고 링크와
+   사이트 컨트롤(모드·언어·소리·오토파일럿)을 전부 이 메뉴 안으로 옮겼으므로,
+   데스크톱에서 감추면 그 기능들에 닿을 방법이 사라진다. */
 .nav-burger {
-  display: none;
+  display: flex;
   flex-direction: column;
   gap: 5px;
   background: none;
@@ -177,35 +163,63 @@
 .nav-burger.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
 .nav-burger:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; border-radius: 4px; }
 
-/* Mobile nav overlay */
+/* 사이트 메뉴 오버레이 — 버거로만 열린다 (폭 무관). 닫힌 상태는 hidden 속성이
+   맡는다: 클래스 선택자가 UA의 [hidden] 규칙을 이기므로 여기서 직접 꺼 준다. */
+.nav-mobile[hidden] { display: none; }
+
 .nav-mobile {
-  display: none;
+  display: flex;
+  position: fixed;
+  inset: 0;
+  background: var(--bg);
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 32px;
+  /* 열려 있는 동안은 모달 표면이다 — 페이지 레벨 알림(하드웨어 가속 안내는
+     z-index 9999에 화면 하단 고정)보다 위에 있어야 한다. 그렇지 않으면 그
+     배너가 메뉴 하단의 사이트 컨트롤을 덮어 클릭을 가로챈다. */
+  z-index: 10000;
+}
+
+.nav-mobile .nav-link { font-size: 24px; }
+.nav-mobile .nav-cta { font-size: 20px; padding: 12px 32px; }
+
+/* 상단 바의 버거는 오버레이 위에 남아 있어야 메뉴를 닫을 수 있다. .navbar가
+   z-index:100으로 자기 스택 컨텍스트를 만들기 때문에 .nav-controls의 값만
+   올려서는 오버레이(10000)를 넘지 못한다 — 헤더 자체를 올려야 한다. 메뉴가
+   열린 동안에만 적용해 다른 오버레이(워프 전환 등)와의 순서는 건드리지 않는다. */
+.navbar--menu-open {
+  z-index: 10001;
+}
+
+.nav-controls {
+  z-index: 1;
+  position: relative;
+}
+
+/* 링크 묶음과 사이트 컨트롤 사이의 경계 — 성격이 다른 두 그룹이다. */
+.nav-menu-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 8px;
+  padding-top: 28px;
+  border-top: 1px solid var(--border);
+  width: min(420px, 78vw);
+}
+
+/* 메뉴 안에서는 열릴 공간이 아래쪽뿐이라, 패널을 버튼 위로 띄운다. */
+.nav-menu-controls .mode-menu-panel,
+.nav-menu-controls .lang-menu-panel {
+  top: auto;
+  bottom: calc(100% + 12px);
 }
 
 @media (max-width: 768px) {
-  .nav-links { display: none; }
-  .nav-burger { display: flex; }
-
-  .nav-mobile {
-    display: flex;
-    position: fixed;
-    inset: 0;
-    background: var(--bg);
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 40px;
-    z-index: 99;
-  }
-
-  .nav-mobile .nav-link { font-size: 24px; }
-  .nav-mobile .nav-cta { font-size: 20px; padding: 12px 32px; }
-
-  /* Keep Mode/Language controls clickable above the mobile overlay */
-  .nav-controls {
-    z-index: 200;
-    position: relative;
-  }
+  .nav-mobile { gap: 26px; }
 }
 
 /* Icon-only: 오토파일럿 버튼(텍스트 라벨 포함 109px + 12px 갭 = 121px)이 더해지며

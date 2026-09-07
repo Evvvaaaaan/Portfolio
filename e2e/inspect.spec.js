@@ -1,7 +1,9 @@
 import { test, expect } from '@playwright/test'
+import { openSiteMenu } from './openSiteMenu.js'
 
 test('inspect: tour panel steps through annotated elements', async ({ page }) => {
   await page.goto('/')
+  await openSiteMenu(page)
   await page.getByRole('button', { name: 'Mode' }).click()
   await page.getByRole('menuitem', { name: /Inspect/ }).click()
 
