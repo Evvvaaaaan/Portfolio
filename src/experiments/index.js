@@ -14,6 +14,9 @@ const EarthExplorer = lazy(() => import('./EarthExplorer/EarthExplorer'))
 const NonEuclideanPortals = lazy(() => import('./NonEuclideanPortals/NonEuclideanPortals'))
 const CosmicMirror = lazy(() => import('./CosmicMirror/CosmicMirror'))
 const CloudGallery = lazy(() => import('./CloudGallery/CloudGallery'))
+const ProceduralCity = lazy(() => import('./ProceduralCity/ProceduralCity'))
+const ShipInABottle = lazy(() => import('./ShipInABottle/ShipInABottle'))
+const GothicCathedral = lazy(() => import('./GothicCathedral/GothicCathedral'))
 
 export const experiments = [
   {
@@ -185,5 +188,44 @@ export const experiments = [
     symbol: '☁',
     fullscreen: true,
     component: CloudGallery,
+  },
+  {
+    id: 'procedural-city',
+    title: 'Procedural City',
+    description:
+      '시드 숫자 하나가 도시 한 채가 됩니다. 도로망·필지 분할·건물 매스·창문 불빛까지 에셋 파일 없이 전부 런타임에 코드로 생성되고, 시드를 바꾸면 완전히 다른 스카이라인이 즉시 올라섭니다. 도시 위를 천천히 비행하며 낮과 밤을 오갈 수 있습니다.',
+    tags: ['three.js', 'procedural', 'instancing'],
+    color: '#ffb454',
+    planet: 'uranus',
+    planetName: 'CITY',
+    symbol: '▟',
+    fullscreen: true,
+    component: ProceduralCity,
+  },
+  {
+    id: 'ship-in-a-bottle',
+    title: 'Ship in a Bottle',
+    description:
+      '유리병 하나에 담긴 바다. 17세기 범선의 선체는 늑골 단면을 이어 붙여, 돛대와 삭구는 치수와 선으로, 산호초는 재귀 분기로 — 에셋 파일 없이 전부 코드가 빚습니다. 배는 연출이 아니라 실제 파고를 앞뒤로 재어 그 기울기대로 흔들리고, 갈매기가 선회하고 등대가 깜빡입니다.',
+    tags: ['three.js', 'procedural', 'glsl'],
+    color: '#6fd3c7',
+    planet: 'ocean',
+    planetName: 'SHIP',
+    symbol: '⚓',
+    fullscreen: true,
+    component: ShipInABottle,
+  },
+  {
+    id: 'gothic-cathedral',
+    title: 'Gothic Cathedral',
+    description:
+      '규칙 하나에서 자라나는 대성당. 첨두아치의 두 중심, 배럴볼트 두 개가 만나 생기는 리브 볼트, 다발기둥과 플라잉 버트리스까지 — 에셋 없이 도면의 논리만으로 세워집니다. 땅에서 솟아오르는 시공을 지켜보고, 해를 돌리면 스테인드글라스가 만든 색 광선이 바닥을 가로지릅니다.',
+    tags: ['three.js', 'procedural', 'architecture'],
+    color: '#e0b169',
+    planet: 'meteor',
+    planetName: 'NAVE',
+    symbol: '⛨',
+    fullscreen: true,
+    component: GothicCathedral,
   },
 ]
