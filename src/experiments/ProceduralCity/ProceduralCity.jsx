@@ -1,10 +1,20 @@
 import { useEffect, useRef, useState } from 'react'
 import * as THREE from 'three'
+import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js'
+import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js'
+import { GTAOPass } from 'three/examples/jsm/postprocessing/GTAOPass.js'
+import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js'
+import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js'
+import { patchFacade, patchGround, PALETTE, FLOOR_H } from './scene/facade.js'
 import '../shared/exp.css'
 
 // 에셋 없이 도시 한 채를 코드로 짓는다. 지오메트리는 단위 박스 하나뿐이고,
-// 도로망·필지 분할·건물 매스·창문 불빛·차량 흐름이 전부 시드 하나에서
-// 결정론적으로 파생된다. 시드가 같으면 언제 열어도 같은 도시가 선다.
+// 도로망·필지 분할·건물 매스·창문·차량 흐름이 전부 시드 하나에서 결정론적으로
+// 파생된다. 시드가 같으면 언제 열어도 같은 도시가 선다.
+//
+// 셰이딩은 three의 표준 재질에 코드를 주입하는 방식이다 (scene/facade.js).
+// 직접 램버트를 계산하면 그림자도, 하늘 반사도, 창 뒤의 방도 얻을 수 없다 —
+// 도시가 도시로 보이지 않는 이유의 대부분이 그 셋이었다.
 
 const GRID = 24            // 한 변의 블록 수
 const BLOCK = 28           // 블록 피치(도로 중심 간 거리)
@@ -13,10 +23,7 @@ const EXTENT = GRID * BLOCK
 const HALF = EXTENT / 2
 const MAX_TIERS = 5200     // 인스턴스 상한 — 재생성 때 버퍼를 다시 만들지 않는다
 const CARS = 2400
-const FLOOR_H = 2.2        // 창문 행 간격 = 층고
-const WINDOW_W = 1.7       // 창문 열 간격
 
-// mulberry32: 32비트 시드 하나로 결정론적 난수열을 만든다.
 function mulberry32(seed) {
   let a = seed >>> 0
   return () => {
@@ -29,188 +36,29 @@ function mulberry32(seed) {
 
 const clamp01 = (v) => (v < 0 ? 0 : v > 1 ? 1 : v)
 
-// 셰이더가 공유하는 상수 — JS의 배치 규칙과 어긋나면 도로 위에 건물이 선다.
-const SHARED_GLSL = /* glsl */ `
-  const float BLOCK = ${BLOCK.toFixed(1)};
-  const float ROAD_W = ${ROAD_W.toFixed(1)};
-  const float HALF = ${HALF.toFixed(1)};
-
-  float hash21(vec2 p) {
-    vec3 p3 = fract(vec3(p.xyx) * 0.1031);
-    p3 += dot(p3, p3.yzx + 33.33);
-    return fract((p3.x + p3.y) * p3.z);
-  }
-`
-
-const BUILDING_VERT = /* glsl */ `
-  attribute vec3 aScale;
-  attribute float aSeed;
-  attribute float aTint;
-
-  varying vec3 vLocal;
-  varying vec3 vScale;
-  varying vec3 vNrm;
-  varying vec3 vView;
-  varying float vSeed;
-  varying float vTint;
-  varying float vDepth;
-
+const SKY_VERT = /* glsl */ `
+  varying vec3 vDir;
   void main() {
-    // 박스는 축 정렬이라 인스턴스 행렬에 회전이 없다 — 법선은 그대로 월드 법선이다.
-    vNrm = normal;
-    vLocal = position * aScale;
-    vScale = aScale;
-    vSeed = aSeed;
-    vTint = aTint;
-
-    vec4 world = instanceMatrix * vec4(position, 1.0);
-    vView = normalize(cameraPosition - world.xyz);
-    vec4 mv = modelViewMatrix * world;
-    vDepth = -mv.z;
-    gl_Position = projectionMatrix * mv;
+    vDir = normalize(position);
+    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
   }
 `
 
-const BUILDING_FRAG = /* glsl */ `
+const SKY_FRAG = /* glsl */ `
   precision highp float;
-  ${SHARED_GLSL}
-
-  uniform vec3 uWallDay;
-  uniform vec3 uWallNight;
-  uniform vec3 uWindowWarm;
-  uniform vec3 uWindowCool;
-  uniform vec3 uGlassDay;
+  uniform vec3 uHorizon;
+  uniform vec3 uZenith;
   uniform vec3 uSunDir;
   uniform vec3 uSunColor;
-  uniform vec3 uSkyTint;
-  uniform vec3 uNightFill;
-  uniform vec3 uFogColor;
-  uniform float uFogDensity;
-  uniform float uNight;
-  uniform float uTime;
-
-  varying vec3 vLocal;
-  varying vec3 vScale;
-  varying vec3 vNrm;
-  varying vec3 vView;
-  varying float vSeed;
-  varying float vTint;
-  varying float vDepth;
-
+  varying vec3 vDir;
   void main() {
-    vec3 n = normalize(vNrm);
-    float roof = step(0.5, abs(n.y));
-
-    vec3 wall = mix(uWallDay, uWallNight, uNight);
-    // 건물마다 콘크리트 톤을 조금씩 흔든다 — 같은 회색이 반복되면 렌더가 아니라
-    // 프로그램 출력처럼 보인다.
-    wall *= 0.82 + vTint * 0.36;
-
-    // 벽면 좌표: u는 벽을 따라간 거리, v는 지면으로부터의 높이.
-    float u = abs(n.x) > 0.5 ? vLocal.z : vLocal.x;
-    float v = vLocal.y + vScale.y * 0.5;
-
-    vec2 cell = vec2(floor(u / ${WINDOW_W.toFixed(1)}), floor(v / ${FLOOR_H.toFixed(1)}));
-    vec2 f = vec2(fract(u / ${WINDOW_W.toFixed(1)}), fract(v / ${FLOOR_H.toFixed(1)}));
-    float pane = step(0.20, f.x) * step(f.x, 0.80) * step(0.32, f.y) * step(f.y, 0.82);
-    pane *= 1.0 - roof;
-
-    float h = hash21(cell + vec2(vSeed, vSeed * 1.7));
-    // 밤에만 창이 켜진다. 낮에는 같은 격자가 어두운 유리로 읽힌다.
-    // 절반 넘게 켜 두면 건물이 통째로 빛나는 덩어리가 되어 매스가 사라진다.
-    float lit = step(0.62, h) * pane * uNight;
-    // 켜진 창도 밝기가 제각각이어야 격자가 아니라 창으로 읽힌다.
-    float bright = 0.45 + 0.55 * hash21(cell * 3.7 - vSeed);
-    // 극히 일부 창만 아주 느리게 점멸시킨다 — 도시가 정지 화면이 아니라는 신호.
-    float blink = 0.55 + 0.45 * sin(uTime * 1.7 + h * 90.0);
-    lit *= bright * mix(1.0, blink, step(0.97, h));
-    // 1층은 상가 — 밤이면 거의 다 켜져 거리에 빛이 깔린다.
-    lit = max(lit, step(v, ${FLOOR_H.toFixed(1)}) * pane * uNight * 0.8);
-
-    vec3 windowColor = mix(uWindowWarm, uWindowCool, step(0.88, hash21(cell * 1.9 + vSeed)));
-
-    // 낮의 창은 하늘을 담은 어두운 유리.
-    vec3 albedo = mix(wall, uGlassDay, pane * (1.0 - uNight) * 0.75);
-
-    float ndl = max(dot(n, uSunDir), 0.0);
-    float skyDome = 0.5 + 0.5 * n.y;
-    // 밤에는 태양 대신 하늘 전체가 약한 광원이 된다. 앰비언트를 낮과 같은
-    // 배율로 두면 벽이 완전히 검정이 되어 창문 격자만 허공에 뜬다 — 건물이
-    // 덩어리로 읽히려면 밤 전용 채움광이 필요하다.
-    vec3 ambient = mix(
-      uSkyTint * (0.62 + 0.53 * skyDome),
-      uNightFill * (0.95 + 0.5 * skyDome),
-      uNight
-    );
-    vec3 color = albedo * (ambient + uSunColor * ndl * mix(1.05, 0.10, uNight));
-
-    // 시선에 비스듬한 면일수록 하늘빛을 얹어 모서리를 살린다 — 밤에 건물과
-    // 건물이 겹쳐도 실루엣이 분리돼 보인다.
-    float rim = pow(1.0 - abs(dot(n, normalize(vView))), 2.2);
-    color += uNightFill * rim * uNight * 0.55;
-
-    color += windowColor * lit * 1.35;
-
-    float fog = 1.0 - exp(-vDepth * uFogDensity);
-    gl_FragColor = vec4(mix(color, uFogColor, fog), 1.0);
-  }
-`
-
-const GROUND_VERT = /* glsl */ `
-  varying vec3 vWorld;
-  varying float vDepth;
-  void main() {
-    vec4 world = modelMatrix * vec4(position, 1.0);
-    vWorld = world.xyz;
-    vec4 mv = viewMatrix * world;
-    vDepth = -mv.z;
-    gl_Position = projectionMatrix * mv;
-  }
-`
-
-const GROUND_FRAG = /* glsl */ `
-  precision highp float;
-  ${SHARED_GLSL}
-
-  uniform vec3 uAsphalt;
-  uniform vec3 uPlaza;
-  uniform vec3 uLine;
-  uniform vec3 uLampGlow;
-  uniform vec3 uFogColor;
-  uniform float uFogDensity;
-  uniform float uNight;
-
-  varying vec3 vWorld;
-  varying float vDepth;
-
-  void main() {
-    vec2 g = mod(vWorld.xz + HALF, BLOCK);
-    float dx = min(g.x, BLOCK - g.x);
-    float dz = min(g.y, BLOCK - g.y);
-    float dRoad = min(dx, dz);
-
-    // 도로 → 보도 → 필지 순으로 밝기가 한 단계씩 올라간다.
-    float road = 1.0 - smoothstep(ROAD_W * 0.5 - 1.2, ROAD_W * 0.5 + 0.4, dRoad);
-    float curb = smoothstep(ROAD_W * 0.5 - 1.4, ROAD_W * 0.5 - 0.2, dRoad)
-               * (1.0 - smoothstep(ROAD_W * 0.5 + 0.6, ROAD_W * 0.5 + 2.0, dRoad));
-
-    vec3 color = mix(uPlaza, uAsphalt, road);
-    color = mix(color, uPlaza * 1.35, curb * 0.7);
-
-    // 중앙 파선 — 교차로에서는 끊는다.
-    float alongX = step(dz, dx);
-    float along = alongX > 0.5 ? vWorld.x : vWorld.z;
-    float dash = step(0.55, fract(along / 9.0));
-    float center = (1.0 - smoothstep(0.0, 0.55, dRoad)) * dash * road;
-    float crossing = step(min(dx, dz), ROAD_W * 0.5) * step(max(dx, dz), ROAD_W * 0.5);
-    color = mix(color, uLine, center * (1.0 - crossing) * 0.75);
-
-    // 밤에는 가로등 빛웅덩이가 도로를 따라 이어진다.
-    float lampBeat = smoothstep(0.35, 1.0, sin(along * 0.22) * 0.5 + 0.5);
-    color += uLampGlow * road * uNight * (0.25 + 0.55 * lampBeat);
-
-    float fog = 1.0 - exp(-vDepth * uFogDensity);
-    gl_FragColor = vec4(mix(color, uFogColor, fog), 1.0);
+    vec3 d = normalize(vDir);
+    float t = clamp(d.y * 1.6 + 0.06, 0.0, 1.0);
+    vec3 col = mix(uHorizon, uZenith, pow(t, 0.75));
+    // 해 주변의 산란 — 이 한 항이 환경맵에 들어가면 건물 유리에 해가 비친다.
+    float s = max(dot(d, uSunDir), 0.0);
+    col += uSunColor * (pow(s, 8.0) * 0.55 + pow(s, 220.0) * 6.0);
+    gl_FragColor = vec4(col, 1.0);
   }
 `
 
@@ -238,28 +86,8 @@ const CAR_FRAG = /* glsl */ `
     float d = length(gl_PointCoord - 0.5);
     float a = smoothstep(0.5, 0.06, d);
     float fog = 1.0 - exp(-vDepth * uFogDensity);
-    // 낮에는 헤드라이트가 잘 보이지 않는다 — 아주 흐리게만 남긴다.
-    float strength = mix(0.28, 1.5, uNight);
+    float strength = mix(0.3, 1.6, uNight);
     gl_FragColor = vec4(vColor * strength, a * strength * (1.0 - fog));
-  }
-`
-
-const SKY_VERT = /* glsl */ `
-  varying vec3 vDir;
-  void main() {
-    vDir = normalize(position);
-    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-  }
-`
-
-const SKY_FRAG = /* glsl */ `
-  precision highp float;
-  uniform vec3 uHorizon;
-  uniform vec3 uZenith;
-  varying vec3 vDir;
-  void main() {
-    float t = clamp(vDir.y * 1.6 + 0.06, 0.0, 1.0);
-    gl_FragColor = vec4(mix(uHorizon, uZenith, pow(t, 0.75)), 1.0);
   }
 `
 
@@ -295,10 +123,8 @@ function buildCity(seed, { matrix, scales, seeds, tints, dummy }) {
       const dist = Math.hypot(cx, cz) / HALF
       const downtown = Math.pow(1 - clamp01(dist * 1.15), 2.0)
 
-      // 가끔 한 블록을 통째로 비워 공원·광장을 만든다.
-      if (rng() < 0.05 + dist * 0.06) continue
+      if (rng() < 0.05 + dist * 0.06) continue // 공원·광장
 
-      // 필지 분할: 1 / 2 / 4 등분.
       const split = rng() < 0.34 ? 1 : rng() < 0.6 ? 2 : 4
       const cols = split === 4 ? 2 : split
       const rows = split === 4 ? 2 : 1
@@ -315,32 +141,43 @@ function buildCity(seed, { matrix, scales, seeds, tints, dummy }) {
           const w = Math.max(plotW - margin * 2, 3)
           const d = Math.max(plotD - margin * 2, 3)
 
-          // 저층 스프롤 위에, 도심일수록 드물게 타워가 솟는다.
-          const lowRise = 7 + rng() * 12
-          const tower = Math.pow(rng(), 2.6) * 150 * downtown
-          const height = lowRise + tower
+          // 층 수에서 높이를 만든다 — 창 격자가 층고와 맞아떨어져야 창이
+          // 반 칸 잘린 채 옥상에 걸리지 않는다.
+          const lowFloors = 2 + Math.floor(rng() * 4)
+          const towerFloors = Math.floor(Math.pow(rng(), 2.6) * 46 * downtown)
+          const height = (lowFloors + towerFloors) * FLOOR_H
           const tint = rng()
 
           if (height > 46 && rng() < 0.75) {
             // 세트백: 위로 갈수록 좁아지는 단. 실루엣이 단조로운 직육면체에서
             // 벗어나 스카이라인에 층이 생긴다.
-            const lower = height * (0.52 + rng() * 0.18)
+            const lower = Math.round((height * (0.52 + rng() * 0.18)) / FLOOR_H) * FLOOR_H
             push(px, pz, w, d, 0, lower, tint)
             const midW = w * (0.62 + rng() * 0.18)
             const midD = d * (0.62 + rng() * 0.18)
-            const mid = (height - lower) * (0.62 + rng() * 0.25)
+            const mid = Math.round(((height - lower) * (0.62 + rng() * 0.25)) / FLOOR_H) * FLOOR_H
             push(px, pz, midW, midD, lower, mid, tint)
+            // 각 단 위의 파라펫 — 옥상이 칼로 자른 듯 끝나면 종이처럼 보인다.
+            push(px, pz, midW + 0.5, midD + 0.5, lower + mid - 0.1, 1.1, tint)
             const capH = height - lower - mid
             if (capH > 4) push(px, pz, midW * 0.66, midD * 0.66, lower + mid, capH, tint)
-            // 첨탑: 가장 높은 몇 채에만.
             if (height > 110 && rng() < 0.5) {
-              push(px, pz, 1.1, 1.1, height, 10 + rng() * 22, tint)
+              push(px, pz, 1.1, 1.1, height, 10 + rng() * 22, tint) // 첨탑
             }
           } else {
             push(px, pz, w, d, 0, height, tint)
-            // 옥탑(설비층) — 저층 지붕이 전부 평평하면 위에서 볼 때 밋밋하다.
-            if (rng() < 0.5) {
-              push(px, pz, w * 0.3, d * 0.3, height, 1.4 + rng() * 2.2, tint)
+            push(px, pz, w + 0.55, d + 0.55, height - 0.15, 1.0, tint) // 파라펫
+            // 옥탑 설비: 물탱크·계단실·실외기. 위에서 내려다보는 도시에서
+            // 옥상이 전부 평평하면 그 순간 모형으로 읽힌다.
+            const units = 1 + Math.floor(rng() * 3)
+            for (let u = 0; u < units; u++) {
+              const uw = w * (0.16 + rng() * 0.2)
+              const ud = d * (0.16 + rng() * 0.2)
+              push(
+                px + (rng() - 0.5) * (w - uw) * 0.7,
+                pz + (rng() - 0.5) * (d - ud) * 0.7,
+                uw, ud, height, 1.2 + rng() * 2.6, tint,
+              )
             }
           }
         }
@@ -350,8 +187,6 @@ function buildCity(seed, { matrix, scales, seeds, tints, dummy }) {
   return n
 }
 
-// 차량: 도로 격자를 따라 흐르는 빛점. 방향에 따라 헤드라이트(흰빛)와
-// 테일라이트(붉은빛)로 나뉘어 흐름이 두 줄로 보인다.
 function seedTraffic(rng, cars) {
   for (let i = 0; i < CARS; i++) {
     const axis = rng() < 0.5 ? 0 : 1
@@ -363,7 +198,7 @@ function seedTraffic(rng, cars) {
     cars.dir[i] = dir
     cars.speed[i] = 14 + rng() * 22
     const tail = dir < 0
-    cars.color[i * 3] = tail ? 1.0 : 1.0
+    cars.color[i * 3] = 1.0
     cars.color[i * 3 + 1] = tail ? 0.22 : 0.93
     cars.color[i * 3 + 2] = tail ? 0.16 : 0.82
   }
@@ -386,71 +221,94 @@ export default function ProceduralCity() {
     const pixelRatio = Math.min(window.devicePixelRatio, 2)
     renderer.setPixelRatio(pixelRatio)
     renderer.setSize(wrap.clientWidth, wrap.clientHeight)
+    renderer.shadowMap.enabled = true
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap
+    renderer.toneMapping = THREE.ACESFilmicToneMapping
+    renderer.toneMappingExposure = 0.92
     wrap.appendChild(renderer.domElement)
 
-    // --- 낮/밤 팔레트. 한 프레임에 하나씩 보간해 토글이 컷이 아니라 전환이 된다.
-    const PALETTE = {
-      day: {
-        horizon: new THREE.Color('#b9c6d8'), zenith: new THREE.Color('#5d84bd'),
-        fog: new THREE.Color('#aebfd3'), sky: new THREE.Color('#8ea6c4'),
-        asphalt: new THREE.Color('#3c4048'), plaza: new THREE.Color('#6c7078'),
-        lamp: new THREE.Color('#000000'),
-      },
-      night: {
-        horizon: new THREE.Color('#28324a'), zenith: new THREE.Color('#070a14'),
-        fog: new THREE.Color('#1c2334'), sky: new THREE.Color('#4a5c84'),
-        asphalt: new THREE.Color('#161b26'), plaza: new THREE.Color('#20252f'),
-        lamp: new THREE.Color('#5c4520'),
-      },
+    const disposables = []
+    const track = (o) => { disposables.push(o); return o }
+
+    // ── 하늘: 별도 씬에 두고 큐브맵으로 구워 배경과 환경광(IBL)에 함께 쓴다.
+    // 씬 안에 두면 GTAO의 깊이·법선 프리패스가 하늘까지 훑어 지평선에 후광이
+    // 생긴다. 굽기만 하면 HDRI 파일 없이도 하늘빛이 건물을 비춘다.
+    const skyUniforms = {
+      uHorizon: { value: new THREE.Color() },
+      uZenith: { value: new THREE.Color() },
+      uSunDir: { value: new THREE.Vector3() },
+      uSunColor: { value: new THREE.Color() },
+    }
+    const skyScene = new THREE.Scene()
+    const skyGeo = track(new THREE.SphereGeometry(500, 32, 16))
+    const skyMat = track(new THREE.ShaderMaterial({
+      vertexShader: SKY_VERT, fragmentShader: SKY_FRAG,
+      uniforms: skyUniforms, side: THREE.BackSide, depthWrite: false,
+    }))
+    skyScene.add(new THREE.Mesh(skyGeo, skyMat))
+
+    const cubeRT = track(new THREE.WebGLCubeRenderTarget(256))
+    const cubeCam = new THREE.CubeCamera(1, 2000, cubeRT)
+    const pmrem = new THREE.PMREMGenerator(renderer)
+    pmrem.compileEquirectangularShader()
+    let envRT = null
+    const bakeSky = () => {
+      cubeCam.update(renderer, skyScene)
+      scene.background = cubeRT.texture
+      envRT?.dispose()
+      envRT = pmrem.fromScene(skyScene, 0, 1, 1500)
+      scene.environment = envRT.texture
     }
 
+    // ── 해: 그림자를 만드는 유일한 광원. 카메라를 따라다니며 그림자 카메라를
+    // 시야 근처에 붙여 둔다 — 도시 전체를 한 장으로 덮으면 텍셀이 모자란다.
+    const sun = new THREE.DirectionalLight(0xffffff, 3.0)
+    sun.castShadow = true
+    sun.shadow.mapSize.set(4096, 4096)
+    const SHADOW_SPAN = 420
+    Object.assign(sun.shadow.camera, {
+      left: -SHADOW_SPAN, right: SHADOW_SPAN, top: SHADOW_SPAN, bottom: -SHADOW_SPAN,
+      near: 1, far: 1200,
+    })
+    sun.shadow.bias = -0.0004
+    sun.shadow.normalBias = 0.7
+    scene.add(sun, sun.target)
+    const sunDir = new THREE.Vector3()
+
+    // ── 공유 유니폼
     const uniforms = {
       uNight: { value: night ? 1 : 0 },
-      uTime: { value: 0 },
-      uFogDensity: { value: 0.0027 },
-      uFogColor: { value: new THREE.Color() },
-      uSkyTint: { value: new THREE.Color() },
-      uSunDir: { value: new THREE.Vector3(0.42, 0.78, 0.46).normalize() },
-      uSunColor: { value: new THREE.Color('#ffe6c4') },
-      uWallDay: { value: new THREE.Color('#9aa2ad') },
-      uWallNight: { value: new THREE.Color('#39424f') },
-      uNightFill: { value: new THREE.Color('#4a5c84') },
-      uWindowWarm: { value: new THREE.Color('#ffcb7a') },
-      uWindowCool: { value: new THREE.Color('#8fd0ff') },
-      uGlassDay: { value: new THREE.Color('#4c5f7a') },
+      uTimeF: { value: 0 },
+      uWindowWarm: { value: new THREE.Color('#ffcf8d') },
+      uWindowCool: { value: new THREE.Color('#a8d4ff') },
+      uRoomBack: { value: new THREE.Color() },
+      uRoomSide: { value: new THREE.Color() },
+      uRoomFloor: { value: new THREE.Color() },
+      uRoomCeil: { value: new THREE.Color() },
+      uInteriorDepth: { value: 3.4 },
       uAsphalt: { value: new THREE.Color() },
       uPlaza: { value: new THREE.Color() },
       uLine: { value: new THREE.Color('#c9c2a8') },
       uLampGlow: { value: new THREE.Color() },
-      uHorizon: { value: new THREE.Color() },
-      uZenith: { value: new THREE.Color() },
+      uFogDensity: { value: 0.0013 },
       uPixelRatio: { value: pixelRatio },
     }
 
-    // --- 하늘: 큰 구 안쪽에 그린 수직 그라디언트.
-    const skyGeo = new THREE.SphereGeometry(1800, 24, 12)
-    const skyMat = new THREE.ShaderMaterial({
-      vertexShader: SKY_VERT,
-      fragmentShader: SKY_FRAG,
-      uniforms: { uHorizon: uniforms.uHorizon, uZenith: uniforms.uZenith },
-      side: THREE.BackSide,
-      depthWrite: false,
-    })
-    scene.add(new THREE.Mesh(skyGeo, skyMat))
+    scene.fog = new THREE.FogExp2(0x000000, uniforms.uFogDensity.value)
 
-    // --- 지면: 도로 격자를 셰이더가 직접 그린다 (텍스처 없음).
-    const groundGeo = new THREE.PlaneGeometry(EXTENT * 3.2, EXTENT * 3.2)
-    const groundMat = new THREE.ShaderMaterial({
-      vertexShader: GROUND_VERT,
-      fragmentShader: GROUND_FRAG,
-      uniforms,
-    })
+    // ── 지면
+    const groundGeo = track(new THREE.PlaneGeometry(EXTENT * 3.2, EXTENT * 3.2))
+    const groundMat = track(patchGround(
+      new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.95, metalness: 0 }),
+      uniforms, { block: BLOCK, roadW: ROAD_W, half: HALF },
+    ))
     const ground = new THREE.Mesh(groundGeo, groundMat)
     ground.rotation.x = -Math.PI / 2
+    ground.receiveShadow = true
     scene.add(ground)
 
-    // --- 건물: 단위 박스 하나를 인스턴싱해 도시 전체를 드로우콜 한 번에 그린다.
-    const boxGeo = new THREE.BoxGeometry(1, 1, 1)
+    // ── 건물: 단위 박스 하나를 인스턴싱해 도시 전체를 드로우콜 한 번에 그린다.
+    const boxGeo = track(new THREE.BoxGeometry(1, 1, 1))
     const scales = new Float32Array(MAX_TIERS * 3)
     const seeds = new Float32Array(MAX_TIERS)
     const tints = new Float32Array(MAX_TIERS)
@@ -458,43 +316,33 @@ export default function ProceduralCity() {
     boxGeo.setAttribute('aSeed', new THREE.InstancedBufferAttribute(seeds, 1))
     boxGeo.setAttribute('aTint', new THREE.InstancedBufferAttribute(tints, 1))
 
-    const buildingMat = new THREE.ShaderMaterial({
-      vertexShader: BUILDING_VERT,
-      fragmentShader: BUILDING_FRAG,
+    const buildingMat = track(patchFacade(
+      new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.9, metalness: 0 }),
       uniforms,
-    })
+    ))
     const city = new THREE.InstancedMesh(boxGeo, buildingMat, MAX_TIERS)
     city.frustumCulled = false // 도시 전체가 한 덩어리라 잘라낼 것이 없다
+    city.castShadow = true
+    city.receiveShadow = true
     scene.add(city)
 
     const dummy = new THREE.Object3D()
-    const buffers = {
-      matrix: city.instanceMatrix.array,
-      scales, seeds, tints, dummy,
-    }
+    const buffers = { matrix: city.instanceMatrix.array, scales, seeds, tints, dummy }
 
-    // --- 차량 빛점
+    // ── 차량 빛점
     const carPos = new Float32Array(CARS * 3)
     const carCol = new Float32Array(CARS * 3)
     const cars = {
-      axis: new Uint8Array(CARS),
-      lane: new Float32Array(CARS),
-      pos: new Float32Array(CARS),
-      dir: new Float32Array(CARS),
-      speed: new Float32Array(CARS),
-      color: carCol,
+      axis: new Uint8Array(CARS), lane: new Float32Array(CARS), pos: new Float32Array(CARS),
+      dir: new Float32Array(CARS), speed: new Float32Array(CARS), color: carCol,
     }
-    const carGeo = new THREE.BufferGeometry()
+    const carGeo = track(new THREE.BufferGeometry())
     carGeo.setAttribute('position', new THREE.BufferAttribute(carPos, 3))
     carGeo.setAttribute('aColor', new THREE.BufferAttribute(carCol, 3))
-    const carMat = new THREE.ShaderMaterial({
-      vertexShader: CAR_VERT,
-      fragmentShader: CAR_FRAG,
-      uniforms,
-      transparent: true,
-      depthWrite: false,
-      blending: THREE.AdditiveBlending,
-    })
+    const carMat = track(new THREE.ShaderMaterial({
+      vertexShader: CAR_VERT, fragmentShader: CAR_FRAG, uniforms,
+      transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
+    }))
     const traffic = new THREE.Points(carGeo, carMat)
     traffic.frustumCulled = false
     scene.add(traffic)
@@ -510,10 +358,26 @@ export default function ProceduralCity() {
     }
     rebuild(seed)
 
-    // --- 시점: 도시 위를 도는 완만한 비행 + 드래그 시점 + 휠 고도.
+    // ── 후처리: GTAO가 골목과 창 오목부를 어둡게 만들고, 블룸이 켜진 창을 번지게
+    // 한다. AO 없이는 건물끼리 맞닿은 곳이 전부 같은 밝기라 매스가 붙어 보인다.
+    const composer = new EffectComposer(renderer)
+    composer.addPass(new RenderPass(scene, camera))
+    const gtao = new GTAOPass(scene, camera, wrap.clientWidth, wrap.clientHeight)
+    gtao.output = GTAOPass.OUTPUT.Default
+    gtao.blendIntensity = 0.85
+    gtao.updateGtaoMaterial({ radius: 6.5, distanceExponent: 1.4, thickness: 3.0, scale: 1.1, samples: 16 })
+    composer.addPass(gtao)
+    const bloom = new UnrealBloomPass(
+      new THREE.Vector2(wrap.clientWidth, wrap.clientHeight), 0.42, 0.8, 0.9,
+    )
+    composer.addPass(bloom)
+    composer.addPass(new OutputPass())
+
+    // ── 시점: 도시 위를 도는 완만한 비행 + 드래그 시점 + 휠 고도.
     let nightTarget = night ? 1 : 0
+    let bakedNight = -1
     let flight = 0
-    let altitude = 124
+    let altitude = 110
     let yaw = 0
     let pitch = 0
     let dragging = false
@@ -525,8 +389,7 @@ export default function ProceduralCity() {
     const onMove = (e) => {
       if (!dragging) return
       yaw -= (e.clientX - px) * 0.0026
-      pitch -= (e.clientY - py) * 0.0022
-      pitch = Math.max(-0.9, Math.min(0.5, pitch))
+      pitch = Math.max(-0.9, Math.min(0.5, pitch - (e.clientY - py) * 0.0022))
       px = e.clientX
       py = e.clientY
     }
@@ -547,6 +410,7 @@ export default function ProceduralCity() {
       camera.aspect = w / h
       camera.updateProjectionMatrix()
       renderer.setSize(w, h)
+      composer.setSize(w, h)
     }
     const ro = new ResizeObserver(resize)
     ro.observe(wrap)
@@ -556,7 +420,6 @@ export default function ProceduralCity() {
     const look = new THREE.Vector3()
     const R = 168
 
-    // 비행 경로: 반지름이 서로 다른 두 원을 겹쳐 같은 자리를 반복하지 않는다.
     const pathAt = (s, out) => out.set(
       Math.sin(s * 0.052) * R + Math.sin(s * 0.019) * R * 0.55,
       0,
@@ -566,10 +429,8 @@ export default function ProceduralCity() {
     let raf = 0
     const tick = () => {
       raf = requestAnimationFrame(tick)
-      // 탭 복귀 같은 스톨에서 도시가 순간이동하지 않도록 프레임 간격을 자른다.
       const dt = Math.min(clock.getDelta(), 0.05)
-      uniforms.uTime.value += dt
-
+      uniforms.uTimeF.value += dt
       if (!reduced) flight += dt
 
       pathAt(flight, eye)
@@ -581,20 +442,14 @@ export default function ProceduralCity() {
       camera.rotateY(yaw)
       camera.rotateX(pitch)
 
-      // 차량 이동: 도로를 따라 흐르고 끝에 닿으면 반대편에서 다시 들어온다.
       for (let i = 0; i < CARS; i++) {
         let p = cars.pos[i] + cars.dir[i] * cars.speed[i] * (reduced ? 0 : dt)
         if (p > HALF) p -= EXTENT
         else if (p < -HALF) p += EXTENT
         cars.pos[i] = p
         const idx = i * 3
-        if (cars.axis[i] === 0) {
-          carPos[idx] = p
-          carPos[idx + 2] = cars.lane[i]
-        } else {
-          carPos[idx] = cars.lane[i]
-          carPos[idx + 2] = p
-        }
+        if (cars.axis[i] === 0) { carPos[idx] = p; carPos[idx + 2] = cars.lane[i] }
+        else { carPos[idx] = cars.lane[i]; carPos[idx + 2] = p }
         carPos[idx + 1] = 0.9
       }
       carGeo.attributes.position.needsUpdate = true
@@ -605,16 +460,43 @@ export default function ProceduralCity() {
       const t = uniforms.uNight.value
       const d = PALETTE.day
       const nn = PALETTE.night
-      uniforms.uFogColor.value.copy(d.fog).lerp(nn.fog, t)
-      uniforms.uSkyTint.value.copy(d.sky).lerp(nn.sky, t)
+
+      skyUniforms.uHorizon.value.copy(d.horizon).lerp(nn.horizon, t)
+      skyUniforms.uZenith.value.copy(d.zenith).lerp(nn.zenith, t)
+      skyUniforms.uSunColor.value.copy(d.sun).lerp(nn.sun, t)
       uniforms.uAsphalt.value.copy(d.asphalt).lerp(nn.asphalt, t)
       uniforms.uPlaza.value.copy(d.plaza).lerp(nn.plaza, t)
       uniforms.uLampGlow.value.copy(d.lamp).lerp(nn.lamp, t)
-      uniforms.uHorizon.value.copy(d.horizon).lerp(nn.horizon, t)
-      uniforms.uZenith.value.copy(d.zenith).lerp(nn.zenith, t)
+      buildingMat.color.copy(d.wall).lerp(nn.wall, t)
+      scene.fog.color.copy(d.fog).lerp(nn.fog, t)
 
-      renderer.render(scene, camera)
+      // 실내 색: 낮은 무채색 사무실, 밤은 조명이 켜진 따뜻한 방.
+      const room = d.room.clone().lerp(nn.room, t)
+      uniforms.uRoomBack.value.copy(room)
+      uniforms.uRoomSide.value.copy(room).multiplyScalar(0.78)
+      uniforms.uRoomFloor.value.copy(room).multiplyScalar(0.55)
+      uniforms.uRoomCeil.value.copy(room).multiplyScalar(1.15)
+
+      // 해: 낮에는 낮게 걸어 그림자를 길게 뽑고, 밤에는 달빛 수준으로 낮춘다.
+      const el2 = 0.36
+      const az = 0.85
+      sunDir.set(Math.cos(az) * Math.cos(el2), Math.sin(el2), Math.sin(az) * Math.cos(el2)).normalize()
+      skyUniforms.uSunDir.value.copy(sunDir)
+      sun.color.copy(d.sun).lerp(nn.sun, t)
+      sun.intensity = 3.0 * (1 - t) + 0.12 * t
+      sun.target.position.set(camera.position.x, 0, camera.position.z)
+      sun.position.copy(sun.target.position).addScaledVector(sunDir, 500)
+      sun.target.updateMatrixWorld()
+
+      // 환경맵은 매 프레임 굽기엔 비싸다 — 하늘색이 눈에 띄게 바뀔 때만 다시 굽는다.
+      if (Math.abs(t - bakedNight) > 0.04) {
+        bakedNight = t
+        bakeSky()
+      }
+
+      composer.render()
     }
+    bakeSky()
     tick()
 
     apiRef.current = {
@@ -630,14 +512,12 @@ export default function ProceduralCity() {
       window.removeEventListener('pointermove', onMove)
       window.removeEventListener('pointerup', onUp)
       el.removeEventListener('wheel', onWheel)
-      skyGeo.dispose()
-      skyMat.dispose()
-      groundGeo.dispose()
-      groundMat.dispose()
-      boxGeo.dispose()
-      buildingMat.dispose()
-      carGeo.dispose()
-      carMat.dispose()
+      envRT?.dispose()
+      pmrem.dispose()
+      gtao.dispose()
+      bloom.dispose()
+      composer.dispose()
+      for (const o of disposables) o.dispose?.()
       renderer.dispose()
       wrap.removeChild(renderer.domElement)
     }
