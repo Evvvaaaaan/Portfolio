@@ -291,10 +291,15 @@ export default function ProceduralCity() {
       uLine: { value: new THREE.Color('#c9c2a8') },
       uLampGlow: { value: new THREE.Color() },
       uFogDensity: { value: 0.0013 },
+      uHazeColor: { value: new THREE.Color() },
+      uHazeSun: { value: new THREE.Color() },
+      uSunDirF: { value: new THREE.Vector3() },
+      uHazeDensity: { value: 0.0011 },
+      // 연무는 지면에 쌓인다 — 고도 60m쯤에서 절반으로 옅어진다.
+      uHazeFalloff: { value: 0.011 },
       uPixelRatio: { value: pixelRatio },
     }
 
-    scene.fog = new THREE.FogExp2(0x000000, uniforms.uFogDensity.value)
 
     // ── 지면
     const groundGeo = track(new THREE.PlaneGeometry(EXTENT * 3.2, EXTENT * 3.2))
@@ -464,11 +469,12 @@ export default function ProceduralCity() {
       skyUniforms.uHorizon.value.copy(d.horizon).lerp(nn.horizon, t)
       skyUniforms.uZenith.value.copy(d.zenith).lerp(nn.zenith, t)
       skyUniforms.uSunColor.value.copy(d.sun).lerp(nn.sun, t)
+      uniforms.uHazeColor.value.copy(d.haze).lerp(nn.haze, t)
+      uniforms.uHazeSun.value.copy(d.hazeSun).lerp(nn.hazeSun, t)
       uniforms.uAsphalt.value.copy(d.asphalt).lerp(nn.asphalt, t)
       uniforms.uPlaza.value.copy(d.plaza).lerp(nn.plaza, t)
       uniforms.uLampGlow.value.copy(d.lamp).lerp(nn.lamp, t)
       buildingMat.color.copy(d.wall).lerp(nn.wall, t)
-      scene.fog.color.copy(d.fog).lerp(nn.fog, t)
 
       // 실내 색: 낮은 무채색 사무실, 밤은 조명이 켜진 따뜻한 방.
       const room = d.room.clone().lerp(nn.room, t)
@@ -482,6 +488,7 @@ export default function ProceduralCity() {
       const az = 0.85
       sunDir.set(Math.cos(az) * Math.cos(el2), Math.sin(el2), Math.sin(az) * Math.cos(el2)).normalize()
       skyUniforms.uSunDir.value.copy(sunDir)
+      uniforms.uSunDirF.value.copy(sunDir).negate()
       sun.color.copy(d.sun).lerp(nn.sun, t)
       sun.intensity = 3.0 * (1 - t) + 0.12 * t
       sun.target.position.set(camera.position.x, 0, camera.position.z)
