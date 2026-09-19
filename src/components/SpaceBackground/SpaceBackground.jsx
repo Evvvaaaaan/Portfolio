@@ -78,8 +78,7 @@ export default function SpaceBackground({ warpEnabled = false, stageEnabled = fa
     } catch (err) {
       // WebGL 사용 불가 — 배경 없이 DOM 콘텐츠만으로 동작한다 (스펙 5.4).
       // HardwareAccelNotice가 별도로 사용자에게 안내한다.
-      // 도착 시퀀스는 반드시 종결돼야 하는 계약(arrivalSequence.js) — 여기서
-      // 리턴해도 Hero가 영원히 기다리지 않도록 'skipped'로 마무리한다.
+      // 배경 연출이 재생되지 않았음을 'skipped'로 마무리한다.
       console.warn('[SpaceBackground] WebGL renderer 생성 실패:', err)
       concludeArrival('skipped')
       return
@@ -232,8 +231,7 @@ export default function SpaceBackground({ warpEnabled = false, stageEnabled = fa
 
     // 첫 로딩 도착 시퀀스: 조건 충족 시 고속 워프에서 시작해 감속-정착한다.
     // SpaceBackground는 라우트가 바뀌어도 언마운트되지 않으므로 이 판정은
-    // 페이지 로드당 정확히 1회다. 재생하지 않는 경우에도 반드시 'skipped'로
-    // 종결해 Hero가 기다리지 않게 한다.
+    // 페이지 로드당 정확히 1회다. 재생하지 않는 경우에도 'skipped'로 종결한다.
     let arrivalActive = shouldPlayArrival({
       warpEnabled: warpEnabledRef.current,
       reducedMotion,

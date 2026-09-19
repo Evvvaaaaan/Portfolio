@@ -1,27 +1,28 @@
 import { test, expect } from '@playwright/test'
 
+test.beforeEach(async ({ page }) => {
+  await page.addInitScript(() => {
+    window.__arrivalDone = false
+    window.addEventListener('space-arrival:done', () => { window.__arrivalDone = true })
+  })
+})
+
 test('첫 방문 인트로가 콘솔 에러 없이 끝나고 히어로가 나타난다', async ({ page }) => {
   const errors = []
   page.on('console', (msg) => { if (msg.type() === 'error') errors.push(msg.text()) })
   page.on('pageerror', (err) => errors.push(err.message))
 
   await page.goto('/', { waitUntil: 'commit' })
-  // 인트로(1.9s) + 도착 워프(2.4s)가 끝나면 히어로 콘텐츠가 등장한다.
+  // 콘텐츠는 먼저 표시되고, 짧은 배경 연출은 독립적으로 마무리된다.
   await expect(page.locator('.hero-title').first()).toBeVisible({ timeout: 20000 })
+  await waitUntilSettled(page)
   expect(errors).toEqual([])
 })
 
-// 오프닝(인트로 + 도착 워프)이 완전히 끝난 시점까지 기다린다. .hero-title은
-// 도착 이전에도 이미 바운딩 박스를 가지므로 완료 신호로 쓸 수 없다.
+// 콘텐츠 표시는 배경 연출과 독립적이므로 종결 이벤트를 직접 확인한다.
 async function waitUntilSettled(page) {
   await page.locator('section.hero').waitFor({ timeout: 20000 })
-  await page.waitForFunction(
-    () => {
-      const hero = document.querySelector('section.hero')
-      return !!hero && !hero.classList.contains('hero--awaiting-arrival')
-    },
-    { timeout: 30000 },
-  )
+  await page.waitForFunction(() => window.__arrivalDone, null, { timeout: 30000 })
 }
 
 // 세션 게이트의 "판단" 자체는 introSequence.test.js가 결정적으로 검증한다
@@ -51,9 +52,8 @@ test('인트로 완료 시 세션 플래그가 기록되고, 재방문 경로도
 test('인트로가 끝나면 도착 시퀀스까지 종결된다', async ({ page }) => {
   await page.goto('/', { waitUntil: 'commit' })
   const hero = page.locator('section.hero')
-  // 인트로가 매달리면 beginArrival이 호출되지 않아 이 클래스가 떨어지지 않는다.
-  await expect(hero).toHaveClass(/hero--awaiting-arrival/, { timeout: 15000 })
-  await expect(hero).not.toHaveClass(/hero--awaiting-arrival/, { timeout: 25000 })
+  await expect(hero).not.toHaveClass(/hero--awaiting-arrival/)
+  await waitUntilSettled(page)
   await expect(page.locator('canvas').first()).toBeVisible()
 })
 
@@ -84,13 +84,7 @@ test('인트로 도중 라우트를 떠나도 돌아오면 완성 상태다', as
   await page.waitForTimeout(3000)
   await page.goBack()
   await page.waitForURL('http://localhost:5173/')
-  // 돌아온 뒤 오프닝이 끝까지 돌아야 한다 — 중간 빌드에 얼어붙으면
-  // 도착 시퀀스도 종결되지 않는다.
-  await page.locator('section.hero').waitFor({ timeout: 20000 })
-  await page.waitForFunction(
-    () => { const h = document.querySelector('section.hero')
-            return !!h && !h.classList.contains('hero--awaiting-arrival') },
-    { timeout: 30000 },
-  )
+  await waitUntilSettled(page)
+  await expect(page.locator('.hero-title-holo-wrap')).toHaveCSS('opacity', '1')
   expect(errors).toEqual([])
 })

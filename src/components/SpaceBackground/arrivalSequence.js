@@ -1,12 +1,11 @@
 // 첫 로딩 "도착 시퀀스": 페이지가 고속 워프 상태(intensity=1)로 시작해
-// 감속하며 Hero 별필드에 정착한다. SpaceBackground가 재생을 담당하고,
-// Hero는 종결 이벤트(ARRIVAL_DONE_EVENT)를 기다렸다가 콘텐츠를 등장시킨다.
-// 재생 조건 미충족 시에도 반드시 'skipped'로 종결해 이벤트를 쏜다 —
-// Hero가 영원히 기다리는 상황을 막는 계약이다.
+// 감속하며 Hero 별필드에 정착한다. SpaceBackground가 재생을 담당하며,
+// 콘텐츠는 이 배경 연출과 무관하게 즉시 표시된다.
+// 재생 조건 미충족 시에도 'skipped' 종결 이벤트를 쏜다.
 
 export const ARRIVAL_DONE_EVENT = 'space-arrival:done'
-export const ARRIVAL_HOLD_MS = 600
-export const ARRIVAL_DURATION_MS = 2400
+export const ARRIVAL_HOLD_MS = 0
+export const ARRIVAL_DURATION_MS = 350
 
 // 0~HOLD: 최고 속도 유지, HOLD~DURATION: ease-out cubic으로 1→0 감속.
 export function computeArrivalIntensity(elapsedMs) {

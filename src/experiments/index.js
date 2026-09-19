@@ -17,8 +17,29 @@ const CloudGallery = lazy(() => import('./CloudGallery/CloudGallery'))
 const ProceduralCity = lazy(() => import('./ProceduralCity/ProceduralCity'))
 const ShipInABottle = lazy(() => import('./ShipInABottle/ShipInABottle'))
 const GothicCathedral = lazy(() => import('./GothicCathedral/GothicCathedral'))
+const ControlRoom = lazy(() => import('./ControlRoom/ControlRoom'))
+const VideoWall = lazy(() => import('./VideoWall/VideoWall'))
+const MidnightDispatch = lazy(() => import('./MidnightDispatch/MidnightDispatch'))
+const FittingStudio = lazy(() => import('./FittingStudio/FittingStudio'))
+const EarthJourney = lazy(() => import('./EarthJourney/EarthJourney'))
+const LivingPaper = lazy(() => import('./LivingPaper/LivingPaper'))
+const Curvature = lazy(() => import('./Curvature/Curvature'))
+const Skybound = lazy(() => import('./Skybound/Skybound'))
+const SpatialStudio = lazy(() => import('./SpatialStudio/SpatialStudio'))
 
 export const experiments = [
+  {
+    id: 'spatial-studio',
+    title: 'Spatial Studio',
+    description: '한 장에서 시작하는 공간 복원. 사진의 깊이와 촬영 시점을 함께 추정하고, 원본의 질감을 입힌 3D 공간을 탐색합니다. 실제 Blender 프로젝트와 GLB 모델을 내려받을 수 있습니다. 변환은 로컬 엔진에서 실행되며, 가려진 표면과 실제 치수는 보장하지 않습니다.',
+    tags: ['blender', '3d-reconstruction', 'photography'],
+    color: '#a1b58b',
+    planet: 'earth',
+    planetName: 'SPATIAL',
+    symbol: '▧',
+    fullscreen: true,
+    component: SpatialStudio,
+  },
   {
     id: 'particle-morph',
     title: 'Particle Morph',
@@ -227,5 +248,109 @@ export const experiments = [
     symbol: '⛨',
     fullscreen: true,
     component: GothicCathedral,
+  },
+  {
+    id: 'control-room',
+    title: 'Control Room',
+    description:
+      '실제로 동작하는 홈·랩·게스트북·프로젝트 페이지 네 개가 CSS3D로 3D 공간 속 모니터에 그대로 얹힙니다 — 각자 따로 시간이 흐르는 진짜 화면입니다. 베젤·조명·바닥은 WebGL이 그리고, 화면 안쪽만 살아있는 페이지입니다. 드래그로 방을 둘러보고, 화면을 클릭하면 그 앞으로 다가갑니다.',
+    tags: ['three.js', 'css3d', 'live-dom'],
+    color: '#6f8fff',
+    planet: 'neptune',
+    planetName: 'RELAY',
+    symbol: '🖥',
+    fullscreen: true,
+    component: ControlRoom,
+  },
+  {
+    id: 'video-wall',
+    title: 'Video Wall',
+    description:
+      '같은 홈페이지 한 장을 여섯 개의 타일로 찢어 붙인 전광판. 각 타일은 독립된 페이지를 새로 띄워 같은 그림을 재구성하기 때문에, 애니메이션이 타일마다 미세하게 어긋나며 진짜 옥외 전광판 같은 이음매가 생깁니다. 가끔 한 칸이 스스로 새로고침되며 화면이 깜빡입니다.',
+    tags: ['css-3d', 'live-dom', 'mosaic'],
+    color: '#ffcf5c',
+    planet: 'saturn',
+    planetName: 'TILE',
+    symbol: '▧',
+    fullscreen: true,
+    component: VideoWall,
+  },
+  {
+    id: 'midnight-dispatch',
+    title: 'Midnight Dispatch',
+    description:
+      'GTA 2의 탑다운 감각에서 출발한 독자적인 3D 야간 도시 게임. 거리를 걷고 노란 쿠페에 올라 세 곳에 화물을 배달합니다. 교통과 순찰대를 피해 제한 시간 안에 야간 근무를 마치세요. WASD·방향키 이동, E 탑승, Space 핸드브레이크. 모바일 터치 조작도 지원합니다.',
+    tags: ['three.js', 'game', 'driving'],
+    color: '#eac074',
+    planet: 'uranus',
+    planetName: 'NIGHT',
+    symbol: '▰',
+    fullscreen: true,
+    component: MidnightDispatch,
+  },
+  {
+    id: 'fitting-studio',
+    title: 'Fitting Atelier',
+    description:
+      '사진으로 만드는 나의 3D 피팅 스튜디오. 인물과 의류 이미지를 업로드하고 착장을 검토한 뒤 3D로 회전·확대·비교합니다. 기본 마네킹 룩과 GLB 뷰어는 브라우저에서, AI 생성은 Higgsfield CLI가 연결된 로컬 Lab에서 동작합니다. 실제 치수·원단 핏을 보장하지 않는 시각적 실험입니다.',
+    tags: ['three.js', '3d-fitting', 'higgsfield'],
+    color: '#a7b991',
+    planet: 'venus',
+    planetName: 'ATELIER',
+    symbol: '♧',
+    fullscreen: true,
+    component: FittingStudio,
+  },
+  {
+    id: 'terra',
+    title: 'Terra — Earth Journey',
+    description:
+      '우주에서 지구를 바라보고, 스크롤을 따라 에펠탑·콜로세움·자유의 여신상·리우 예수상·시드니 오페라하우스로 날아갑니다. 실제 항공사진 기반 3D 지형을 가까이 탐험하고, 드래그로 랜드마크를 둘러보는 시네마틱 지구 여행.',
+    tags: ['three.js', 'scroll', '3d-tiles'],
+    color: '#e7c49a',
+    planet: 'earth',
+    planetName: 'TERRA',
+    symbol: '◎',
+    fullscreen: true,
+    component: EarthJourney,
+  },
+  {
+    id: 'living-paper',
+    title: 'Living Paper',
+    description:
+      '직접 쓴 문서가 손으로 만지는 종이가 됩니다. HTML-in-Canvas로 살아 있는 HTML을 그려 모서리를 말고, 바람을 더하고, 다시 펼쳐 편집합니다. 실험 기능이 없는 브라우저에서는 문서 편집 모드로 열립니다.',
+    tags: ['html-in-canvas', 'webgl2', 'interaction'],
+    color: '#a6bcd0',
+    planet: 'moon',
+    planetName: 'PAPER',
+    symbol: '▱',
+    fullscreen: true,
+    component: LivingPaper,
+  },
+  {
+    id: 'curvature',
+    title: 'Curvature — Spacetime Lab',
+    description:
+      '질량이 공간을 휘게 하고 빛의 경로를 바꿉니다. 중심 질량과 빛의 입사 거리를 조절해 중력 렌즈·임계 궤적·빛의 포획을 실험하고, 관측 거리별 시간 지연을 비교하는 3D 시공간 연구소. 슈바르츠실트 모형의 광선 경로를 수치 계산하는 교육용 시뮬레이터입니다.',
+    tags: ['three.js', 'relativity', 'simulation'],
+    color: '#edbd86',
+    planet: 'saturn',
+    planetName: 'CURVE',
+    symbol: '◉',
+    fullscreen: true,
+    component: Curvature,
+  },
+  {
+    id: 'skybound',
+    title: 'Skybound — Coastal Flight',
+    description:
+      '작은 프로펠러 비행기로 푸른 섬과 구름 사이를 비행합니다. 상승·하강·선회·추력을 직접 조절해 8개의 공중 체크포인트를 통과하거나, 시간 제한 없이 해안을 둘러보세요. 지형 충돌, 기록, 추적·기수 시점과 모바일 터치 조작을 지원하는 3D 아케이드 비행 게임.',
+    tags: ['three.js', 'game', 'flight'],
+    color: '#dca772',
+    planet: 'sky',
+    planetName: 'FLIGHT',
+    symbol: '✈',
+    fullscreen: true,
+    component: Skybound,
   },
 ]

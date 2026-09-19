@@ -4,8 +4,13 @@ import {
   computeIntroState, staggeredBuild, shouldPlayIntro,
   hasSeenIntro, markIntroSeen,
 } from './introSequence.js'
+import { ARRIVAL_DURATION_MS } from './arrivalSequence.js'
 
 describe('인트로 타임라인', () => {
+  it('첫 진입 배경 연출의 총 길이가 1초를 넘지 않는다', () => {
+    expect(INTRO_TOTAL_MS + ARRIVAL_DURATION_MS).toBeLessThanOrEqual(1000)
+  })
+
   it('구간 합이 전체 길이와 같다', () => {
     expect(INTRO_GRID_MS + INTRO_DRAW_MS + INTRO_IGNITE_MS).toBe(INTRO_TOTAL_MS)
   })

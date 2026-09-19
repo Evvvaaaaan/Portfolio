@@ -3,3 +3,12 @@ build
 dist
 .env
 .env*
+
+# Local-only engines, weights, private uploads, and verification archives.
+.spatial-runtime
+.spatial-data
+.claude/
+.superpowers/
+test-results
+playwright-report
+*.log

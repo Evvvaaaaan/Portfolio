@@ -12,9 +12,10 @@ import {
 } from './arrivalSequence.js'
 
 describe('computeArrivalIntensity', () => {
-  it('홀드 구간에서는 최고 속도(1)를 유지한다', () => {
+  it('최고 속도에서 홀드 없이 바로 감속한다', () => {
+    expect(ARRIVAL_HOLD_MS).toBe(0)
     expect(computeArrivalIntensity(0)).toEqual({ intensity: 1, done: false })
-    expect(computeArrivalIntensity(ARRIVAL_HOLD_MS - 1)).toEqual({ intensity: 1, done: false })
+    expect(computeArrivalIntensity(1).intensity).toBeLessThan(1)
   })
 
   it('감속 구간에서 단조 감소한다', () => {
@@ -75,7 +76,7 @@ describe('arrival status 머신', () => {
     expect(window.dispatchEvent.mock.calls[0][0].type).toBe(ARRIVAL_DONE_EVENT)
   })
 
-  it('pending → skipped 전이도 이벤트를 dispatch한다 (Hero가 기다리지 않도록)', () => {
+  it('pending → skipped 전이도 종결 이벤트를 dispatch한다', () => {
     concludeArrival('skipped')
     expect(getArrivalStatus()).toBe('skipped')
     expect(window.dispatchEvent).toHaveBeenCalledTimes(1)

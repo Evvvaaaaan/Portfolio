@@ -36,3 +36,8 @@ playwright-report/
 # Agent workspaces (git worktrees + SDD scratch); never part of the repo
 .claude/worktrees/
 .superpowers/
+
+# Local spatial reconstruction engines, model weights, and private uploads
+.spatial-runtime
+.spatial-data/
+spatial/__pycache__/

@@ -1,11 +1,11 @@
 // 첫 방문 인트로 타임라인 (순수 모듈). 항성계가 청사진으로 그려진 뒤
 // 점화되어 실체화되기까지를 담당하고, 끝나면 기존 도착 워프로 넘긴다.
 //
-// 재생 정책(사용자 확정): 첫 방문만 풀 인트로. 재방문은 도착 워프만.
+// 첫 방문만 짧은 배경 인트로. 콘텐츠 표시는 이 타임라인을 기다리지 않는다.
 
-export const INTRO_GRID_MS = 500
-export const INTRO_DRAW_MS = 1100
-export const INTRO_IGNITE_MS = 300
+export const INTRO_GRID_MS = 80
+export const INTRO_DRAW_MS = 220
+export const INTRO_IGNITE_MS = 200
 export const INTRO_TOTAL_MS = INTRO_GRID_MS + INTRO_DRAW_MS + INTRO_IGNITE_MS
 
 // 드로잉 구간이 끝나는 시점의 빌드 진행도. blueprint.glsl.js가 0.55부터

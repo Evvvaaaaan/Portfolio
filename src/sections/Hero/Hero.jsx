@@ -1,7 +1,6 @@
-import { useEffect, useRef, useState, useSyncExternalStore } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import * as THREE from 'three'
 import { useLang } from '../../context/LangContext'
-import { ARRIVAL_DONE_EVENT, getArrivalStatus } from '../../components/SpaceBackground/arrivalSequence.js'
 import './Hero.css'
 
 function createSoftPointTexture() {
@@ -25,22 +24,21 @@ function createSoftPointTexture() {
   return texture
 }
 
-function useTyping(words, lang, speed = 80, pause = 1800, active = true) {
-  const [text, setText] = useState('')
+function useTyping(words, lang, speed = 80, pause = 1800) {
+  const [text, setText] = useState(words[0] ?? '')
   const [wordIdx, setWordIdx] = useState(0)
-  const [charIdx, setCharIdx] = useState(0)
+  const [charIdx, setCharIdx] = useState(words[0]?.length ?? 0)
   const [deleting, setDeleting] = useState(false)
 
   // Reset when language changes
   useEffect(() => {
-    setText('')
+    setText(words[0] ?? '')
     setWordIdx(0)
-    setCharIdx(0)
+    setCharIdx(words[0]?.length ?? 0)
     setDeleting(false)
-  }, [lang])
+  }, [lang, words])
 
   useEffect(() => {
-    if (!active) return
     const current = words[wordIdx] ?? ''
     let timeout
 
@@ -57,7 +55,7 @@ function useTyping(words, lang, speed = 80, pause = 1800, active = true) {
 
     setText(current.slice(0, charIdx))
     return () => clearTimeout(timeout)
-  }, [charIdx, deleting, wordIdx, words, speed, pause, active])
+  }, [charIdx, deleting, wordIdx, words, speed, pause])
 
   return text
 }
@@ -162,41 +160,13 @@ function ParticleScene({ containerRef }) {
   return null
 }
 
-// useSyncExternalStore 계약: subscribe는 스토어 변경 시 콜백을 부르고,
-// getSnapshot은 현재 값을 돌려준다. 종결 이벤트가 곧 유일한 변경 신호다.
-function subscribeToArrival(onStoreChange) {
-  window.addEventListener(ARRIVAL_DONE_EVENT, onStoreChange)
-  return () => window.removeEventListener(ARRIVAL_DONE_EVENT, onStoreChange)
-}
-
-function isArrivalConcluded() {
-  const s = getArrivalStatus()
-  return s === 'done' || s === 'skipped'
-}
-
 export default function Hero() {
   const canvasRef = useRef(null)
   const holoRef = useRef(null)
   const { lang, t } = useLang()
 
-  // 도착 시퀀스가 끝날 때까지 콘텐츠 스태거를 잡아둔다. 상태 머신이 외부
-  // 스토어이므로 useSyncExternalStore로 구독한다 — 구독 직후 스냅샷을
-  // 재확인하므로 SpaceBackground 이펙트와의 실행 순서 레이스가 없다.
-  const arrivalConcluded = useSyncExternalStore(subscribeToArrival, isArrivalConcluded)
-
-  // 안전장치: 어떤 이유로든 시퀀스가 종결되지 않아도 콘텐츠가 영원히
-  // 숨지 않도록 4초 후 로컬로만 공개한다. Hero는 공유 상태 머신의
-  // 소비자일 뿐이므로 스토어에 쓰지 않는다.
-  const [fallbackRevealed, setFallbackRevealed] = useState(false)
-  useEffect(() => {
-    if (arrivalConcluded) return
-    const fallback = setTimeout(() => setFallbackRevealed(true), 4000)
-    return () => clearTimeout(fallback)
-  }, [arrivalConcluded])
-
-  const awaitingArrival = !arrivalConcluded && !fallbackRevealed
-
-  const typedText = useTyping(t.hero.roles, lang, 80, 1800, !awaitingArrival)
+  // 콘텐츠는 배경 연출을 기다리지 않고 첫 프레임부터 표시한다.
+  const typedText = useTyping(t.hero.roles, lang)
 
   // Physical screen tilt → holographic color on text
   useEffect(() => {
@@ -301,18 +271,18 @@ export default function Hero() {
   const descLines = t.hero.desc.split('\n')
 
   return (
-    <section className={awaitingArrival ? 'hero hero--awaiting-arrival' : 'hero'} id="home">
+    <section className="hero" id="home">
       <div className="hero-canvas" ref={canvasRef}>
         <ParticleScene containerRef={canvasRef} />
       </div>
 
       <div className="hero-content container">
-        <div className="hero-tag fade-up">
+        <div className="hero-tag">
           <span className="hero-tag-dot" />
           {t.hero.tag}
         </div>
 
-        <div className="hero-title-holo-wrap fade-up delay-1">
+        <div className="hero-title-holo-wrap">
           <h1 className="hero-title">
             Hi, I&apos;m <span className="hero-name">Evan</span>
           </h1>
@@ -322,17 +292,17 @@ export default function Hero() {
           </h1>
         </div>
 
-        <div className="hero-role fade-up delay-2" aria-live="polite" aria-atomic="true">
+        <div className="hero-role" aria-live="polite" aria-atomic="true">
           <span className="role-text">{typedText}</span>
           <span className="role-cursor" aria-hidden="true">|</span>
         </div>
 
-        <p className="hero-desc fade-up delay-3">
+        <p className="hero-desc">
           {descLines[0]}<br />
           {descLines[1]}
         </p>
 
-        <div className="hero-actions fade-up delay-4">
+        <div className="hero-actions">
           <a
             href="#projects"
             className="btn btn-primary"
@@ -349,7 +319,7 @@ export default function Hero() {
           </a>
         </div>
 
-        <div className="hero-socials fade-up delay-5">
+        <div className="hero-socials">
           <a href="https://github.com/Evvvaaaaan" target="_blank" rel="noreferrer" className="social-link" aria-label="GitHub">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
               <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/>

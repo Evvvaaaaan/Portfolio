@@ -9,7 +9,12 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest run",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "spatial": "vite --host 127.0.0.1 --port 5175",
+    "spatial:setup": "node spatial/setup.mjs",
+    "spatial:setup:completion": "node spatial/setup.mjs --completion",
+    "spatial:check": "node spatial/setup.mjs --check",
+    "spatial:serve": "node spatial/serve.mjs"
   },
   "dependencies": {
     "@mediapipe/tasks-vision": "^0.10.35",

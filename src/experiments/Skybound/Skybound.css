@@ -1,0 +1,200 @@
+.skybound {
+  --sb-ink: #21464b;
+  --sb-muted: #567779;
+  --sb-paper: #f5efdf;
+  --sb-orange: #d5844f;
+  position: absolute; inset: 0; overflow: hidden; background: #b5d4d8; color: var(--sb-ink);
+  font-family: var(--font-sans); isolation: isolate; outline: none; user-select: none; -webkit-user-select: none;
+}
+.sb-scene, .sb-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.sb-vignette { position: absolute; inset: 0; pointer-events: none; background: linear-gradient(180deg, #e3eee824, transparent 24%, transparent 66%, #244c523b); }
+.skybound button { font: inherit; cursor: pointer; color: inherit; }
+.skybound :is(button, a):focus-visible { outline: 2px solid #b36d3d; outline-offset: 5px; }
+.skybound kbd { display: inline-block; border: 1px solid #56777955; border-radius: 3px; padding: 2px 5px; font: 9px var(--font-mono); line-height: 1.3; }
+.sb-header { position: absolute; z-index: 3; top: 20px; left: 136px; right: 30px; display: flex; align-items: center; justify-content: space-between; gap: 20px; }
+.sb-brand { display: flex; align-items: center; gap: 9px; font-size: 14px; letter-spacing: .17em; font-weight: 600; }
+.sb-brand > svg { width: 20px; height: 20px; }
+.sb-brand > span { border-left: 1px solid #587a7b4d; padding-left: 13px; margin-left: 5px; font: 8px var(--font-mono); letter-spacing: .12em; font-weight: 400; }
+.sb-header-tools { display: flex; align-items: center; gap: 20px; }
+.sb-header-tools button { background: transparent; border: 0; font: 8px var(--font-mono); letter-spacing: .08em; padding: 8px 0; color: #45686a; }
+.sb-header-tools button[aria-pressed=true] { color: #9b602d; }
+.sb-header-tools .sb-pause-button { border: 1px solid #4b717b4d; border-radius: 50%; width: 30px; height: 30px; padding: 0; font-size: 14px; }
+.sb-overlay { position: absolute; z-index: 4; inset: 70px 0 145px; display: flex; justify-content: center; align-items: center; padding: 28px; overflow-y: auto; background: #d9e6df22; }
+.sb-overlay:not(.sb-intro-overlay) { inset: 70px 0 70px; background: #d6e6dd66; backdrop-filter: blur(8px); }
+.sb-card { width: 440px; max-width: 100%; flex-shrink: 0; }
+.sb-intro-overlay { justify-content: flex-start; padding-left: clamp(32px, 7vw, 110px); background: linear-gradient(90deg, #dce8dfbb, #dce8df33 38%, transparent 65%); pointer-events: none; }
+.sb-intro-overlay .sb-card { pointer-events: auto; }
+.sb-overline { display: flex; align-items: center; gap: 8px; font: 8px var(--font-mono); color: #527373; letter-spacing: .12em; line-height: 1.8; }
+.sb-overline > i { width: 5px; height: 5px; background: var(--sb-orange); border-radius: 50%; }
+.sb-card h1 { color: var(--sb-ink); font-size: clamp(36px, 4.9vw, 73px); font-weight: 400; letter-spacing: -.055em; line-height: 1.04; margin: 23px 0; }
+.sb-card h1 em { color: #486c66; font-family: Georgia, 'Times New Roman', serif; font-weight: 400; }
+.sb-card > p { font-size: 12px; color: #4f7070; line-height: 1.95; word-break: keep-all; max-width: 360px; }
+.sb-card .sb-intro-copy { font-size: 13px; }
+.sb-mode-select { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; margin: 28px 0 14px; max-width: 365px; }
+.sb-mode-select button { background: #e8f0e549; border: 1px solid #607d7040; border-radius: 5px; text-align: left; padding: 13px 14px; }
+.sb-mode-select button:hover { background: #f2f3df88; }
+.sb-mode-select button[aria-pressed=true] { background: #f4f0dfbd; border-color: #bda16a; }
+.sb-mode-select button > span { font: 8px var(--font-mono); display: flex; gap: 10px; align-items: center; color: #8a957c; }
+.sb-mode-select strong { font: 12px var(--font-sans); color: var(--sb-ink); }
+.sb-mode-select small { display: block; font-size: 9px; color: #6d8379; margin-top: 7px; padding-left: 23px; }
+.sb-view-select { display: flex; gap: 5px; max-width: 365px; margin: 0 0 14px; }
+.sb-view-select button { flex: 1; padding: 8px 4px; border: 1px solid #66847538; border-radius: 4px; font-size: 9px; background: #e8f0e52b; color: #5a7770; }
+.sb-view-select button[aria-pressed=true] { color: #244f50; border-color: #70897c; background: #f6f1df9c; }
+.sb-view-select + .sb-start { margin-top: 0; }
+.sb-start { width: 100%; max-width: 365px; display: flex; align-items: center; justify-content: space-between; background: #244f50; color: #f8f1da !important; border: 1px solid #244f50; padding: 16px 20px; border-radius: 5px; font-size: 12px !important; margin-top: 20px; box-shadow: 0 4px 12px #375d5814; }
+.sb-start:hover { background: #163f43; }
+.sb-start > span { color: #e8bd85; font-size: 20px; line-height: 1; }
+.sb-mode-select + .sb-start { margin-top: 0; }
+.sb-intro-controls { display: flex; gap: 16px; margin-top: 18px; font-size: 9px; color: #577271; }
+.sb-intro-controls span { display: flex; align-items: center; gap: 6px; }
+.sb-card .sb-flight-note { margin-top: 15px; font-size: 8px; color: #617c75; }
+.sb-asset-credits { display: inline-block; margin-top: 12px; color: #446763; font-size: 8px; text-underline-offset: 3px; }
+.sb-aircraft-label { position: absolute; right: 9%; bottom: 22%; text-align: right; pointer-events: none; }
+.sb-aircraft-label > span { font: 8px var(--font-mono); letter-spacing: .12em; color: #517879; }
+.sb-aircraft-label strong { display: block; margin-top: 6px; font: 15px var(--font-sans); letter-spacing: .06em; }
+.sb-aircraft-label p { font-family: Georgia, 'Times New Roman', serif; font-size: 13px; font-style: italic; color: #547a79; margin-top: 5px; }
+.sb-aircraft-label > i { display: block; height: 1px; width: 70px; background: #527a7366; margin-top: 14px; margin-left: auto; }
+.sb-instruments { position: absolute; bottom: 65px; left: 36px; display: flex; align-items: center; gap: 32px; color: #f3eedb; pointer-events: none; text-shadow: 0 1px 8px #28535833; }
+.sb-instruments-preview { left: clamp(32px, 7vw, 110px); bottom: 66px; color: #325e60; text-shadow: none; }
+.sb-instrument { min-width: 95px; }
+.sb-instrument > span { display: block; font: 8px var(--font-mono); letter-spacing: .13em; opacity: .8; }
+.sb-instrument > strong { display: block; font: 33px var(--font-mono); font-weight: 400; line-height: 1.8; letter-spacing: -.04em; }
+.sb-instrument > strong small { font: 9px var(--font-mono); letter-spacing: 0; margin-left: 7px; opacity: .65; }
+.sb-ticks { height: 5px; border-bottom: 1px solid currentColor; background: repeating-linear-gradient(90deg, currentColor 0, currentColor 1px, transparent 1px, transparent 12px); opacity: .35; }
+.sb-attitude { width: 60px; height: 60px; border: 1px solid #eaf4dc80; border-radius: 50%; overflow: hidden; position: relative; }
+.sb-attitude-dial { position: absolute; inset: -10px; }
+.sb-attitude-dial > div { position: absolute; inset: -20px; background: linear-gradient(#9bc3c777 50%, #8a9d8166 50%); }
+.sb-attitude-dial::after { content: ''; position: absolute; top: 50%; width: 100%; height: 1px; background: #eef2d5b0; }
+.sb-attitude > span { position: absolute; inset: 0; display: grid; place-items: center; color: #faf3d2; font: 15px var(--font-mono); letter-spacing: -1px; }
+.sb-instruments-preview .sb-attitude { border-color: #55797266; }
+.sb-throttle { min-width: 74px; }
+.sb-throttle-track { height: 3px; background: #d9eee030; }
+.sb-throttle-track i { display: block; height: 100%; background: #eedba7; }
+.sb-instruments-preview .sb-throttle-track { background: #527c7430; }
+.sb-instruments-preview .sb-throttle-track i { background: #4b7470; }
+.sb-mission { position: absolute; top: 100px; left: 36px; pointer-events: none; }
+.sb-mission h2 { color: #294f52; font-size: 22px; font-weight: 400; margin: 7px 0; letter-spacing: -.035em; }
+.sb-mission > p { color: #5c7e7b; font-size: 10px; }
+.sb-clock { position: absolute; top: 100px; right: 36px; text-align: right; }
+.sb-clock > span { font: 8px var(--font-mono); color: #5c7e7b; letter-spacing: .11em; }
+.sb-clock strong { display: block; font: 32px var(--font-mono); color: #315a5c; margin: 4px 0; }
+.sb-clock small { display: block; font: 9px var(--font-mono); color: #577b77; }
+.sb-map { position: absolute; right: 36px; bottom: 100px; width: 154px; padding: 13px 12px 10px; background: #e1ead8b0; border: 1px solid #edf3df99; border-radius: 7px; backdrop-filter: blur(7px); }
+.sb-map-title { display: flex; justify-content: space-between; font: 7px var(--font-mono); letter-spacing: .05em; color: #51716b; }
+.sb-map svg { display: block; width: 100%; height: auto; margin: 6px 0; }
+.sb-map-caption { display: block; text-align: center; color: #6e8376; font: 6px var(--font-mono); letter-spacing: .08em; }
+.sb-navigation { position: absolute; top: 102px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 10px; padding: 8px 13px; border: 1px solid #f1f4de55; border-radius: 30px; background: #eef1df77; color: #416865; font-size: 10px; white-space: nowrap; pointer-events: none; }
+.sb-navigation > span:first-child { display: inline-block; font-size: 20px; line-height: 1; color: #8e733e; }
+.sb-notice { position: absolute; top: 29%; left: 50%; transform: translateX(-50%); color: #fff5d5; text-shadow: 0 1px 12px #38585288; text-align: center; font: 22px var(--font-mono); letter-spacing: .05em; pointer-events: none; }
+.sb-notice > span { display: block; font-size: 8px; margin-top: 8px; letter-spacing: .18em; }
+.sb-warning { position: absolute; top: 200px; left: 50%; transform: translateX(-50%); padding: 8px 15px; background: #815137d9; color: #fff0cc; border-radius: 4px; font-size: 11px; pointer-events: none; }
+.sb-view-button { position: absolute; bottom: 64px; right: 36px; display: flex; align-items: center; gap: 8px; padding: 8px 11px; background: #e2eddfbb; color: #375f5e; border: 1px solid #edf3df99; border-radius: 4px; font-size: 9px !important; }
+.sb-view-button > span { font-size: 16px; line-height: 1; }
+.sb-view-button kbd { margin-left: 8px; }
+.sb-desktop-help { position: absolute; bottom: 30px; left: 36px; display: flex; gap: 16px; color: #e4efdb; font-size: 8px; }
+.sb-desktop-help > span { display: flex; align-items: center; gap: 4px; }
+.sb-desktop-help kbd { border-color: #d5e9d34f; font-size: 7px; }
+.sb-footer { position: absolute; bottom: 12px; left: 36px; right: 36px; display: flex; justify-content: space-between; gap: 20px; font: 6px var(--font-mono); color: #dcecdfb0; letter-spacing: .09em; pointer-events: none; }
+.skybound[data-phase=ready] .sb-footer { color: #315a5c90; }
+.sb-footer i { font-style: normal; margin: 0 7px; }
+.sb-pause-controls { display: grid; gap: 8px; margin: 22px 0; font-size: 10px; color: #4b6c68; }
+.sb-secondary { border: none; border-bottom: 1px solid #4d72615a; padding: 9px 0; margin-top: 12px; background: none; font-size: 10px !important; }
+.sb-results { display: flex; gap: 35px; margin: 25px 0 15px; }
+.sb-results span { font: 7px var(--font-mono); letter-spacing: .06em; color: #5e7d72; }
+.sb-results strong { display: block; margin-top: 8px; font: 26px var(--font-mono); color: #375e5c; }
+.sb-results strong small { font-size: 10px; margin-left: 3px; }
+.sb-card .sb-best { font: 8px var(--font-mono); margin-top: 18px; color: #547468; }
+.sb-best > span { margin-left: 20px; color: #94663c; }
+.sb-touch-controls { display: none; }
+.sb-pilot-label { position: absolute; top: 153px; left: 50%; transform: translateX(-50%); display: flex; gap: 9px; align-items: center; font: 7px var(--font-mono); letter-spacing: .1em; color: #3e6362; pointer-events: none; }
+.sb-pilot-label > i { width: 3px; height: 3px; border-radius: 50%; background: #a6794e; }
+.sb-pilot-label > b { font-weight: 400; margin-left: 7px; }
+.skybound[data-view=cockpit][data-phase=playing] .sb-instruments { opacity: 0; }
+.skybound[data-view=cockpit] .sb-view-button { top: 169px; bottom: auto; }
+.skybound[data-view=cockpit] .sb-map { top: 221px; bottom: auto; width: 128px; }
+.skybound[data-view=cockpit] .sb-desktop-help { left: 50%; transform: translateX(-50%); bottom: 8px; white-space: nowrap; }
+.skybound[data-view=cockpit][data-phase=playing] .sb-footer { display: none; }
+@media (max-height: 730px) and (min-width: 701px) {
+  .sb-overlay { inset: 66px 0 120px; }
+  .sb-card h1 { font-size: 52px; margin: 15px 0; }
+  .sb-mode-select { margin-top: 19px; }
+  .sb-flight-note { display: none; }
+  .sb-instruments-preview { bottom: 45px; }
+  .sb-aircraft-label { bottom: 12%; }
+}
+@media (max-width: 1000px) { .sb-brand > span { display: none; } .sb-aircraft-label { display: none; } .sb-intro-overlay { padding-left: 38px; } .sb-card { width: 360px; } .sb-navigation { top: 178px; } .sb-instruments { gap: 20px; } }
+@media (max-width: 1000px) { .sb-pilot-label { top: 150px; } }
+@media (max-width: 700px), (pointer: coarse) {
+  .sb-touch-controls { position: absolute; left: 20px; right: 20px; bottom: 28px; display: flex; justify-content: space-between; align-items: flex-end; pointer-events: none; }
+  .sb-touch-controls button { pointer-events: auto; touch-action: none; -webkit-touch-callout: none; background: #dce9dbc7; border: 1px solid #eff2df99; color: #315b5c; border-radius: 8px; font-size: 24px; display: grid; place-content: center; }
+  .sb-touch-controls button:active { background: #fbefd1; }
+  .sb-dpad { display: grid; grid-template-columns: repeat(3, 41px); grid-template-rows: repeat(3, 39px); gap: 3px; }
+  .sb-touch-up { grid-area: 1 / 2; }
+  .sb-touch-left { grid-area: 2 / 1; }
+  .sb-touch-right { grid-area: 2 / 3; }
+  .sb-touch-down { grid-area: 3 / 2; }
+  .sb-dpad > span { grid-area: 2 / 2; display: grid; place-items: center; color: #e8efd8; font: 7px var(--font-mono); letter-spacing: .1em; }
+  .sb-touch-power { display: flex; gap: 8px; padding-bottom: 1px; }
+  .sb-touch-power button { width: 57px; height: 66px; }
+  .sb-touch-power small { font: 6px var(--font-mono); letter-spacing: .07em; margin-top: 2px; }
+  .sb-desktop-help { display: none; }
+  .skybound[data-phase=playing] .sb-instruments { bottom: 170px; }
+  .sb-map { bottom: 272px; width: 112px; right: 20px; padding: 9px; }
+  .sb-view-button { bottom: 233px; right: 20px; }
+  .sb-view-button kbd { display: none; }
+  .skybound[data-view=cockpit][data-phase=playing] .sb-instruments { opacity: 1; bottom: 158px; }
+  .skybound[data-view=cockpit] .sb-view-button { top: 217px; bottom: auto; }
+  .skybound[data-view=cockpit] .sb-map { top: 264px; bottom: auto; width: 100px; }
+  .skybound[data-view=cockpit] .sb-warning { top: 208px; left: 20px; transform: none; }
+  .skybound[data-view=cockpit] .sb-instrument > strong { font-size: 22px; }
+}
+@media (max-width: 700px) {
+  .sb-header { left: 115px; right: 18px; top: 21px; gap: 9px; }
+  .sb-brand { font-size: 11px; letter-spacing: .1em; gap: 6px; }
+  .sb-brand svg { width: 16px; height: 16px; }
+  .sb-header-tools { gap: 12px; }
+  .sb-header-tools button { font-size: 6px; padding: 8px 0; }
+  .sb-header-tools button[aria-label="카메라 움직임 줄이기"] { display: none; }
+  .sb-overlay { inset: 85px 0 135px; padding: 24px; align-items: flex-start; }
+  .sb-intro-overlay { background: linear-gradient(180deg, #dce9de99, transparent); }
+  .sb-card { width: 340px; }
+  .sb-overline { font-size: 7px; letter-spacing: .065em; }
+  .sb-card h1 { font-size: 55px; margin: 16px 0; }
+  .sb-card .sb-intro-copy { font-size: 11px; }
+  .sb-mode-select { margin-top: 24px; }
+  .sb-mode-select button { padding: 11px; }
+  .sb-mode-select strong { font-size: 11px; }
+  .sb-mode-select small { font-size: 8px; padding-left: 19px; }
+  .sb-start { padding: 14px 17px; }
+  .sb-intro-controls { gap: 13px; font-size: 8px; margin-top: 14px; }
+  .sb-card .sb-flight-note { font-size: 8px; margin-top: 12px; }
+  .sb-instruments { left: 20px; gap: 22px; bottom: 52px; right: 20px; justify-content: space-between; }
+  .sb-instrument { min-width: 0; flex: 1; }
+  .sb-instrument > span { font-size: 6px; }
+  .sb-instrument > strong { font-size: 25px; line-height: 1.65; }
+  .sb-instrument > strong small { font-size: 7px; margin-left: 5px; }
+  .sb-attitude { display: none; }
+  .sb-mission { top: 84px; left: 22px; }
+  .sb-mission h2 { font-size: 19px; }
+  .sb-mission p { font-size: 9px; }
+  .sb-clock { right: 20px; top: 84px; }
+  .sb-clock strong { font-size: 25px; }
+  .sb-clock > span, .sb-clock small { font-size: 7px; }
+  .sb-navigation { top: 167px; font-size: 9px; padding: 7px 11px; }
+  .sb-notice { top: 27%; font-size: 15px; }
+  .sb-warning { top: 218px; font-size: 9px; white-space: nowrap; }
+  .sb-footer { left: 20px; right: 20px; font-size: 5px; bottom: 10px; letter-spacing: 0; }
+  .sb-footer > span:last-child { display: none; }
+  .sb-overlay:not(.sb-intro-overlay) { inset: 80px 0 80px; align-items: center; }
+  .sb-overlay:not(.sb-intro-overlay) h1 { font-size: 36px; }
+  .sb-results { gap: 24px; }
+}
+@media (max-height: 680px) and (max-width: 700px) {
+  .sb-overlay { top: 70px; bottom: 92px; padding-top: 15px; }
+  .sb-card h1 { font-size: 42px; margin: 12px 0; }
+  .sb-card .sb-flight-note { display: none; }
+  .sb-mode-select { margin-top: 17px; }
+  .sb-instruments-preview { bottom: 30px; }
+  .sb-map { display: none; }
+  .sb-view-button { bottom: 255px; }
+}

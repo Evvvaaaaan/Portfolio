@@ -1,0 +1,97 @@
+.video-wall-exp {
+  --tilt-x: 0deg;
+  --tilt-y: 0deg;
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background: radial-gradient(ellipse at 50% 20%, #111318 0%, #030405 72%);
+  perspective: 2200px;
+}
+
+.vw-caption {
+  position: absolute;
+  left: 30px;
+  bottom: 24px;
+  z-index: 4;
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  font-family: var(--font-mono);
+  color: rgba(255, 255, 255, 0.62);
+  pointer-events: none;
+}
+
+.vw-caption span {
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.vw-caption strong {
+  font-family: var(--font-sans);
+  font-size: 13px;
+  letter-spacing: -0.01em;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.vw-grid {
+  display: grid;
+  grid-template-columns: repeat(var(--cols), var(--tile-w));
+  gap: 7px;
+  padding: 7px;
+  background: #000;
+  border-radius: 6px;
+  box-shadow: 0 40px 90px rgba(0, 0, 0, 0.55);
+  transform: rotateX(var(--tilt-x)) rotateY(var(--tilt-y));
+  transform-style: preserve-3d;
+  transition: transform 0.35s cubic-bezier(0.2, 0.7, 0.3, 1);
+  will-change: transform;
+}
+
+.vw-tile {
+  position: relative;
+  width: var(--tile-w);
+  height: var(--tile-h);
+  overflow: hidden;
+  background: #000;
+}
+
+.vw-tile-frame {
+  position: absolute;
+  top: 0;
+  left: 0;
+  border: 0;
+  pointer-events: none;
+  filter: saturate(1.04) contrast(1.02);
+}
+
+.vw-tile-pending {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(120deg, #0a0b0f 0%, #16181f 50%, #0a0b0f 100%);
+  background-size: 200% 100%;
+  animation: vw-pending-sweep 1.6s ease-in-out infinite;
+}
+
+@keyframes vw-pending-sweep {
+  0% { background-position: 0% 0; }
+  100% { background-position: -200% 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vw-grid { transition: none; }
+  .vw-tile-pending { animation: none; }
+}
+
+@media (max-width: 1040px) {
+  .video-wall-exp { --tile-w-scale: 0.72; }
+  .vw-grid { transform: rotateX(var(--tilt-x)) rotateY(var(--tilt-y)) scale(0.72); }
+}
+
+@media (max-width: 720px) {
+  .vw-grid { transform: rotateX(var(--tilt-x)) rotateY(var(--tilt-y)) scale(0.4); }
+  .vw-caption { display: none; }
+}
