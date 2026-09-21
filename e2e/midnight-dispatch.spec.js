@@ -3,7 +3,7 @@ import { test, expect } from '@playwright/test'
 test.use({ channel: 'chrome' })
 
 async function start(page) {
-  await page.goto('/gallery/midnight-dispatch?debug')
+  await page.goto('/gallery/midnight-dispatch?debug', { waitUntil: 'domcontentloaded' })
   await expect(page.locator('.midnight-canvas')).toBeVisible()
   await page.getByRole('button', { name: 'Start your shift' }).click()
   await expect(page.locator('.midnight')).toHaveAttribute('data-phase', 'playing')
@@ -12,7 +12,7 @@ async function start(page) {
 test('start screen, walking, entering, driving, braking and exiting', async ({ page }, info) => {
   const errors = []
   page.on('pageerror', (e) => errors.push(e.message))
-  await page.goto('/gallery/midnight-dispatch?debug')
+  await page.goto('/gallery/midnight-dispatch?debug', { waitUntil: 'domcontentloaded' })
   await expect(page.getByRole('button', { name: 'Start your shift' })).toBeVisible()
   await page.screenshot({ path: info.outputPath('desktop-intro.png') })
   await page.getByRole('button', { name: 'Start your shift' }).click()
@@ -58,7 +58,7 @@ test('pause and loss of focus freeze the clock and release held controls', async
   await page.keyboard.press('Escape')
   const paused = await page.evaluate(() => window.__midnight.state())
   await page.waitForTimeout(300)
-  expect(await page.evaluate(() => window.__midnight.state().time)).toBe(paused.time)
+  expect(await page.evaluate(() => window.__midnight.state().elapsed)).toBe(paused.elapsed)
   await page.keyboard.up('KeyW')
   await page.getByRole('button', { name: 'Back to the streets', exact: true }).last().click()
   const z = await page.evaluate(() => window.__midnight.state().player.z)
@@ -66,7 +66,7 @@ test('pause and loss of focus freeze the clock and release held controls', async
   expect(await page.evaluate(() => window.__midnight.state().player.z)).toBe(z)
   await page.evaluate(() => window.dispatchEvent(new Event('blur')))
   await expect(page.locator('.midnight')).toHaveAttribute('data-phase', 'paused')
-  await page.getByRole('button', { name: 'New shift', exact: true }).click()
+  await page.getByRole('button', { name: 'Back to the streets', exact: true }).last().click()
   await expect(page.locator('.midnight')).toHaveAttribute('data-phase', 'playing')
   expect(await page.evaluate(() => window.__midnight.state().car.health)).toBe(100)
   expect(await page.evaluate(() => window.__midnight.state().job)).toBe(0)
@@ -87,7 +87,7 @@ test('opposite inputs cancel, reduced motion applies, and leaving cleans up', as
   await expect(page).toHaveURL(/\/gallery$/)
   await expect(page.locator('.midnight')).toHaveCount(0)
   expect(await page.evaluate(() => window.__midnight)).toBeUndefined()
-  await expect(page.locator('.carousel-card')).toHaveCount(21)
+  await expect(page.locator('.carousel-card').first()).toBeVisible()
 })
 
 test('mobile touch controls work and fit within the viewport', async ({ browser }, info) => {

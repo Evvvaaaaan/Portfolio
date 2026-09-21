@@ -1,7 +1,8 @@
 import * as THREE from 'three'
-import { BUILDINGS, JOBS, ROADS, subject } from './game.js'
+import { BUILDINGS, ROADS, subject, missionTarget } from './game.js'
+import { DISTRICTS, SERVICES, STASHES, LIMIT, districtAt } from './world.js'
+import { VEHICLES } from './progress.js'
 
-const PALETTE = ['#3c4955', '#4e435a', '#37555b', '#5c514b']
 const CAR_COLORS = ['#d17e68', '#93ada1', '#b9b5cc', '#527b9b']
 
 export function createScene(host, initial) {
@@ -19,15 +20,17 @@ export function createScene(host, initial) {
   const cube = track(new THREE.BoxGeometry(1, 1, 1))
   const matte = track(new THREE.MeshLambertMaterial({ color: '#ffffff' }))
   const glow = track(new THREE.MeshBasicMaterial({ color: '#ffffff' }))
-  scene.add(new THREE.HemisphereLight('#bcd4f5', '#283449', 2.1))
+  const sky = new THREE.HemisphereLight('#bcd4f5', '#283449', 2.1)
+  scene.add(sky)
   const moon = new THREE.DirectionalLight('#cfdfec', 1.8)
   moon.position.set(-60, 100, 40)
   scene.add(moon)
 
   const solid = [], luminous = []
   const box = (list, x, y, z, w, h, d, color) => list.push({ x, y, z, w, h, d, color })
-  box(solid, 0, -0.6, 0, 274, 1, 274, '#182730')
-  box(solid, 0, -0.07, 0, 251, 0.1, 251, '#29353d')
+  box(solid, 0, -1.2, 0, 620, 1, 620, '#183c4b')
+  box(solid, 0, -0.6, 0, 490, 1, 490, '#182730')
+  box(solid, 0, -0.07, 0, 474, 0.1, 474, '#29353d')
   const transform = new THREE.Object3D()
   const tint = new THREE.Color()
 
@@ -48,15 +51,15 @@ export function createScene(host, initial) {
   }
 
   // Sidewalks, lane markings, zebra crossings and lamps establish the road grid.
-  for (let row = 0; row < 4; row++) {
-    for (let col = 0; col < 4; col++) {
-      const x = -84 + col * 56, z = -84 + row * 56
+  for (let row = 0; row < 8; row++) {
+    for (let col = 0; col < 8; col++) {
+      const x = -196 + col * 56, z = -196 + row * 56
       box(solid, x, 0.09, z, 43, 0.35, 43, '#677175')
-      box(solid, x, 0.28, z, 40.8, 0.1, 40.8, '#465259')
+      box(solid, x, 0.28, z, 40.8, 0.1, 40.8, districtAt({ x, z }).ground)
     }
   }
   for (const road of ROADS) {
-    for (let p = -120; p <= 120; p += 7) {
+    for (let p = -232; p <= 232; p += 7) {
       if (ROADS.some((r) => Math.abs(p - r) < 10)) continue
       box(solid, road - 0.35, 0.02, p, 0.18, 0.04, 3, '#bca970')
       box(solid, road + 0.35, 0.02, p, 0.18, 0.04, 3, '#bca970')
@@ -78,7 +81,7 @@ export function createScene(host, initial) {
 
   BUILDINGS.forEach((b, index) => {
     box(solid, b.x + b.h * 0.16, 0.35, b.z - b.h * 0.14, b.w + 1.1, 0.06, b.d + 1.1, '#27333d')
-    box(solid, b.x, b.h / 2 + 0.4, b.z, b.w, b.h, b.d, PALETTE[b.tint])
+    box(solid, b.x, b.h / 2 + 0.4, b.z, b.w, b.h, b.d, b.color)
     box(solid, b.x, b.h + 0.55, b.z, b.w + 0.6, 0.35, b.d + 0.6, '#788285')
     box(solid, b.x, b.h + 0.76, b.z, b.w - 1, 0.12, b.d - 1, '#485963')
     // Rooftop air conditioners, vents and parapets, visible from the steep camera.
@@ -88,8 +91,9 @@ export function createScene(host, initial) {
     }
     box(solid, b.x + 3, b.h + 1.5, b.z - 4, 4, 1.5, 3, '#64737a')
     if (index % 4 === 0) {
-      box(luminous, b.x, b.h + 0.85, b.z - b.d / 2, b.w, 0.16, 0.2, '#6edfc9')
-      box(luminous, b.x - b.w / 2, b.h + 0.85, b.z, 0.2, 0.16, b.d, '#6edfc9')
+      const color = DISTRICTS.find((d) => d.id === b.district).color
+      box(luminous, b.x, b.h + 0.85, b.z - b.d / 2, b.w, 0.16, 0.2, color)
+      box(luminous, b.x - b.w / 2, b.h + 0.85, b.z, 0.2, 0.16, b.d, color)
     }
     for (let floor = 2; floor < b.h - 1; floor += 2.6) {
       for (let window = -5; window <= 5; window += 2.5) {
@@ -101,11 +105,26 @@ export function createScene(host, initial) {
     }
   })
   // The city boundary reads as a quay, with containers and a lit perimeter.
-  for (let p = -120; p <= 120; p += 10) {
-    box(solid, p, 0.4, 127, 8, 1, 2, '#727477')
-    box(solid, -127, 0.4, p, 2, 1, 8, '#727477')
-    box(luminous, p, 1.05, 127, 1, 0.1, 0.3, '#e4b268')
-    box(solid, 131, 1.6, p, 5, 3, 8, p % 20 ? '#894d49' : '#397474')
+  for (let p = -232; p <= 232; p += 10) {
+    box(solid, p, 0.4, 239, 8, 1, 2, '#727477')
+    box(solid, -239, 0.4, p, 2, 1, 8, '#727477')
+    box(luminous, p, 1.05, 239, 1, 0.1, 0.3, '#e4b268')
+    if (p < 0) box(solid, p, 1.6, 245, 8, 3, 5, p % 20 ? '#894d49' : '#397474')
+  }
+  // The four districts share navigable streets but have distinct silhouettes and landmarks.
+  for (const b of BUILDINGS.filter((_, i) => i % 4 === 0)) {
+    if (b.district === 'harbor') {
+      box(solid, b.x, b.h + 6, b.z, 0.8, 12, 0.8, '#d49b57')
+      box(solid, b.x + 5, b.h + 11, b.z, 13, 0.65, 0.65, '#d49b57')
+    } else if (b.district === 'coast') {
+      const x = b.x - 10, z = b.z
+      box(solid, x, 3, z, 0.7, 6, 0.7, '#9a7d57')
+      box(solid, x, 6, z, 7, 0.4, 1.5, '#669971')
+      box(solid, x, 6.1, z, 1.5, 0.4, 7, '#76aa7d')
+    } else if (b.district === 'desert') {
+      box(solid, b.x - 10, 1.6, b.z, 0.9, 3.2, 0.9, '#769478')
+      box(solid, b.x - 9, 2, b.z, 2.3, 0.65, 0.7, '#769478')
+    }
   }
   instances(solid, matte)
   instances(luminous, glow)
@@ -136,6 +155,13 @@ export function createScene(host, initial) {
   sign('RADIO 88.4', 76, -74, '#9ce3d0')
   sign('NIGHT MARKET', -20, -75, '#df95b2', 17)
   sign('AUTO SERVICE', 76, 77, '#a6dbcc', 16)
+  for (const d of DISTRICTS) sign(d.name, d.x + 20, d.z + 20, d.color, 25)
+  for (const p of SERVICES) {
+    // A lettered marker makes the shop type readable before the player reaches its ring.
+    sign(`${p.icon} · ${p.type || p.id}`.toUpperCase(), p.x, p.z, p.color, 18)
+    const ring = new THREE.Mesh(track(new THREE.RingGeometry(5, 5.4, 32)), track(new THREE.MeshBasicMaterial({ color: p.color, side: THREE.DoubleSide })))
+    ring.rotation.x = -Math.PI / 2; ring.position.set(p.x, 0.12, p.z); scene.add(ring)
+  }
 
   // All moving cars share three instanced draws, including lights and glass.
   const parts = [
@@ -150,8 +176,8 @@ export function createScene(host, initial) {
     { x: 0, y: 1.4, z: 1.17, w: 1.57, h: 0.14, d: 0.45, color: '#273b4c' },
   ]
   const cars = [initial.car, ...initial.traffic, ...initial.police]
-  const bodies = new THREE.InstancedMesh(cube, matte, cars.length * parts.length)
-  const lights = new THREE.InstancedMesh(cube, glow, cars.length * 4 + 4)
+  const bodies = new THREE.InstancedMesh(cube, matte, 40 * parts.length)
+  const lights = new THREE.InstancedMesh(cube, glow, 40 * 6)
   bodies.instanceMatrix.setUsage(THREE.DynamicDrawUsage)
   lights.instanceMatrix.setUsage(THREE.DynamicDrawUsage)
   bodies.frustumCulled = lights.frustumCulled = false
@@ -160,10 +186,11 @@ export function createScene(host, initial) {
   track(lights)
 
   function carPart(mesh, index, car, part, color) {
+    const spec = VEHICLES.find((v) => v.id === car.model) || VEHICLES[0]
     const cos = Math.cos(car.heading), sin = Math.sin(car.heading)
-    transform.position.set(car.x + part.x * cos - part.z * sin, part.y, car.z + part.x * sin + part.z * cos)
+    transform.position.set(car.x + part.x * spec.width * cos - part.z * spec.length * sin, part.y, car.z + part.x * spec.width * sin + part.z * spec.length * cos)
     transform.rotation.set(0, -car.heading, 0)
-    transform.scale.set(part.w, part.h, part.d)
+    transform.scale.set(part.w * spec.width, part.h * (car.model === 'sentinel' ? 1.25 : 1), part.d * spec.length)
     transform.updateMatrix()
     mesh.setMatrixAt(index, transform.matrix)
     mesh.setColorAt(index, tint.set(color))
@@ -184,7 +211,19 @@ export function createScene(host, initial) {
   const rightLeg = limb(0.27, 0.8, 0.3, '#1f3547', 0.23, 0.45, 0)
   limb(0.25, 0.7, 0.3, '#cfaa69', -0.54, 1.15, 0)
   limb(0.25, 0.7, 0.3, '#cfaa69', 0.54, 1.15, 0)
+  const gun = limb(0.2, 0.22, 1.2, '#b9c7ca', 0.5, 1.25, -0.8)
   scene.add(person)
+
+  const enemies = new THREE.InstancedMesh(cube, matte, 12)
+  const tracers = new THREE.InstancedMesh(cube, glow, 32)
+  const stashes = new THREE.InstancedMesh(cube, glow, STASHES.length)
+  const rain = new THREE.InstancedMesh(cube, track(new THREE.MeshBasicMaterial({ color: '#9ebec8', transparent: true, opacity: 0.35 })), 180)
+  for (const mesh of [enemies, tracers, stashes, rain]) { mesh.frustumCulled = false; scene.add(mesh); track(mesh) }
+  const setBox = (mesh, i, x, y, z, w, h, d, color, rotation = 0) => {
+    transform.position.set(x, y, z); transform.rotation.set(0, rotation, 0); transform.scale.set(w, h, d); transform.updateMatrix()
+    mesh.setMatrixAt(i, transform.matrix); if (color) mesh.setColorAt(i, tint.set(color))
+  }
+  const raycaster = new THREE.Raycaster(), ground = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0), aimPoint = new THREE.Vector3()
 
   const ringGeo = track(new THREE.RingGeometry(5.7, 6, 64))
   const marker = new THREE.Mesh(ringGeo, track(new THREE.MeshBasicMaterial({ color: '#8df2cd', side: THREE.DoubleSide })))
@@ -225,8 +264,18 @@ export function createScene(host, initial) {
 
   return {
     renderer,
+    aim(clientX, clientY) {
+      const rect = renderer.domElement.getBoundingClientRect()
+      raycaster.setFromCamera(new THREE.Vector2((clientX - rect.left) / rect.width * 2 - 1, 1 - (clientY - rect.top) / rect.height * 2), camera)
+      return raycaster.ray.intersectPlane(ground, aimPoint) ? { x: aimPoint.x, z: aimPoint.z } : null
+    },
     render(s, dt, calm = false) {
       const p = subject(s)
+      const sunset = s.theme === 'sunset', wet = s.theme === 'rain'
+      sky.color.set(sunset ? '#ffe3bb' : '#bcd4f5')
+      sky.intensity = sunset ? 3 : wet ? 1.4 : 1.9 + Math.sin(s.elapsed / 90) * 0.2
+      moon.color.set(sunset ? '#ffbd81' : '#cfdfec')
+      renderer.setClearColor(sunset ? '#9b8375' : wet ? '#162b38' : '#101c29')
       const ahead = s.driving ? s.car.speed * 0.23 : 0
       eye.set(p.x + Math.sin(p.heading) * ahead, 0, p.z - Math.cos(p.heading) * ahead)
       target.lerp(eye, calm ? 1 : 1 - Math.exp(-5 * dt))
@@ -238,19 +287,19 @@ export function createScene(host, initial) {
         camera.updateProjectionMatrix()
       }
       person.visible = !s.driving
+      gun.visible = Boolean(s.weapon)
       person.position.set(s.player.x, 0.3, s.player.z)
       person.rotation.y = -s.player.heading
       leftLeg.rotation.x = s.player.moving && s.phase === 'playing' ? Math.sin(s.elapsed * 15) * 0.65 : 0
       rightLeg.rotation.x = -leftLeg.rotation.x
       playerRing.position.set(p.x, 0.35, p.z)
       playerRing.scale.setScalar(s.driving ? 1.8 : 1)
-      cars[0] = s.car
-      for (let i = 0; i < s.traffic.length; i++) cars[i + 1] = s.traffic[i]
-      for (let i = 0; i < s.police.length; i++) cars[i + 1 + s.traffic.length] = s.police[i]
+      cars.length = 0
+      cars.push(s.car, ...s.parked, ...s.traffic.filter((c) => c.disabled <= 0), ...s.police.filter((c) => c.disabled <= 0))
       let lightIndex = 0
       cars.forEach((car, i) => {
-        const police = i > s.traffic.length
-        const color = i === 0 ? '#e9bb56' : police ? '#d1dce2' : CAR_COLORS[car.color]
+        const police = s.police.includes(car)
+        const color = police ? '#d1dce2' : s.traffic.includes(car) ? CAR_COLORS[car.color] : (VEHICLES.find((v) => v.id === car.model) || VEHICLES[0]).color
         parts.forEach((part, j) => carPart(bodies, i * parts.length + j, car, part, part.color === 'body' ? color : part.color))
         for (const side of [-1, 1]) {
           carPart(lights, lightIndex++, car, { x: side * 0.72, y: 0.8, z: -2.28, w: 0.5, h: 0.24, d: 0.12 }, '#fff1c0')
@@ -263,9 +312,25 @@ export function createScene(host, initial) {
           }
         }
       })
+      bodies.count = cars.length * parts.length; lights.count = lightIndex
       bodies.instanceMatrix.needsUpdate = lights.instanceMatrix.needsUpdate = true
       bodies.instanceColor.needsUpdate = lights.instanceColor.needsUpdate = true
-      const job = JOBS[s.job]
+      let ei = 0
+      for (const e of s.enemies.filter((e) => e.health > 0)) {
+        setBox(enemies, ei++, e.x, 1.15, e.z, 1, 1.8, 0.6, '#cb6674', -e.heading)
+        setBox(enemies, ei++, e.x, 2.2, e.z, 0.6, 0.5, 0.6, '#d9b496')
+        setBox(enemies, ei++, e.x, 3, e.z, e.health / 90 * 2, 0.15, 0.25, '#ed927e')
+      }
+      enemies.count = ei
+      tracers.count = Math.min(32, s.shots.length)
+      s.shots.slice(0, 32).forEach((shot, i) => setBox(tracers, i, (shot.x + shot.tx) / 2, 1.3, (shot.z + shot.tz) / 2, 0.09, 0.08, Math.hypot(shot.tx - shot.x, shot.tz - shot.z), shot.hostile ? '#ff8f81' : '#ffdf94', Math.atan2(shot.tx - shot.x, shot.tz - shot.z)))
+      const remaining = STASHES.filter((c) => !s.found.includes(c.id))
+      stashes.count = remaining.length
+      remaining.forEach((c, i) => setBox(stashes, i, c.x, 1.1, c.z, 1.3, 1.3, 1.3, '#f3cc73', calm ? 0 : s.elapsed * 0.6))
+      rain.visible = wet && !calm
+      if (rain.visible) for (let i = 0; i < 180; i++) setBox(rain, i, p.x + (i * 17 % 110) - 55, 24 - (s.elapsed * 21 + i * 7) % 24, p.z + (i * 31 % 100) - 50, 0.035, 1.3, 0.035)
+      for (const mesh of [enemies, tracers, stashes, rain]) { mesh.instanceMatrix.needsUpdate = true; if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true }
+      const job = missionTarget(s)
       marker.visible = beam.visible = diamond.visible = Boolean(job)
       if (job) {
         marker.position.set(job.x, 0.08, job.z)
@@ -291,7 +356,7 @@ export function drawMap(canvas, s) {
   const ctx = canvas.getContext('2d')
   if (!ctx) return
   const size = canvas.width
-  const scale = size / 270
+  const scale = size / (LIMIT * 2 + 24)
   ctx.clearRect(0, 0, size, size)
   ctx.fillStyle = '#101e29'
   ctx.fillRect(0, 0, size, size)
@@ -302,13 +367,18 @@ export function drawMap(canvas, s) {
   ctx.lineWidth = 8
   for (const r of ROADS) {
     ctx.beginPath()
-    ctx.moveTo(-123, r); ctx.lineTo(123, r)
-    ctx.moveTo(r, -123); ctx.lineTo(r, 123)
+    ctx.moveTo(-LIMIT, r); ctx.lineTo(LIMIT, r)
+    ctx.moveTo(r, -LIMIT); ctx.lineTo(r, LIMIT)
     ctx.stroke()
   }
-  ctx.fillStyle = '#293d49'
-  for (const b of BUILDINGS) ctx.fillRect(b.x - b.w / 2, b.z - b.d / 2, b.w, b.d)
-  const job = JOBS[s.job]
+  for (const b of BUILDINGS) { ctx.fillStyle = b.color; ctx.fillRect(b.x - b.w / 2, b.z - b.d / 2, b.w, b.d) }
+  for (const stash of STASHES) if (!s.found.includes(stash.id)) { ctx.fillStyle = '#eec16d'; ctx.fillRect(stash.x - 2, stash.z - 2, 4, 4) }
+  for (const service of SERVICES) {
+    ctx.fillStyle = '#10202a'; ctx.fillRect(service.x - 9, service.z - 9, 18, 18)
+    ctx.fillStyle = service.color; ctx.font = 'bold 13px monospace'; ctx.textAlign = 'center'; ctx.fillText(service.icon, service.x, service.z + 5)
+  }
+  for (const enemy of s.enemies) if (enemy.health > 0) { ctx.fillStyle = '#ed8b83'; ctx.fillRect(enemy.x - 3, enemy.z - 3, 6, 6) }
+  const job = missionTarget(s)
   if (job) {
     const p = subject(s)
     ctx.strokeStyle = '#77dab1'

@@ -1,15 +1,12 @@
 // Assisted arcade flight, not an aeronautical training model. Metres / seconds.
+import { getAircraft } from './aircraft.js'
+import { CHECKPOINT_GOLD } from './progress.js'
+import { WORLD_LIMIT, terrainHeight, biomeAt } from './world.js'
+export { WORLD_LIMIT, ISLANDS, terrainHeight } from './world.js'
+
 export const STEP = 1 / 120
 export const TIME_LIMIT = 150
-export const WORLD_LIMIT = 2800
 export const SPAWN = { x: 0, y: 125, z: 240 }
-export const ISLANDS = [
-  { x: 370, z: -350, rx: 325, rz: 370, height: 175 },
-  { x: -520, z: -680, rx: 300, rz: 240, height: 145 },
-  { x: 750, z: -1400, rx: 430, rz: 290, height: 215 },
-  { x: -580, z: 630, rx: 390, rz: 310, height: 155 },
-  { x: 1390, z: 350, rx: 340, rz: 450, height: 190 },
-]
 export const GATES = [
   { x: 0, y: 125, z: -70, radius: 30, name: '첫 번째 바람' },
   { x: 0, y: 135, z: -350, radius: 32, name: '해안선' },
@@ -19,37 +16,42 @@ export const GATES = [
   { x: 910, y: 125, z: -270, radius: 38, name: '섬의 끝' },
   { x: 660, y: 125, z: 140, radius: 38, name: '귀환 항로' },
   { x: 280, y: 125, z: 320, radius: 38, name: '홈 스트레치' },
-].map((gate, index, gates) => {
+].map(orientGate)
+
+function orientGate(gate, index, gates) {
   const previous = gates[index - 1] || SPAWN
   const dx = gate.x - previous.x, dy = gate.y - previous.y, dz = gate.z - previous.z
   const length = Math.hypot(dx, dy, dz)
   return { ...gate, normal: { x: dx / length, y: dy / length, z: dz / length } }
-})
+}
+
+export const ROUTES = [
+  { id: 'coast', name: '해안 항로', time: TIME_LIMIT, gates: GATES },
+  { id: 'world', name: '월드 투어', time: 660, gates: [
+    { x: 0, y: 150, z: -350, radius: 42, name: '바다에서 출발' },
+    { x: -1400, y: 280, z: -1400, radius: 60, name: '정글의 입구' },
+    { x: -3300, y: 400, z: -2100, radius: 65, name: '에메랄드 수관' },
+    { x: -2400, y: 550, z: -3300, radius: 65, name: '숲 너머 능선' },
+    { x: -300, y: 880, z: -4100, radius: 70, name: '알파인 고개' },
+    { x: 1500, y: 950, z: -3500, radius: 70, name: '설산의 바람' },
+    { x: 3200, y: 580, z: -2200, radius: 65, name: '동쪽 산자락' },
+    { x: 4100, y: 320, z: -500, radius: 60, name: '대륙의 지평선' },
+    { x: 4000, y: 260, z: 1400, radius: 60, name: '골든 평원' },
+    { x: 2200, y: 220, z: 2800, radius: 60, name: '남쪽 초원' },
+    { x: 400, y: 180, z: 1500, radius: 55, name: '다시 푸른 바다로' },
+    { x: 0, y: 125, z: 400, radius: 50, name: '대륙 횡단의 끝' },
+  ].map(orientGate) },
+]
+export const getRoute = (id) => ROUTES.find((route) => route.id === id) || ROUTES[0]
 
 export const clamp = (value, min, max) => Math.min(max, Math.max(min, value))
 export const angleDifference = (a, b) => Math.atan2(Math.sin(a - b), Math.cos(a - b))
 
-export function terrainHeight(x, z) {
-  let height = -3
-  for (const island of ISLANDS) {
-    const nx = (x - island.x) / island.rx, nz = (z - island.z) / island.rz
-    const r = Math.hypot(nx, nz)
-    const edge = 1 + 0.075 * Math.sin(Math.atan2(nz, nx) * 5 + island.x)
-    if (r >= edge) continue
-    const profile = Math.pow(Math.max(0, 1 - r / edge), 1.55)
-    const ridges = 1 + 0.19 * Math.sin(x * 0.022 + z * 0.013) * Math.cos(z * 0.027)
-    height = Math.max(height, profile * island.height * ridges - 2)
-  }
-  // Flat-topped airfield island, shared by visual terrain and collision checks.
-  const airfield = Math.hypot((x + 220) / 170, (z - 190) / 235)
-  height = Math.max(height, Math.min(10, (1 - airfield) * 65))
-  return height
-}
-
-export function createFlight(mode = 'course') {
+export function createFlight(mode = 'course', aircraftId = 'trainer', routeId = 'coast') {
+  const aircraft = getAircraft(aircraftId), route = getRoute(routeId)
   return {
-    phase: 'ready', mode, position: { ...SPAWN }, heading: 0, pitch: 0, roll: 0,
-    speed: 62, throttle: 0.58, elapsed: 0, time: TIME_LIMIT, gate: 0, score: 0,
+    phase: 'ready', mode, aircraft: aircraft.id, route: route.id, position: { ...SPAWN }, heading: 0, pitch: 0, roll: 0,
+    speed: aircraft.cruise, throttle: 0.58, elapsed: 0, time: route.time, gate: 0, score: 0, goldEarned: 0,
     notice: '', noticeTime: 0, reason: '', clearance: 125,
   }
 }
@@ -74,16 +76,17 @@ export function stepFlight(state, input = {}, dt = STEP) {
   dt = Math.min(dt, 1 / 30)
   const axis = (value) => Number.isFinite(value) ? clamp(value, -1, 1) : 0
   const pitch = axis(input.pitch), bank = axis(input.bank)
+  const aircraft = getAircraft(state.aircraft), route = getRoute(state.route)
   state.elapsed += dt
   if (state.mode === 'course') state.time = Math.max(0, state.time - dt)
   state.noticeTime = Math.max(0, state.noticeTime - dt)
   state.throttle = clamp(state.throttle + axis(input.throttle) * dt * 0.3, 0, 1)
-  state.pitch += (pitch * 0.5 - state.pitch) * (1 - Math.exp(-3.3 * dt))
+  state.pitch += (pitch * aircraft.climb - state.pitch) * (1 - Math.exp(-aircraft.response * dt))
   state.roll += (bank * 0.98 - state.roll) * (1 - Math.exp(-4.2 * dt))
-  const targetSpeed = input.brake ? 30 : 30 + state.throttle * 68
+  const targetSpeed = input.brake ? aircraft.minSpeed : aircraft.minSpeed + state.throttle * (aircraft.maxSpeed - aircraft.minSpeed)
   state.speed += (targetSpeed - state.speed) * (1 - Math.exp(-0.8 * dt)) - Math.sin(state.pitch) * 7 * dt
-  state.speed = clamp(state.speed, 23, 105)
-  state.heading = angleDifference(state.heading + Math.tan(state.roll) * 0.40 * dt, 0)
+  state.speed = clamp(state.speed, aircraft.minSpeed - 7, aircraft.maxSpeed + 7)
+  state.heading = angleDifference(state.heading + Math.tan(state.roll) * aircraft.turn * dt, 0)
   const before = { ...state.position }
   const horizontal = Math.cos(state.pitch) * state.speed
   state.position.x += Math.sin(state.heading) * horizontal * dt
@@ -96,31 +99,33 @@ export function stepFlight(state, input = {}, dt = STEP) {
     state.reason = terrainHeight(state.position.x, state.position.z) > 0 ? 'terrain' : 'water'
     return
   }
-  if (Math.hypot(state.position.x, state.position.z) > WORLD_LIMIT || state.position.y > 1100) {
+  if (Math.hypot(state.position.x, state.position.z) > WORLD_LIMIT || state.position.y > 1600) {
     state.phase = 'crashed'
     state.reason = 'boundary'
     return
   }
   if (state.mode === 'course' && state.time <= 0) { state.phase = 'crashed'; state.reason = 'timeout'; return }
-  const gate = state.mode === 'course' ? GATES[state.gate] : null
+  const gate = state.mode === 'course' ? route.gates[state.gate] : null
   if (gate) {
     const crossing = gateCrossing(before, state.position, gate)
     if (crossing !== null) {
       state.gate++
       const points = 100 + Math.round((1 - crossing) * 100)
       state.score += points
+      state.goldEarned += CHECKPOINT_GOLD
       state.notice = crossing < 0.3 ? `PERFECT LINE +${points}` : `CHECKPOINT +${points}`
       state.noticeTime = 2
-      if (state.gate === GATES.length) state.phase = 'won'
+      if (state.gate === route.gates.length) state.phase = 'won'
     }
   }
 }
 
 export function flightTelemetry(state) {
-  const gate = GATES[state.gate]
+  const gate = getRoute(state.route).gates[state.gate]
   const target = state.mode === 'course' && gate
   return {
-    phase: state.phase, mode: state.mode, speed: Math.round(state.speed * 3.6), altitude: Math.round(state.position.y),
+    phase: state.phase, mode: state.mode, aircraft: state.aircraft, route: state.route, biome: biomeAt(state.position.x, state.position.z), goldEarned: state.goldEarned,
+    speed: Math.round(state.speed * 3.6), altitude: Math.round(state.position.y),
     clearance: Math.round(state.clearance), throttle: Math.round(state.throttle * 100),
     heading: (Math.round(state.heading * 180 / Math.PI) + 360) % 360, roll: state.roll, pitch: state.pitch,
     time: Math.ceil(state.time), elapsed: state.elapsed, gate: state.gate, score: state.score, reason: state.reason,

@@ -117,7 +117,6 @@ export function loadFlightAssets({ scene, renderer, own, isDisposed, invalidate,
       texture('grass-color.jpg', true), texture('grass-normal.jpg'), texture('grass-rough.jpg'),
     ])
     if (isDisposed()) return
-    terrainMaterial.vertexColors = false
     terrainMaterial.map = sand
     terrainMaterial.normalMap = sandNormal
     terrainMaterial.normalScale.set(.65, .65)
@@ -136,7 +135,9 @@ export function loadFlightAssets({ scene, renderer, own, isDisposed, invalidate,
           float sbLandMix = smoothstep(5.0, 24.0, vSbHeight);
           vec3 sbSand = mix(texture2D(map, vMapUv * .24).rgb, texture2D(map, -vMapUv * .13 + .37).rgb, .45);
           vec3 sbGrassColor = mix(texture2D(sbGrass, vMapUv * .24).rgb, texture2D(sbGrass, -vMapUv * .13 + .37).rgb, .45);
-          vec3 sbColor = mix(sbSand, sbGrassColor * vec3(.59, .76, .58), sbLandMix);
+          vec3 sbColor = mix(sbSand, sbGrassColor, sbLandMix);
+          sbColor = mix(sbColor, vec3(.82), smoothstep(250., 520., vSbHeight));
+          sbColor = mix(sbColor, vec3(1.), smoothstep(520., 620., vSbHeight));
           diffuseColor.rgb *= sbColor;
         `)
         .replace('#include <normal_fragment_maps>', THREE.ShaderChunk.normal_fragment_maps.replaceAll(
@@ -147,7 +148,7 @@ export function loadFlightAssets({ scene, renderer, own, isDisposed, invalidate,
           float roughnessFactor = roughness * mix(texture2D(roughnessMap, vRoughnessMapUv).g, texture2D(sbGrassRough, vRoughnessMapUv).g, sbLandMix);
         `)
     }
-    terrainMaterial.customProgramCacheKey = () => 'skybound-coastal-pbr-v1'
+    terrainMaterial.customProgramCacheKey = () => 'skybound-biomes-pbr-v2'
     terrainMaterial.needsUpdate = true
   })
   return status

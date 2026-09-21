@@ -109,6 +109,57 @@
 .sb-pilot-label { position: absolute; top: 153px; left: 50%; transform: translateX(-50%); display: flex; gap: 9px; align-items: center; font: 7px var(--font-mono); letter-spacing: .1em; color: #3e6362; pointer-events: none; }
 .sb-pilot-label > i { width: 3px; height: 3px; border-radius: 50%; background: #a6794e; }
 .sb-pilot-label > b { font-weight: 400; margin-left: 7px; }
+.sb-gold { color: #805d27; font: 12px var(--font-mono); white-space: nowrap; }
+.sb-gold > span { font-size: 9px; }
+.sb-save-status { position: absolute; z-index: 5; top: 49px; right: 30px; margin: 0; max-width: 310px; font-size: 10px; color: #805d27; }
+.sb-map-labels { font: 5px var(--font-mono); text-anchor: middle; fill: #284b44; }
+.sb-route-select { display: flex; align-items: center; justify-content: space-between; gap: 12px; max-width: 365px; margin: 0 0 12px; font-size: 10px; color: #4f7070; }
+.sb-route-select select { min-width: 0; max-width: 260px; font: inherit; color: var(--sb-ink); background: #f3f0e5b0; border: 1px solid #66847538; padding: 7px; border-radius: 4px; }
+.sb-route-select select:focus-visible { outline: 2px solid #b36d3d; outline-offset: 3px; }
+.sb-hangar-link { display: flex; width: 100%; max-width: 365px; justify-content: space-between; align-items: center; gap: 10px; padding: 11px 0; margin: 0 0 12px; border: 0; border-top: 1px solid #607d7040; border-bottom: 1px solid #607d7040; background: transparent; font-size: 10px !important; text-align: left; }
+.sb-hangar-link small { margin-left: 7px; color: #567779; font-size: 8px; }
+.sb-hangar-link > span:last-child { color: #8a6034; white-space: nowrap; }
+.sb-return { margin-left: 20px; }
+.sb-results { gap: 22px; flex-wrap: wrap; }
+.sb-results strong { font-size: 23px; }
+.sb-overlay { align-items: safe center; }
+.sb-hangar-overlay { padding: 25px; }
+.sb-hangar { width: 720px; max-width: 100%; flex-shrink: 0; padding: 26px; border: 1px solid #f9f5e5aa; border-radius: 12px; background: #edf0e2f5; box-shadow: 0 18px 60px #173e4020; }
+.sb-hangar-heading { display: flex; align-items: center; justify-content: space-between; gap: 20px; }
+.sb-hangar-heading h1 { margin: 8px 0 0; font-size: 30px; font-weight: 500; letter-spacing: -.045em; color: var(--sb-ink); }
+.sb-hangar-close { border: 1px solid #56777944; border-radius: 50%; background: transparent; width: 36px; height: 36px; font-size: 24px !important; }
+.sb-hangar-copy { margin: 12px 0 20px; font-size: 11px; color: #567779; line-height: 1.7; }
+.sb-hangar-balance { display: flex; align-items: center; gap: 12px; padding-bottom: 15px; font-size: 10px; }
+.sb-hangar-balance strong { color: #956b2d; font: 24px var(--font-mono); }
+.sb-hangar-balance small { font-size: 11px; }
+.sb-hangar-balance > span:last-child { margin-left: auto; color: #567779; }
+.sb-aircraft-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.sb-aircraft-card { min-width: 0; padding: 16px; border: 1px solid #607d7040; border-radius: 7px; background: #faf7ea88; }
+.sb-selected-aircraft { border-color: #b2925b; background: #f6efdc; }
+.sb-aircraft-topline { display: flex; justify-content: space-between; gap: 7px; font: 7px var(--font-mono); color: #638078; }
+.sb-aircraft-topline > span:last-child { color: #8a6034; white-space: nowrap; }
+.sb-aircraft-drawing { display: block; width: 100%; height: 84px; }
+.sb-aircraft-card h2 { margin: 1px 0 6px; font-size: 17px; font-weight: 500; color: var(--sb-ink); }
+.sb-aircraft-card p { min-height: 30px; margin: 0 0 12px; font-size: 10px; line-height: 1.6; color: #567779; word-break: keep-all; }
+.sb-aircraft-spec { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 5px; margin-bottom: 12px; font-size: 8px; color: #60766b; }
+.sb-aircraft-card button { width: 100%; border: 1px solid #244f50; border-radius: 4px; padding: 10px 8px; background: #244f50; color: #f8f1da; font-size: 10px; }
+.sb-aircraft-card button:disabled { cursor: default; background: #dae0d270; border-color: #607d7028; color: #6d7f6f; }
+.sb-hangar-note { margin: 16px 0 0; font-size: 9px; line-height: 1.6; color: #60766b; }
+.sb-hangar > .sb-start { max-width: none; margin-top: 14px; }
+@media (min-width: 701px) { .sb-intro-overlay .sb-card h1 { font-size: clamp(42px, 4.3vw, 62px); margin: 16px 0; } .sb-intro-overlay .sb-mode-select { margin-top: 18px; } }
+@media (max-width: 700px) {
+  .sb-header-tools { gap: 9px; }
+  .sb-gold { font-size: 10px; }
+  .sb-hangar-overlay { padding: 16px; }
+  .sb-hangar { padding: 18px; margin-block: auto; }
+  .sb-hangar-heading h1 { font-size: 25px; }
+  .sb-aircraft-grid { grid-template-columns: 1fr; }
+  .sb-aircraft-card { padding: 14px; }
+  .sb-aircraft-drawing { height: 72px; }
+  .sb-aircraft-card p { min-height: 0; }
+  .sb-save-status { right: 18px; font-size: 8px; }
+  .sb-hangar-link { font-size: 9px !important; }
+}
 .skybound[data-view=cockpit][data-phase=playing] .sb-instruments { opacity: 0; }
 .skybound[data-view=cockpit] .sb-view-button { top: 169px; bottom: auto; }
 .skybound[data-view=cockpit] .sb-map { top: 221px; bottom: auto; width: 128px; }

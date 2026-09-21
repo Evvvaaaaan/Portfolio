@@ -1,0 +1,112 @@
+import { expect, test } from '@playwright/test'
+
+const key = 'skybound-progress-v1'
+const saved = (page) => page.evaluate((key) => JSON.parse(localStorage.getItem(key)), key)
+
+test.beforeEach(async ({ page }) => {
+  // Progression must also work when optional model and texture downloads fail.
+  await page.route('**/skybound/**', (route) => route.fulfill({ status: 404, body: '' }))
+})
+
+async function open(page) {
+  await page.goto('/gallery/skybound?debug')
+  await expect(page.getByRole('button', { name: '비행 시작하기' })).toBeVisible()
+  await page.waitForFunction(() => Boolean(window.__skybound))
+}
+
+test('checkpoint earnings survive reload and buy a plane that stays selected', async ({ page }) => {
+  test.setTimeout(60_000)
+  const errors = []
+  page.on('pageerror', (error) => errors.push(error.message))
+  await open(page)
+  await page.getByRole('button', { name: '비행 시작하기' }).click()
+  await expect.poll(() => page.evaluate(() => window.__skybound.state().gate), { timeout: 20_000 }).toBe(2)
+  await page.keyboard.press('KeyP')
+  expect((await saved(page)).gold).toBe(200)
+  await page.reload()
+  await expect(page.getByLabel('보유 골드')).toContainText('200')
+  await page.getByRole('button', { name: /격납고 · 기체 구매/ }).click()
+  await expect(page.getByRole('button', { name: 'Jungle Hopper 구매' })).toBeDisabled()
+  await page.getByRole('button', { name: '격납고 닫기' }).click()
+  await page.getByRole('button', { name: '비행 시작하기' }).click()
+  await expect.poll(() => page.evaluate(() => window.__skybound.state().gate), { timeout: 15_000 }).toBe(1)
+  await page.keyboard.press('KeyP')
+  expect((await saved(page)).gold).toBe(300)
+  await page.getByRole('button', { name: '격납고로 돌아가기' }).click()
+  await page.getByRole('button', { name: 'Jungle Hopper 구매' }).click()
+  expect(await saved(page)).toEqual({ gold: 0, owned: ['trainer', 'bush'], selected: 'bush' })
+  await expect(page.getByRole('button', { name: 'Jungle Hopper 선택' })).toBeDisabled()
+  await page.reload()
+  await expect(page.locator('.sb-canvas')).toHaveAttribute('data-aircraft', 'bush')
+  await page.getByRole('button', { name: '비행 시작하기' }).click()
+  expect(await page.evaluate(() => window.__skybound.state().aircraft)).toBe('bush')
+  expect((await saved(page)).gold).toBe(0)
+  expect(errors).toEqual([])
+})
+
+test('all purchased airframes can be selected and the world tour starts with 12 gates', async ({ page }, testInfo) => {
+  await page.addInitScript((key) => {
+    if (!localStorage.getItem(key)) localStorage.setItem(key, JSON.stringify({ gold: 3000, owned: ['trainer'], selected: 'trainer' }))
+  }, key)
+  await open(page)
+  await page.getByRole('button', { name: /격납고 · 기체 구매/ }).click()
+  for (const [name, id, gold] of [['Jungle Hopper', 'bush', 2700], ['Alpine Glider', 'sailplane', 2100], ['Horizon Jet', 'jet', 900]]) {
+    await page.getByRole('button', { name: `${name} 구매` }).click()
+    expect((await saved(page)).gold).toBe(gold)
+    await expect(page.locator('.sb-canvas')).toHaveAttribute('data-aircraft', id)
+  }
+  await page.screenshot({ path: testInfo.outputPath('owned-hangar.png') })
+  await page.getByRole('button', { name: '격납고 닫기' }).click()
+  await page.selectOption('#sb-route', 'world')
+  await page.getByRole('button', { name: '추적 시점', exact: true }).click()
+  await page.getByRole('button', { name: '비행 시작하기' }).click()
+  await expect(page.locator('.sb-mission')).toContainText('/ 12')
+  const flight = await page.evaluate(() => window.__skybound.state())
+  expect(flight.route).toBe('world')
+  expect(flight.aircraft).toBe('jet')
+  expect(flight.time).toBeGreaterThan(655)
+  await page.keyboard.down('KeyW')
+  await expect.poll(() => page.evaluate(() => window.__skybound.state().position.y)).toBeGreaterThan(140)
+  await page.keyboard.up('KeyW')
+  await page.screenshot({ path: testInfo.outputPath('jet-world-tour.png') })
+  await page.keyboard.press('KeyP')
+  await page.getByRole('button', { name: '격납고로 돌아가기' }).click()
+  await page.getByRole('button', { name: 'Alpine Glider 선택' }).click()
+  expect((await saved(page)).gold).toBe(900)
+  await page.reload()
+  await expect(page.locator('.sb-canvas')).toHaveAttribute('data-aircraft', 'sailplane')
+})
+
+test('mobile hangar scrolls to every purchase and touch controls fly the selected plane', async ({ page }, testInfo) => {
+  await page.setViewportSize({ width: 390, height: 844 })
+  await open(page)
+  await page.getByRole('button', { name: /격납고 · 기체 구매/ }).click()
+  await expect(page.getByRole('heading', { name: '나만의 격납고' })).toBeInViewport()
+  const jet = page.getByRole('button', { name: 'Horizon Jet 구매' })
+  await jet.scrollIntoViewIfNeeded()
+  await expect(jet).toBeInViewport()
+  await page.getByRole('button', { name: '격납고 닫기' }).scrollIntoViewIfNeeded()
+  await page.screenshot({ path: testInfo.outputPath('mobile-hangar.png') })
+  await page.getByRole('button', { name: '격납고 닫기' }).click()
+  await page.getByRole('button', { name: /자유 비행/ }).click()
+  await page.getByRole('button', { name: '비행 시작하기' }).click()
+  const up = page.getByRole('button', { name: '상승', exact: true })
+  const bounds = await up.boundingBox()
+  await page.mouse.move(bounds.x + bounds.width / 2, bounds.y + bounds.height / 2)
+  await page.mouse.down()
+  await expect.poll(() => page.evaluate(() => window.__skybound.state().position.y)).toBeGreaterThan(135)
+  await page.mouse.up()
+  await expect(page.locator('.skybound')).toHaveAttribute('data-phase', 'playing')
+  await page.screenshot({ path: testInfo.outputPath('mobile-flight.png') })
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
+})
+
+test('storage failure keeps flying and clearly reports that progress cannot persist', async ({ page }) => {
+  await page.addInitScript(() => { Storage.prototype.setItem = () => { throw new DOMException('Blocked', 'QuotaExceededError') } })
+  await open(page)
+  await page.getByRole('button', { name: '비행 시작하기' }).click()
+  await expect.poll(() => page.evaluate(() => window.__skybound.state().gate), { timeout: 15_000 }).toBe(1)
+  await expect(page.getByLabel('보유 골드')).toContainText('100')
+  await expect(page.locator('.sb-save-status')).toContainText('이번 접속 동안만')
+  await expect(page.locator('.skybound')).toHaveAttribute('data-phase', 'playing')
+})

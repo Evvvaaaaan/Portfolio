@@ -1,5 +1,6 @@
 import * as THREE from 'three'
 import { clamp } from './game.js'
+import { getAircraft } from './aircraft.js'
 
 // Camera-local interior: the landscape follows the aircraft attitude while the
 // instruments stay fixed in the pilot's field of view. Geometry remains local;
@@ -46,9 +47,11 @@ export function createCockpit(camera, own) {
   hood.position.set(0, -1.05, -4.8); hood.scale.set(.64, .55, 2.7)
   cockpit.add(hood)
   box(cockpit, copper, [0, -.508, -4.8], [.13, .012, 2.9])
+  const highWings = new THREE.Group()
+  cockpit.add(highWings)
   for (const side of [-1, 1]) {
-    box(cockpit, ivory, [side * 3.2, 1.4, -.8], [4.7, .09, 1.55]).rotation.z = side * .025
-    tube(cockpit, [[side * .85, -.85, -1.9], [side * 3.4, 1.4, -.95]], .035, ivory)
+    box(highWings, ivory, [side * 3.2, 1.4, -.8], [4.7, .09, 1.55]).rotation.z = side * .025
+    tube(highWings, [[side * .85, -.85, -1.9], [side * 3.4, 1.4, -.95]], .035, ivory)
   }
   const propeller = new THREE.Mesh(own(new THREE.RingGeometry(.35, 1.5, 48)), own(new THREE.MeshBasicMaterial({ color: '#bfc9bc', transparent: true, opacity: .055, side: THREE.DoubleSide, depthWrite: false })))
   propeller.position.set(0, -1.05, -7.4)
@@ -127,17 +130,20 @@ export function createCockpit(camera, own) {
       instruments.position.y = -.68 * (1 - ratio) - (aspect < .8 ? .12 : 0)
     },
     update(state, calm) {
+      const aircraft = getAircraft(state.aircraft)
+      highWings.visible = aircraft.id === 'trainer' || aircraft.id === 'bush'
+      copper.color.set(aircraft.color)
       yoke.rotation.z = -state.roll * .7
       yoke.position.z = -1.52 + state.pitch * .12
       throttle.rotation.x = .4 - state.throttle * .8
-      propeller.visible = !calm
+      propeller.visible = !calm && aircraft.id !== 'jet'
       if (Math.abs(state.elapsed - lastUpdate) < .08) return
       lastUpdate = state.elapsed
       ctx.fillStyle = '#1b2b2f'; ctx.fillRect(0, 0, 1280, 400)
       ctx.strokeStyle = '#34494b'; ctx.lineWidth = 1
       for (let y = 0; y < 400; y += 4) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(1280, y); ctx.stroke() }
-      dial(313, 'AIRSPEED', state.speed * 3.6, 360, 'KM / H')
-      dial(967, 'ALTITUDE', state.position.y, 1200, 'METRES')
+      dial(313, 'AIRSPEED', state.speed * 3.6, Math.ceil(aircraft.maxSpeed * 3.6 / 100) * 100, 'KM / H')
+      dial(967, 'ALTITUDE', state.position.y, 1600, 'METRES')
       ctx.save(); ctx.beginPath(); ctx.arc(640, 194, 104, 0, Math.PI * 2); ctx.clip()
       ctx.translate(640, 194); ctx.rotate(state.roll); ctx.translate(0, state.pitch * 130)
       ctx.fillStyle = '#6999aa'; ctx.fillRect(-220, -350, 440, 350)
@@ -153,7 +159,7 @@ export function createCockpit(camera, own) {
       ctx.moveTo(703, 194); ctx.lineTo(666, 194); ctx.lineTo(666, 202); ctx.stroke()
       ctx.fillStyle = '#ffe1a0'; ctx.beginPath(); ctx.arc(640, 194, 3, 0, Math.PI * 2); ctx.fill()
       text('ATTITUDE', 640, 59, 16)
-      text('SB–01', 88, 67, 18, '#e2d3b4'); text('COASTAL EXPLORER', 88, 87, 9)
+      text(aircraft.id.toUpperCase(), 88, 67, 14, '#e2d3b4'); text(aircraft.subtitle, 88, 87, 9)
       text('PWR', 1177, 148, 14); text(`${Math.round(state.throttle * 100)}%`, 1177, 180, 26, '#e7d5aa')
       text('HDG', 1177, 225, 14); text(`${String((Math.round(state.heading * 180 / Math.PI) + 360) % 360).padStart(3, '0')}°`, 1177, 254, 23, '#c8e6d0')
       text('AURELIA  /  118.70', 640, 335, 16, '#cae1cc')

@@ -279,7 +279,7 @@ export const experiments = [
     id: 'midnight-dispatch',
     title: 'Midnight Dispatch',
     description:
-      'GTA 2의 탑다운 감각에서 출발한 독자적인 3D 야간 도시 게임. 거리를 걷고 노란 쿠페에 올라 세 곳에 화물을 배달합니다. 교통과 순찰대를 피해 제한 시간 안에 야간 근무를 마치세요. WASD·방향키 이동, E 탑승, Space 핸드브레이크. 모바일 터치 조작도 지원합니다.',
+      'GTA 2의 탑다운 감각에서 출발한 독자적인 오픈월드 도시 게임. 네온 도심·사막·항구·해안을 오가며 배달, 택시, 레이스, 소탕, 추격 탈출 의뢰로 돈과 명성을 모으세요. 총 3종과 차량 4종을 구매하고 수배를 따돌리며 나만의 차고를 채웁니다. B 의뢰·상점, M 지도, E 탑승, F 사격. 자동 저장과 모바일 조작을 지원합니다.',
     tags: ['three.js', 'game', 'driving'],
     color: '#eac074',
     planet: 'uranus',

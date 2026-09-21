@@ -58,7 +58,7 @@ describe('Midnight Dispatch', () => {
     const s = playing()
     interact(s)
     stepGame(s, { x: Infinity, y: NaN }, 10)
-    expect(s.time).toBeCloseTo(180 - 1 / 30)
+    expect(s.elapsed).toBeCloseTo(1 / 30)
     expect(s.car.x).toBe(-3)
     expect(s.car.z).toBe(16)
     advance(s, { x: 0, y: 0 }, 1)
@@ -86,7 +86,7 @@ describe('Midnight Dispatch', () => {
     expect(s.car.health).toBeLessThan(100)
   })
 
-  it('requires a stopped vehicle, completes three drops, and restarts cleanly', () => {
+  it('requires a stopped vehicle, repeats deliveries, and keeps the city open', () => {
     const s = playing()
     s.player.x = JOBS[0].x
     s.player.z = JOBS[0].z
@@ -98,18 +98,19 @@ describe('Midnight Dispatch', () => {
       Object.assign(s.car, job, { speed: 0, vx: 0, vz: 0 })
       advance(s, {}, 1)
     }
-    expect(s.phase).toBe('won')
-    expect(s.cash).toBe(2650)
-    expect(s.job).toBe(3)
+    expect(s.phase).toBe('playing')
+    expect(s.cash).toBe(JOBS.reduce((sum, job) => sum + job.reward, 0))
+    expect(s.job).toBe(JOBS.length)
     expect(createGame().job).toBe(0)
     expect(createGame().car.health).toBe(100)
   })
 
-  it('has reachable failure states for both the clock and the vehicle', () => {
+  it('expires timed jobs without ending the career, and detects wrecked vehicles', () => {
     const timed = playing()
-    timed.time = STEP / 2
+    timed.mission.time = STEP / 2
     stepGame(timed)
-    expect(timed.phase).toBe('lost')
+    expect(timed.phase).toBe('playing')
+    expect(timed.mission.time).toBeNull()
     const wrecked = playing()
     wrecked.car.health = 0
     stepGame(wrecked)
