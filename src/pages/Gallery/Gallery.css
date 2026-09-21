@@ -922,30 +922,6 @@
   font-weight: 600;
 }
 
-.carousel-download {
-  font-family: var(--font-mono);
-  font-size: 11px;
-  letter-spacing: 0.04em;
-  color: var(--text-h);
-  padding: 9px 13px;
-  border: 1px solid rgba(161, 181, 139, 0.7);
-  border-radius: 999px;
-  background: rgba(9, 13, 8, 0.68);
-  box-shadow: 0 0 22px rgba(161, 181, 139, 0.14);
-  transition: background 0.2s, border-color 0.2s, transform 0.2s;
-}
-
-.carousel-download:hover {
-  background: rgba(161, 181, 139, 0.2);
-  border-color: #d2e6bd;
-  transform: translateY(-1px);
-}
-
-.carousel-download small {
-  margin-left: 6px;
-  color: var(--text-muted);
-}
-
 /* ── ☁ Sky (Drifting Clouds): soft daytime sky with drifting cloud puffs ── */
 .planet-sky .planet-surface {
   background: linear-gradient(168deg, #3a8db5 0%, #7ec8e3 52%, #b8dff0 100%);

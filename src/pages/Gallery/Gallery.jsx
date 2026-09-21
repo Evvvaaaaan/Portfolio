@@ -241,16 +241,6 @@ export default function Gallery() {
           <div className="carousel-progress">
             <span style={{ width: `${((active + 1) / n) * 100}%` }} />
           </div>
-          {experiments[active].desktopDownload && (
-            <a
-              className="carousel-download"
-              href={experiments[active].desktopDownload}
-              download
-              onPointerDown={(event) => event.stopPropagation()}
-            >
-              ↓ Spatial Studio 내려받기 <small>macOS</small>
-            </a>
-          )}
         </div>
       </div>
 

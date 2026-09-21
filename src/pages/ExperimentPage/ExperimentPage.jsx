@@ -47,6 +47,7 @@ export default function ExperimentPage() {
     return (
       <div className="exp-fullscreen">
         <Link to="/gallery" className="exp-fullscreen-back">← Lab</Link>
+        {exp.desktopDownload && <a className="exp-desktop-download" href={exp.desktopDownload} download>↓ Spatial Studio 내려받기 <small>macOS</small></a>}
         {bar}
         <Suspense fallback={<div className="exp-page-loading">Loading…</div>}>
           <Component title={exp.title} />
