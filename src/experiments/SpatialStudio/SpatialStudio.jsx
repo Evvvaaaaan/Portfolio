@@ -9,6 +9,7 @@ const STAGES = { queued: '변환 준비', validating: '사진 확인', understan
   failed: '변환 실패', cancelled: '변환 취소' }
 const TERMINAL = ['ready', 'failed', 'cancelled']
 const number = value => new Intl.NumberFormat('ko-KR', { notation: 'compact', maximumFractionDigits: 1 }).format(value)
+const desktop = typeof window !== 'undefined' ? window.spatialDesktop : null
 
 function Icon({ name, size = 20, ...props }) {
   const paths = {
@@ -58,6 +59,7 @@ export default function SpatialStudio() {
   const [submitting, setSubmitting] = useState(false)
   const [dragging, setDragging] = useState(false)
   const [guide, setGuide] = useState(false)
+  const [setup, setSetup] = useState(null)
   const fileInput = useRef(null)
   const viewport = useRef(null)
   const dialog = useRef(null)
@@ -112,6 +114,14 @@ export default function SpatialStudio() {
   }, [])
 
   useEffect(() => () => { urls.current.forEach(url => URL.revokeObjectURL(url)) }, [])
+
+  useEffect(() => {
+    if (!desktop) return undefined
+    desktop.setupStatus().then(setSetup)
+    return desktop.onSetupUpdate(setSetup)
+  }, [])
+
+  const installEngine = async () => setSetup(await desktop?.startSetup())
 
   useEffect(() => {
     if (!jobId || TERMINAL.includes(jobStage)) return
@@ -238,7 +248,7 @@ export default function SpatialStudio() {
           <div className="sp-quality">{[['balanced', '균형', '기본 미리보기'], ['detail', '고품질', '더 부드러운 미리보기']].map(([value, title, description]) => <button key={value} disabled={busy} className={quality === value ? 'is-selected' : ''} onClick={() => setQuality(value)} aria-pressed={quality === value}><span>{title}{quality === value && <Icon name="check" size={14}/>}</span><small>{description}</small></button>)}</div>
           <div className="sp-quality-label"><span>안정형 3D 재구성</span><span>API 요금 0원</span></div>
           <p className="sp-completion-notice">벽과 가구를 두께 있는 입체로 조립합니다. 실제와 다른 간결한 CG 형태이며, 사진 질감을 늘여 붙이지 않습니다. 39개 시점 검사를 거쳐 표시합니다. 전력·장비 비용은 별도입니다.</p>
-          {health && !health.ready && <p className="sp-error">로컬 엔진 설치: <code>npm run spatial:setup</code><br/>최초 모델 다운로드 약 4.3GB. 실행 환경과 저장 공간이 추가로 필요합니다.</p>}
+          {health && !health.ready && <div className="sp-error">{desktop ? <><strong>로컬 엔진 설치가 필요합니다.</strong><span>최초 모델 다운로드 약 4.3GB · 설치 공간은 약 10GB가 필요합니다.</span><button type="button" onClick={installEngine} disabled={setup?.running}>{setup?.running ? '엔진 설치 중…' : '엔진 설치 시작'}</button>{setup?.output && <pre>{setup.output}</pre>}{setup?.error && <span>{setup.error}</span>}</> : <>로컬 엔진 설치: <code>npm run spatial:setup</code><br/>최초 모델 다운로드 약 4.3GB. 실행 환경과 저장 공간이 추가로 필요합니다.</>}</div>}
         </section>
         <div className="sp-submit-area">
           {error && <p className="sp-error" role="alert">{error}</p>}

@@ -34,6 +34,7 @@ export default function ExperimentPage() {
           ))}
         </div>
       </div>
+      {exp.desktopDownload && <a className="exp-page-code-btn" href={exp.desktopDownload} download>⇩</a>}
       {exp.sources && (
         <Link to={`/gallery/${exp.id}/code`} className="exp-page-code-btn">
           {'</>'}
