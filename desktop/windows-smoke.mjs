@@ -37,7 +37,7 @@ try {
     expect(health.ready, JSON.stringify(health)).toBe(true)
   }
   await page.reload()
-  await page.getByText('내보내기', { exact: true }).click()
+  await page.locator('.sp-download summary').click()
   const downloadEvent = page.waitForEvent('download')
   await page.getByRole('link', { name: '3D 모델' }).click()
   const download = await downloadEvent
@@ -45,6 +45,13 @@ try {
   expect(await download.failure()).toBeNull()
   await page.screenshot({ path: 'test-results/windows-installed.png' })
   console.log(process.argv.includes('--install-engine') ? 'WINDOWS_ENGINE_VERIFIED: Python, model and Blender installed through the application.' : 'WINDOWS_APP_VERIFIED: NSIS installation, app launch and GLB download.')
+} catch (error) {
+  const page = app.windows()[0]
+  if (page) {
+    console.error(await page.locator('body').innerText())
+    await page.screenshot({ path: 'test-results/windows-failure.png' })
+  }
+  throw error
 } finally {
   await app.close()
 }
