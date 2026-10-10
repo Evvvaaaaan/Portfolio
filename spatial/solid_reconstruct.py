@@ -105,7 +105,7 @@ def run(job):
         torch.mps.empty_cache()
     progress('solidifying', 60)
     blender = os.environ.get('SPATIAL_BLENDER', str(RUNTIME / (
-        'Blender.app/Contents/MacOS/Blender' if sys.platform == 'darwin' else 'blender/blender')))
+        'Blender.app/Contents/MacOS/Blender' if sys.platform == 'darwin' else 'blender/blender.exe' if sys.platform == 'win32' else 'blender/blender')))
     subprocess.run([blender, '--background', '--factory-startup', '--threads', '6',
         '--python-exit-code', '1', '--python', str(ROOT / 'spatial/build_solids.py'), '--', str(job)],
         check=True, timeout=1200)

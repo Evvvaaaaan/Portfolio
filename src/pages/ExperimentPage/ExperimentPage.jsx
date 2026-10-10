@@ -34,7 +34,6 @@ export default function ExperimentPage() {
           ))}
         </div>
       </div>
-      {exp.desktopDownload && <a className="exp-page-code-btn" href={exp.desktopDownload} download>⇩</a>}
       {exp.sources && (
         <Link to={`/gallery/${exp.id}/code`} className="exp-page-code-btn">
           {'</>'}
@@ -47,7 +46,9 @@ export default function ExperimentPage() {
     return (
       <div className="exp-fullscreen">
         <Link to="/gallery" className="exp-fullscreen-back">← Lab</Link>
-        {exp.desktopDownload && <a className="exp-desktop-download" href={exp.desktopDownload} download>↓ Spatial Studio 내려받기 <small>macOS</small></a>}
+        {exp.desktopDownloads && <nav className="exp-desktop-downloads" aria-label="Spatial Studio 다운로드">
+          {exp.desktopDownloads.map(({ platform, url }) => <a key={platform} className="exp-desktop-download" href={url} aria-label={`Spatial Studio ${platform} 다운로드`} download>↓ {platform} 다운로드</a>)}
+        </nav>}
         {bar}
         <Suspense fallback={<div className="exp-page-loading">Loading…</div>}>
           <Component title={exp.title} />

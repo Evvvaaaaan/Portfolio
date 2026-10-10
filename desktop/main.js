@@ -10,7 +10,7 @@ const data = join(app.getPath('userData'), 'jobs')
 let server, installer, setup = { running: false, output: '', error: '' }
 
 function run(script) {
-  return spawn(process.execPath, [script], { cwd: appRoot, env: { ...process.env, ELECTRON_RUN_AS_NODE: '1', SPATIAL_RUNTIME: runtime, SPATIAL_DATA: data, SPATIAL_PORT: '5175' }, stdio: ['ignore', 'pipe', 'pipe'] })
+  return spawn(process.execPath, [script], { cwd: appRoot, windowsHide: true, env: { ...process.env, ELECTRON_RUN_AS_NODE: '1', PYTHONUTF8: '1', SPATIAL_RUNTIME: runtime, SPATIAL_DATA: data, SPATIAL_PORT: '5175' }, stdio: ['ignore', 'pipe', 'pipe'] })
 }
 function broadcast() { BrowserWindow.getAllWindows().forEach((window) => window.webContents.send('spatial:setup-update', setup)) }
 function startServer() { if (!server) { server = run(join(appRoot, 'spatial', 'serve.mjs')); server.once('exit', () => { server = null }) } }

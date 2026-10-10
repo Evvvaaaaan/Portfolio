@@ -11,6 +11,7 @@ const runtime = resolve(process.env.SPATIAL_RUNTIME || join(root, '.spatial-runt
 const platform = `${process.platform}-${process.arch}`
 const configurations = {
   'darwin-arm64': { uv: 'aarch64-apple-darwin', blender: 'blender-4.5.3-macos-arm64.dmg' },
+  'win32-x64': { uv: 'x86_64-pc-windows-msvc', blender: 'blender-4.5.3-windows-x64.zip' },
   'linux-x64': { uv: 'x86_64-unknown-linux-gnu', blender: 'blender-4.5.3-linux-x64.tar.xz' },
 }
 const config = configurations[platform]
@@ -18,7 +19,7 @@ if (!config) throw new Error(`Unsupported automatic setup platform: ${platform}.
 
 function run(command, args, options = {}) {
   return new Promise((resolve, reject) => {
-    const child = spawn(command, args, { cwd: root, stdio: 'inherit', ...options })
+    const child = spawn(command, args, { cwd: root, stdio: 'inherit', windowsHide: true, ...options })
     child.once('error', reject)
     child.once('close', code => code === 0 ? resolve() : reject(new Error(`${command} exited ${code}`)))
   })
@@ -35,15 +36,15 @@ async function download(url, path) {
 }
 
 await mkdir(runtime, { recursive: true })
-const python = join(runtime, 'venv/bin/python')
+const python = join(runtime, process.platform === 'win32' ? 'venv/Scripts/python.exe' : 'venv/bin/python')
 const blender = process.env.SPATIAL_BLENDER || (process.platform === 'darwin'
-  ? join(runtime, 'Blender.app/Contents/MacOS/Blender') : join(runtime, 'blender/blender'))
+  ? join(runtime, 'Blender.app/Contents/MacOS/Blender') : join(runtime, process.platform === 'win32' ? 'blender/blender.exe' : 'blender/blender'))
 if (!process.argv.includes('--check')) {
-  let uv = process.env.UV_BIN || join(runtime, `uv-${config.uv}/uv`)
+  let uv = process.env.UV_BIN || join(runtime, process.platform === 'win32' ? 'uv.exe' : `uv-${config.uv}/uv`)
   if (!existsSync(uv)) {
-    const archive = join(runtime, 'uv.tar.gz')
-    await download(`https://github.com/astral-sh/uv/releases/download/0.12.16/uv-${config.uv}.tar.gz`, archive)
-    await run('tar', ['-xzf', archive, '-C', runtime])
+    const archive = join(runtime, process.platform === 'win32' ? 'uv.zip' : 'uv.tar.gz')
+    await download(`https://github.com/astral-sh/uv/releases/download/0.12.16/uv-${config.uv}.${process.platform === 'win32' ? 'zip' : 'tar.gz'}`, archive)
+    await run('tar', ['-xf', archive, '-C', runtime])
   }
   if (!existsSync(python)) {
     await run(uv, ['python', 'install', '3.12', '--install-dir', join(runtime, 'python'), '--no-bin', '--cache-dir', join(runtime, 'cache')])
@@ -60,6 +61,9 @@ if (!process.argv.includes('--check')) {
       await run('hdiutil', ['attach', '-readonly', '-nobrowse', '-mountpoint', mountpoint, archive])
       try { await cp(join(mountpoint, 'Blender.app'), join(runtime, 'Blender.app'), { recursive: true }) }
       finally { await run('hdiutil', ['detach', mountpoint]) }
+    } else if (process.platform === 'win32') {
+      await run('tar', ['-xf', archive, '-C', runtime])
+      await rename(join(runtime, config.blender.slice(0, -4)), join(runtime, 'blender'))
     } else {
       await mkdir(join(runtime, 'blender'), { recursive: true })
       await run('tar', ['-xf', archive, '--strip-components=1', '-C', join(runtime, 'blender')])

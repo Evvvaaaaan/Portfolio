@@ -45,8 +45,8 @@ async function readJson(path) {
 }
 
 export function runtimeStatus() {
-  const python = process.env.SPATIAL_PYTHON || join(RUNTIME, 'venv/bin/python')
-  const blender = process.env.SPATIAL_BLENDER || join(RUNTIME, process.platform === 'darwin' ? 'Blender.app/Contents/MacOS/Blender' : 'blender/blender')
+  const python = process.env.SPATIAL_PYTHON || join(RUNTIME, process.platform === 'win32' ? 'venv/Scripts/python.exe' : 'venv/bin/python')
+  const blender = process.env.SPATIAL_BLENDER || join(RUNTIME, process.platform === 'darwin' ? 'Blender.app/Contents/MacOS/Blender' : process.platform === 'win32' ? 'blender/blender.exe' : 'blender/blender')
   const checks = { python: existsSync(python), blender: existsSync(blender),
     model: ['config.json', 'model.safetensors', 'preprocessor_config.json', 'tokenizer_config.json']
       .every(file => existsSync(join(RUNTIME, 'models-layout', file))),
@@ -149,10 +149,11 @@ export function createSpatialService() {
             imageCount: files.length, stage: 'queued', progress: 0 }
           await writeFile(join(folder, 'status.json'), JSON.stringify(status))
           const log = openSync(join(folder, 'worker.log'), 'a')
-          const child = spawn(process.env.SPATIAL_PYTHON || join(RUNTIME, 'venv/bin/python'),
-            [join(ROOT, 'spatial/solid_reconstruct.py'), folder], { cwd: ROOT, detached: true,
+          const child = spawn(process.env.SPATIAL_PYTHON || join(RUNTIME, process.platform === 'win32' ? 'venv/Scripts/python.exe' : 'venv/bin/python'),
+            [join(ROOT, 'spatial/solid_reconstruct.py'), folder], { cwd: ROOT, detached: process.platform !== 'win32', windowsHide: true,
               stdio: ['ignore', log, log], env: { ...process.env, SPATIAL_RUNTIME: RUNTIME,
-                XDG_CACHE_HOME: join(RUNTIME, 'cache'), PYTHONUNBUFFERED: '1' } })
+                SPATIAL_BLENDER: process.env.SPATIAL_BLENDER || join(RUNTIME, process.platform === 'darwin' ? 'Blender.app/Contents/MacOS/Blender' : process.platform === 'win32' ? 'blender/blender.exe' : 'blender/blender'),
+                XDG_CACHE_HOME: join(RUNTIME, 'cache'), PYTHONUNBUFFERED: '1', PYTHONUTF8: '1' } })
           closeSync(log)
           child.on('error', async () => {
             await writeFile(join(folder, 'status.json'), JSON.stringify({ ...status, stage: 'failed', error: '복원 엔진을 시작할 수 없습니다.' }))
@@ -172,7 +173,15 @@ export function createSpatialService() {
         if (!TERMINAL.has(status.stage)) {
           const execution = await readJson(join(DATA, id, 'process.json'))
           if (execution && isAlive(execution.pid)) {
-            try { process.kill(-execution.pid, 'SIGTERM') } catch { /* Already exited. */ }
+            if (process.platform === 'win32') {
+              await new Promise((resolve, reject) => {
+                const killer = spawn('taskkill', ['/pid', String(execution.pid), '/T', '/F'], { windowsHide: true })
+                killer.once('error', reject)
+                killer.once('close', resolve)
+              })
+            } else {
+              try { process.kill(-execution.pid, 'SIGTERM') } catch { /* Already exited. */ }
+            }
           }
           const cancelled = { ...status, stage: 'cancelled', error: '변환을 취소했습니다.' }
           await writeFile(join(DATA, id, 'status.json'), JSON.stringify(cancelled))

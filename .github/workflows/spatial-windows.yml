@@ -1,0 +1,45 @@
+name: Spatial Studio Windows
+
+on:
+  push:
+    branches: [feat/spatial-windows-download]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    timeout-minutes: 40
+    env:
+      CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+      PYTHONUTF8: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npx vitest run dev/spatialService.test.js src/experiments/SpatialStudio/navigation.test.js
+      - run: npm run desktop:build:win
+      - name: Install and exercise the packaged application
+        shell: pwsh
+        run: |
+          $installer = Get-ChildItem dist/Spatial-Studio-Setup-*-x64.exe | Select-Object -First 1
+          $destination = Join-Path $env:RUNNER_TEMP 'Spatial Studio'
+          $process = Start-Process -FilePath $installer.FullName -ArgumentList '/S', "/D=$destination" -Wait -PassThru
+          if ($process.ExitCode -ne 0) { throw "Installer exited $($process.ExitCode)" }
+          $env:SPATIAL_TEST_EXE = Join-Path $destination 'Spatial Studio.exe'
+          if (-not (Test-Path $env:SPATIAL_TEST_EXE)) { throw 'Installed executable not found' }
+          npm run desktop:test:win
+          if ($LASTEXITCODE -ne 0) { throw 'Windows smoke check failed' }
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: spatial-studio-windows
+          path: |
+            dist/Spatial-Studio-Setup-*-x64.exe
+            test-results/
+          if-no-files-found: error

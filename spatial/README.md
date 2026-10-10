@@ -17,7 +17,9 @@ Open **http://127.0.0.1:5175/spatial**. `spatial:setup:completion` remains an al
 to the same current setup for existing users; it no longer installs SDXL.
 `npm run spatial:check` checks the runtime and layout constraints.
 
-Setup supports Apple Silicon macOS and Linux x64. It installs isolated Python
+Setup supports Apple Silicon macOS, Windows 10/11 x64 and Linux x64.
+Windows uses the per-user installer and does not require Node.js or Python to be installed beforehand.
+Build the Windows installer with `npm run desktop:build:win` on Windows. It installs isolated Python
 3.12, pinned packages, Qwen3-VL-2B-Instruct and Blender 4.5.3 under
 `.spatial-runtime/`. The vision weights download is approximately 4.3 GB.
 Allow at least 10 GB free for the current engine, installers and generated jobs.

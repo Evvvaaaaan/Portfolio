@@ -162,9 +162,6 @@
 }
 
 .exp-desktop-download {
-  position: absolute;
-  top: 20px;
-  right: 24px;
   z-index: 60;
   font-family: var(--font-mono);
   font-size: 11px;
@@ -192,4 +189,10 @@
 @media (max-width: 767px) {
   .exp-page-bar { padding: 12px 16px; }
   .exp-page-meta { gap: 8px; }
+}
+
+.exp-desktop-downloads { position: absolute; top: 20px; right: 24px; z-index: 60; display: flex; gap: 8px; }
+@media (max-width: 767px) {
+  .exp-desktop-downloads { right: 12px; gap: 5px; }
+  .exp-desktop-download { padding: 8px; font-size: 10px; }
 }
