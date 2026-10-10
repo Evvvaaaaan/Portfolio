@@ -225,6 +225,11 @@ export default function SpatialStudio() {
       <div className="sp-header-center"><span/> A new dimension to your photographs</div>
       <nav><button className={showHistory ? 'is-active' : ''} onClick={() => setShowHistory(!showHistory)}><Icon name="layers" size={16}/>내 공간<span className="sp-count">{history.filter(item => item.stage === 'ready').length}</span></button><button className="sp-help" onClick={() => setGuide(true)} aria-label="촬영 가이드"><Icon name="help"/></button></nav>
     </header>
+    {!desktop && <nav className="sp-app-downloads" aria-label="Spatial Studio 다운로드">
+      <span>Spatial Studio 설치</span>
+      <a href="https://github.com/Evvvaaaaan/Portfolio/releases/download/spatial-studio-windows-v0.0.1/Spatial-Studio-Setup-0.0.1-x64.exe" aria-label="Spatial Studio Windows 다운로드" download>↓ Windows x64</a>
+      <a href="https://github.com/Evvvaaaaan/Portfolio/releases/download/spatial-studio-v1.0.0/Spatial.Studio-0.0.0-arm64.dmg" aria-label="Spatial Studio macOS 다운로드" download>↓ macOS Apple Silicon</a>
+    </nav>}
 
     <div className="sp-layout">
       <aside className="sp-sidebar">

@@ -38,10 +38,6 @@ export const experiments = [
     planetName: 'SPATIAL',
     symbol: '▧',
     fullscreen: true,
-    desktopDownloads: [
-      { platform: 'Windows', url: 'https://github.com/Evvvaaaaan/Portfolio/releases/download/spatial-studio-windows-v0.0.1/Spatial-Studio-Setup-0.0.1-x64.exe' },
-      { platform: 'macOS', url: 'https://github.com/Evvvaaaaan/Portfolio/releases/download/spatial-studio-v1.0.0/Spatial.Studio-0.0.0-arm64.dmg' },
-    ],
     component: SpatialStudio,
   },
   {

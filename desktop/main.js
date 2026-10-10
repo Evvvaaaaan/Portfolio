@@ -2,6 +2,7 @@ import { app, BrowserWindow, ipcMain } from 'electron'
 import { spawn } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
+import process from 'node:process'
 
 const here = dirname(fileURLToPath(import.meta.url))
 const appRoot = app.isPackaged ? join(process.resourcesPath, 'app') : dirname(here)
