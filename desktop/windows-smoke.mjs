@@ -7,7 +7,7 @@ if (process.platform !== 'win32') throw new Error('Run this check on Windows.')
 const executablePath = process.env.SPATIAL_TEST_EXE
 if (!executablePath) throw new Error('Set SPATIAL_TEST_EXE to the installed application.')
 await mkdir('test-results', { recursive: true })
-const app = await electron.launch({ executablePath, timeout: 60_000 })
+const app = await electron.launch({ executablePath, acceptDownloads: true, timeout: 60_000 })
 try {
   const page = await app.firstWindow()
   await expect(page.getByRole('heading', { name: /사진 속 공간을/ })).toBeVisible({ timeout: 60_000 })
