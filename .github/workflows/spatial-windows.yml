@@ -24,7 +24,8 @@ jobs:
       - run: npm ci
       - run: npx vitest run dev/spatialService.test.js src/experiments/SpatialStudio/navigation.test.js
       - run: npm run desktop:build:win
-      - name: Install and exercise the packaged application
+      - name: Install and verify app launch and model export
+        timeout-minutes: 4
         shell: pwsh
         run: |
           $installer = Get-ChildItem dist/Spatial-Studio-Setup-*-x64.exe | Select-Object -First 1
@@ -35,6 +36,13 @@ jobs:
           if (-not (Test-Path $env:SPATIAL_TEST_EXE)) { throw 'Installed executable not found' }
           npm run desktop:test:win
           if ($LASTEXITCODE -ne 0) { throw 'Windows smoke check failed' }
+      - name: Install and verify the local engine
+        timeout-minutes: 28
+        shell: pwsh
+        run: |
+          $env:SPATIAL_TEST_EXE = Join-Path $env:RUNNER_TEMP 'Spatial Studio/Spatial Studio.exe'
+          npm run desktop:test:win -- --install-engine
+          if ($LASTEXITCODE -ne 0) { throw 'Windows engine check failed' }
       - uses: actions/upload-artifact@v4
         if: always()
         with:

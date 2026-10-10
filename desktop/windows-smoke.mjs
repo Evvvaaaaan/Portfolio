@@ -13,27 +13,29 @@ try {
   await expect(page.getByRole('heading', { name: /사진 속 공간을/ })).toBeVisible({ timeout: 60_000 })
   await expect(page.getByTestId('spatial-viewer')).toHaveAttribute('data-renderer', 'closed-solids', { timeout: 60_000 })
   await expect(page.getByRole('button', { name: '엔진 설치 시작' })).toBeVisible()
-  await page.getByRole('button', { name: '엔진 설치 시작' }).click()
-  await expect(page.getByRole('button', { name: '엔진 설치 중…' })).toBeDisabled()
-  const deadline = Date.now() + 25 * 60_000
-  let complete = false
-  let previousOutput = ''
-  while (Date.now() < deadline) {
-    const state = await page.evaluate(() => window.spatialDesktop.setupStatus())
-    if (state.output !== previousOutput) {
-      console.log(state.output.slice(-1000))
-      previousOutput = state.output
+  if (process.argv.includes('--install-engine')) {
+    await page.getByRole('button', { name: '엔진 설치 시작' }).click()
+    await expect(page.getByRole('button', { name: '엔진 설치 중…' })).toBeDisabled()
+    const deadline = Date.now() + 25 * 60_000
+    let complete = false
+    let previousOutput = ''
+    while (Date.now() < deadline) {
+      const state = await page.evaluate(() => window.spatialDesktop.setupStatus())
+      if (state.output !== previousOutput) {
+        console.log(state.output.slice(-1000))
+        previousOutput = state.output
+      }
+      if (!state.running) {
+        expect(state.error, state.output).toBe('')
+        complete = true
+        break
+      }
+      await new Promise(resolve => setTimeout(resolve, 5000))
     }
-    if (!state.running) {
-      expect(state.error, state.output).toBe('')
-      complete = true
-      break
-    }
-    await new Promise(resolve => setTimeout(resolve, 5000))
+    expect(complete, 'Engine installation timed out').toBe(true)
+    const health = await page.evaluate(async () => (await fetch('/api/spatial/health')).json())
+    expect(health.ready, JSON.stringify(health)).toBe(true)
   }
-  expect(complete, 'Engine installation timed out').toBe(true)
-  const health = await page.evaluate(async () => (await fetch('/api/spatial/health')).json())
-  expect(health.ready, JSON.stringify(health)).toBe(true)
   await page.reload()
   await page.getByText('내보내기', { exact: true }).click()
   const downloadEvent = page.waitForEvent('download')
@@ -42,7 +44,7 @@ try {
   await download.saveAs(join('test-results', download.suggestedFilename()))
   expect(await download.failure()).toBeNull()
   await page.screenshot({ path: 'test-results/windows-installed.png' })
-  console.log('WINDOWS_VERIFIED: NSIS installation, app launch, engine setup, Python/model/Blender checks, GLB download.')
+  console.log(process.argv.includes('--install-engine') ? 'WINDOWS_ENGINE_VERIFIED: Python, model and Blender installed through the application.' : 'WINDOWS_APP_VERIFIED: NSIS installation, app launch and GLB download.')
 } finally {
   await app.close()
 }
